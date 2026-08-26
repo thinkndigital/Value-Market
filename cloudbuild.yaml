@@ -1,0 +1,59 @@
+# Value Market - Google Cloud Build pipeline: build -> push to Artifact Registry -> deploy to Cloud Run.
+#
+# No secrets are set here. Database credentials, APP_KEY, and other secrets are expected to already exist
+# in Secret Manager and be wired to the Cloud Run service via `--set-secrets` on a one-time/updated `gcloud
+# run deploy` (documented in docs/CLOUD_RUN_DEPLOYMENT.md) - this pipeline only updates the running
+# revision's image and any already-configured secret/env bindings, it does not define them.
+#
+# One-time setup this pipeline assumes already exists (see docs/CLOUD_RUN_DEPLOYMENT.md for the exact
+# commands): the Artifact Registry Docker repository, the Cloud Run service's first revision (with its
+# secrets/env vars/Cloud SQL connection configured), and the required APIs enabled.
+#
+# Substitutions (override with `gcloud builds submit --substitutions=_REGION=...,_SERVICE_NAME=...`, or set
+# as trigger substitutions in the Cloud Build console):
+substitutions:
+  _REGION: me-central1
+  _SERVICE_NAME: value-market
+  _REPOSITORY: value-market
+
+images:
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA}'
+
+steps:
+  # 1. Build the image. Reproducible from composer.lock/package-lock.json alone (see Dockerfile) - no
+  #    build-arg secrets, no .env, no database access needed or used here.
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA}'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest'
+      - .
+
+  # 2. Push both tags to Artifact Registry.
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - '--all-tags'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}'
+
+  # 3. Deploy the newly-pushed image to the existing Cloud Run service. Only the image is updated here -
+  #    env vars, secrets, Cloud SQL connections, min/max instances etc. are the already-configured service
+  #    settings from its initial `gcloud run deploy` (docs/CLOUD_RUN_DEPLOYMENT.md); this step does not
+  #    reset or redefine them, and never passes a secret value as a plain build substitution.
+  - id: deploy
+    name: gcr.io/google-cloud-sdk/slim
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - '${_SERVICE_NAME}'
+      - '--image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA}'
+      - '--region=${_REGION}'
+      - '--platform=managed'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

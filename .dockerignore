@@ -1,0 +1,56 @@
+# Value Market - Docker build context exclusions.
+# Mirrors .gitignore's spirit plus Docker-specific exclusions; nothing Laravel needs at runtime is excluded.
+
+# Version control / CI
+.git
+.github
+.gitignore
+.gitattributes
+
+# Environment / secrets - never baked into the image, injected at runtime instead (see
+# docs/CLOUD_RUN_DEPLOYMENT.md)
+.env
+.env.*
+!.env.example
+
+# Dependencies - reinstalled inside the image from composer.lock/package-lock.json for a reproducible,
+# platform-correct build (host node_modules/vendor may be for a different OS/arch or PHP/Node version)
+node_modules
+vendor
+
+# Runtime-generated storage - recreated fresh by the Dockerfile; never copy host logs/cache/sessions into
+# a new image
+storage/logs
+storage/framework/cache
+storage/framework/sessions
+storage/framework/views
+storage/*.key
+storage/debugbar
+
+# Frontend build output - rebuilt in Stage 2 of the Dockerfile, not copied from the host
+public/build
+public/hot
+
+# Tests and dev-only tooling - not part of the runtime image
+tests
+.phpunit.cache
+.phpunit.result.cache
+phpunit.xml
+
+# Docker artifacts / local dev
+Dockerfile
+.dockerignore
+docker-compose*.yml
+Homestead.json
+Homestead.yaml
+
+# IDE / OS files
+.idea
+.vscode
+.fleet
+.DS_Store
+Thumbs.db
+
+# Local dev logs
+npm-debug.log
+yarn-error.log

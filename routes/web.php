@@ -40,6 +40,12 @@ Route::get('/version', function () {
     return app()->version();
 });
 
+// Cloud Run deployment (docs/CLOUD_RUN_DEPLOYMENT.md): minimal health check, no auth/DB dependency, no
+// sensitive data - Laravel 10 has no built-in equivalent (the `/up` route is a Laravel 11+ feature).
+Route::get('/up', function () {
+    return response()->json(['status' => 'ok']);
+});
+
 Route::get('storage-link', function () {
     Artisan::call('storage:link');
 });
