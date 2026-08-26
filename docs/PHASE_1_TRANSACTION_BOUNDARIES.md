@@ -70,19 +70,46 @@ pattern" is a different claim from "proven under load," and this document says w
 **Fix**: the same transaction-boundary treatment as `placeOrder()` — `DB::beginTransaction()` around the
 order/order-item write(s), `DB::commit()` once they succeed, catch-all rollback on any exception.
 
-**Known risk found and deliberately NOT fixed here** (in scope for Phase 6 — POS, not Phase 1): this
-method's item loop `return`s after its **first** iteration. A POS cart with more than one product only ever
-creates an `OrderItems` row for the first item — every other line in the cart is silently dropped from the
-order. Separately, **this method never decrements stock for regular products at all** — unlike the
-e-commerce path, which calls `ProductService::updateStock()`/`ComboProductService::updateComboStock()`, no
-equivalent call exists anywhere in `PosController::place_order()`. There's also a block of dead code after
-the loop (`if (isset($res) && !empty($res))`, referencing a variable that is never assigned anywhere in the
-method — leftover from an earlier version that called `OrderService::placeOrder()` directly, per a commented-out
-line still in the file). Fixing any of this is a POS business-logic decision (how should a multi-item POS
-cart behave, where exactly should stock decrement happen, does `order_charges` need a row for POS orders
-too) that belongs to Phase 6's actual design work, not a transaction-boundary pass. This phase only makes
-what the code *already does* atomic — it does not change what it does. Flagging it here so it isn't
-mistaken for "fixed" or lost track of before Phase 6.
+**Known risks found and deliberately NOT fixed here** (in scope for Phase 6 — POS, not Phase 1). Four
+distinct bugs, the first two confirmed by automated test (`tests/Feature/Phase1/PosSaleTest.php`) rather
+than by reading alone — writing that test surfaced two bugs *upstream* of the order-item loop this document
+originally flagged:
+
+1. **`CartService::addToCart()` returns `false` for a genuinely new cart item.** It only returns `true`
+   when called with `$fromApp = true`, or when a cart row for that user+variant already existed.
+   `PosController::place_order()` always calls it with `$fromApp` left at its default (`false`). Net
+   effect: **a walk-in customer's first-ever purchase of a given product fails with "Items are Not Added"**
+   — proven by `test_addtocart_returns_false_for_a_brand_new_item_known_bug`, which needed no cart
+   pre-seeding to reproduce.
+2. **A cart with more than one distinct product crashes outright** (`ErrorException: Undefined array key
+   1`), not just mishandles extra items. `PosController` passes a single scalar `store_id`
+   (session-based, from `StoreService::getStoreId()`); `CartService::addToCart()` explodes it and indexes
+   it per cart item (`$store_id[$index]`), which only has an element at index 0. This happens *before*
+   either item reaches order creation — proven by `test_a_multi_item_cart_of_new_items_crashes_known_bug`.
+   **This means the item-loop bug below is effectively unreachable for a genuine multi-item sale of new
+   products** — the crash above happens first. It only becomes reachable in the narrower case where the
+   first cart item already existed (so `addToCart`'s early-return path is taken) while a later one is new;
+   the loop bug was the original (correct, but incomplete) finding from reading the code before this test
+   existed.
+3. **The order-item creation loop `return`s after its first iteration** regardless of how many items reach
+   it — the pre-existing finding above, still real, just less often the *first* thing to go wrong than
+   originally understood.
+4. **Stock is never decremented for regular products** in this path at all — unlike the e-commerce path,
+   which calls `ProductService::updateStock()`/`ComboProductService::updateComboStock()`, no equivalent
+   call exists anywhere in `PosController::place_order()`. Proven (as an assertion on current, buggy
+   behavior) by `test_a_single_item_pos_sale_creates_an_order_and_decrements_stock`, which asserts stock is
+   unchanged after a successful sale and documents that this assertion should start failing once Phase 6
+   fixes it.
+
+There's also a block of dead code after the loop (`if (isset($res) && !empty($res))`, referencing a
+variable that is never assigned anywhere in the method — leftover from an earlier version that called
+`OrderService::placeOrder()` directly, per a commented-out line still in the file). Fixing any of this is a
+POS business-logic decision (how should `addToCart`/multi-item carts actually behave, where exactly should
+stock decrement happen, does `order_charges` need a row for POS orders too) that belongs to Phase 6's
+actual design work, not a transaction-boundary pass. This phase only makes what the code *already does*
+atomic — it does not change what it does, and now has automated tests proving exactly what it does, not
+just documentation asserting it. Flagging all four here so none is mistaken for "fixed" or lost track of
+before Phase 6.
 
 ### `OrderService::process_refund()` — reviewed, not restructured
 
@@ -118,7 +145,7 @@ future attention.
 | Payment confirmation | Covered indirectly — payment-status updates flow through the same `OrderService`/`WalletService` methods fixed above; no separate dedicated payment-confirmation method was found to fix independently |
 | Wallet transactions | Fixed (all 3 `WalletService` methods), verified by automated test |
 | Stock changes | `ProductService::updateStock()` writes are single-row `UPDATE` statements (already InnoDB-atomic per-row); no multi-step stock operation requiring a transaction wrapper was found in this phase's scope |
-| POS sales | Fixed (transaction boundary added); underlying multi-item/no-stock-decrement bugs found and documented, not fixed (Phase 6) |
+| POS sales | Fixed (transaction boundary added), verified by `PosSaleTest.php`; 4 pre-existing bugs found (2 by automated test, not just reading) and documented, not fixed (Phase 6) |
 | Refunds | Reviewed; primary money-moving call already atomic; a narrower non-money bookkeeping gap documented, not fixed |
 | Commissions | Delivery-boy commission crediting now atomic at the `WalletService` level; not joined with the order-status update it accompanies (documented gap, §3) |
 | Future accounting journal posting | N/A yet — no accounting engine exists (Phase 9); this phase's job was to leave the transaction-boundary *pattern* (begin/try/commit/catch-rollback, or `DB::transaction(closure)` for self-contained operations) demonstrated and working so Phase 9 has a proven convention to build on, not a blank page |

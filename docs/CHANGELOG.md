@@ -61,6 +61,11 @@ the phase and task they belong to per `docs/IMPLEMENTATION_ROADMAP.md`.
 
 ### Bugs found and documented, not fixed (out of Phase 1's scope)
 - POS multi-item order bug and missing stock decrement (see above) — Phase 6.
+- `CartService::addToCart()` returns `false` for a brand-new cart item (POS never passes `$fromApp=true`),
+  and separately crashes outright on a cart with more than one distinct new product (`Undefined array key
+  1`, from indexing a single-element `store_id` array per item) — both found by automated test
+  (`PosSaleTest.php`), not by reading code — Phase 6.
+- `generatParcelInvoicePDF` IDOR (see Security section above) — Phase 2.
 - 10 files with PSR-4 namespace/directory case mismatches — confirmed not currently breaking (PHP resolves
   them via fallback), but fragile under `composer install --classmap-authoritative` — flagged for
   deployment-pipeline attention.
@@ -73,11 +78,13 @@ the phase and task they belong to per `docs/IMPLEMENTATION_ROADMAP.md`.
   key in the live schema.
 
 ### Tests
-- `tests/Feature/Phase1/` — 7 test classes, 40 tests, 59 assertions, all passing: migration baseline
+- `tests/Feature/Phase1/` — 9 test classes, 47 tests, 79 assertions, all passing: migration baseline
   fidelity, transaction atomicity (proven on the real InnoDB-converted `orders` table), wallet service
   correctness, tenant-isolation policy enforcement, both new artisan commands' actual detection behavior
-  (seeded orphans/bad values, confirmed caught), and the address-ownership IDOR fix (attacker blocked,
-  owner unaffected).
+  (seeded orphans/bad values, confirmed caught), the address-ownership IDOR fix (attacker blocked, owner
+  unaffected), stock-update correctness, and a real end-to-end POS sale — which surfaced two further
+  pre-existing POS bugs (`CartService::addToCart()` failing on any brand-new cart item, and crashing
+  outright on a genuine multi-item new-product cart) that reading the code alone hadn't found.
 - Configured `phpunit.xml` to run against a real MySQL/MariaDB database rather than sqlite — the baseline
   migrations use MySQL-specific raw DDL that sqlite cannot execute.
 

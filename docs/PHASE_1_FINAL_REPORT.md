@@ -29,13 +29,13 @@ is stated explicitly rather than glossed over.
 | Orphan records resolved | 0 |
 | Orphan records intentionally unresolved | 0 (none exist to resolve — see above) |
 | Transaction boundaries added | 5 methods: `OrderService::placeOrder()`, `WalletService::updateBalance()`, `WalletService::updateCashReceived()`, `WalletService::updateWalletBalance()`, `Seller\PosController::place_order()` |
-| Tests added | 40 (7 files, `tests/Feature/Phase1/`) |
-| Tests executed | 40 |
-| Tests passed | **40** |
+| Tests added | 47 (9 files, `tests/Feature/Phase1/`) |
+| Tests executed | 47 |
+| Tests passed | **47** |
 | Tests failed | **0** |
 | Confirmed security bugs fixed | 2 (`Admin\Webhook.php` broken import; address IDOR — see below) |
 | Confirmed security bugs documented, not fixed | 1 (`generatParcelInvoicePDF` IDOR) |
-| Bugs found and documented, not fixed | 3 (POS single-item-only loop, POS missing stock decrement, `CashCollectionController` variable-variable typo) |
+| Bugs found and documented, not fixed | 5 (POS `addToCart` fails on new items, POS `addToCart` crashes on 2+ new items, POS single-item-only order loop, POS missing stock decrement, `CashCollectionController` variable-variable typo) — the first two were found by writing an automated test, not by reading code |
 
 ### Why zero new foreign keys, honestly
 
@@ -90,7 +90,7 @@ verified schema-faithful (diffed table-by-table against the original audited dum
 
 ## Tests created
 
-`tests/Feature/Phase1/` (40 tests, 59 assertions, all passing):
+`tests/Feature/Phase1/` (47 tests, 79 assertions, all passing):
 - `MigrationBaselineTest.php` — schema fidelity, InnoDB conversion, DECIMAL types, FK preservation, idempotency
 - `TransactionAtomicityTest.php` — proves `DB::transaction()` rollback actually works on the now-InnoDB `orders` table
 - `WalletServiceTest.php` — debit/credit correctness, insufficient-balance rejection, transaction-log atomicity
@@ -98,6 +98,8 @@ verified schema-faithful (diffed table-by-table against the original audited dum
 - `OrphanReportCommandTest.php` — clean-data and orphan-detection cases for `db:orphan-report`
 - `MoneyPrecisionReportTest.php` — clean-data, non-numeric, and precision-loss cases for `money:precision-report`
 - `AddressOwnershipTest.php` — the address IDOR fix, both directions (attacker blocked, owner unaffected), both operations (update, delete)
+- `StockUpdateTest.php` — `ProductService::updateStock()` decrement/restock correctness and the availability-flip at zero, on the now-InnoDB `products` table
+- `PosSaleTest.php` — a real, unmodified `PosController::place_order()` walk-in sale end to end (order + order-item creation, rollback on invalid quantity); also isolates and proves two further pre-existing POS bugs found while writing it (`CartService::addToCart()` failing on any brand-new item, and crashing outright on a genuine multi-item new-product cart) that reading the code alone had not surfaced
 
 ## Security findings
 
@@ -132,7 +134,7 @@ a live bug); `Role` model/schema timestamp mismatch (dormant); `AuthServiceProvi
 
 ## Known remaining risks (not fixed in Phase 1, by design)
 
-1. POS `place_order()`'s item loop returns after its first iteration (multi-item carts drop lines) and never decrements stock for regular products — Phase 6.
+1. POS has 4 confirmed bugs, 2 found by automated test rather than reading alone: `CartService::addToCart()` fails on any brand-new cart item ("Items are Not Added" on a walk-in customer's first purchase) and crashes outright on a genuine multi-item new-product cart (array-index error); separately, `place_order()`'s order-item loop returns after its first iteration, and stock is never decremented for regular products. All four — Phase 6.
 2. `generatParcelInvoicePDF` IDOR — Phase 2.
 3. `process_refund()` and the delivery-boy commission-crediting path each have two separately-atomic-but-not-jointly-atomic steps — documented in `PHASE_1_TRANSACTION_BOUNDARIES.md`, not restructured (360+-line methods, safer to leave alone than rewrite blind under this phase's time budget).
 4. `role_id = NULL` crash risk in `AuthServiceProvider`/`RoleMiddleware`/`CheckPermissions` — Phase 2.
@@ -149,7 +151,7 @@ in this repo are entirely new, written in Phase 1).
 
 ## Verification performed for this report
 
-- Full test suite run twice consecutively: 40/40 passing both times, no order-dependent flakiness.
+- Full test suite run twice consecutively: 47/47 passing both times, no order-dependent flakiness.
 - Fresh `php artisan migrate` against three separate clean databases across both Phase 1 passes, each
   confirmed idempotent on re-run.
 - `php artisan route:list` — all 1,066 routes resolve cleanly, before and after this pass's controller edits.
