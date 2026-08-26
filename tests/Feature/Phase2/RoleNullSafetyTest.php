@@ -36,11 +36,13 @@ class RoleNullSafetyTest extends TestCase
     public function test_gate_before_does_not_crash_for_a_user_with_no_role(): void
     {
         $user = $this->makeUser(null);
+        $stranger = $this->makeUser(null);
 
         // Previously: ErrorException "Attempt to read property 'name' on null" the instant any Gate/Policy
         // check ran for this user. Now: Gate::before() returns null (not a crash), so Laravel falls
-        // through to the normal ability check - which resolves to false here since no policy grants it.
-        $result = Gate::forUser($user)->allows('view', $user);
+        // through to the normal ability check - UserPolicy (Phase 2 Task 5) grants view only of one's own
+        // account, so a roleless user viewing an unrelated roleless user's account still correctly denies.
+        $result = Gate::forUser($user)->allows('view', $stranger);
 
         $this->assertFalse($result);
     }
@@ -50,8 +52,9 @@ class RoleNullSafetyTest extends TestCase
         // role_id has no FK constraint (docs/DATABASE_GAP_ANALYSIS.md §2) - a dangling reference like this
         // is possible in the real schema, not just a contrived test case.
         $user = $this->makeUser(999999);
+        $stranger = $this->makeUser(999999);
 
-        $result = Gate::forUser($user)->allows('view', $user);
+        $result = Gate::forUser($user)->allows('view', $stranger);
 
         $this->assertFalse($result);
     }

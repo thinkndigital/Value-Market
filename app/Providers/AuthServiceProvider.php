@@ -3,8 +3,20 @@
 namespace App\Providers;
 
 // use Illuminate\Support\Facades\Gate;
+use App\Models\Address;
+use App\Models\Order;
+use App\Models\OrderItems;
 use App\Models\Product;
+use App\Models\Seller;
+use App\Models\Transaction;
+use App\Models\User;
+use App\Policies\AddressPolicy;
+use App\Policies\OrderItemsPolicy;
+use App\Policies\OrderPolicy;
 use App\Policies\ProductPolicy;
+use App\Policies\SellerPolicy;
+use App\Policies\TransactionPolicy;
+use App\Policies\UserPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 
@@ -17,6 +29,12 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         Product::class => ProductPolicy::class,
+        Order::class => OrderPolicy::class,
+        OrderItems::class => OrderItemsPolicy::class,
+        Transaction::class => TransactionPolicy::class,
+        Address::class => AddressPolicy::class,
+        Seller::class => SellerPolicy::class,
+        User::class => UserPolicy::class,
     ];
 
     /**
