@@ -139,7 +139,7 @@ Defined Methods:-
                     'back_licence_image' => !empty($user->back_licence_image) ? app(MediaService::class)->getMediaImageUrl($user->back_licence_image, 'DELIVERY_BOY_IMG_PATH') : '',
                 ];
 
-                if ($user->role_id == 3) {
+                if ($user->isDeliveryBoy()) {
                     if (isset($request->fcm_id) && $request->fcm_id != '') {
                         $fcm_data = [
                             'fcm_id' => $request->fcm_id,
@@ -350,7 +350,7 @@ Defined Methods:-
                 'back_licence_image' => !empty($user->back_licence_image) ? app(MediaService::class)->getMediaImageUrl($user->back_licence_image, 'DELIVERY_BOY_IMG_PATH') : '',
             ];
 
-            if ($user->role_id == 3) {
+            if ($user->isDeliveryBoy()) {
 
                 unset($user->password);
 
@@ -706,7 +706,7 @@ Defined Methods:-
                 $user_id = fetchDetails(User::class, ['mobile' => $mobile], 'role_id')[0];
 
                 //Check if this mobile no. is registered as a delivery boy or not.
-                if ($user_id->role_id != 3) {
+                if (!$user_id->isDeliveryBoy()) {
                     $response = [
                         'error' => true,
                         'message' => 'Mobile number / email could not be found!',
@@ -1095,7 +1095,7 @@ Defined Methods:-
                 if (auth()->check()) {
                     $user = Auth::user();
 
-                    if ($user['role_id'] == '3') {
+                    if ($user->isDeliveryBoy()) {
                         deleteDetails(['id' => $user_id], User::class);
 
                         //delete delivery boy's images

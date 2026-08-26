@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Transaction;
 use App\Models\User;
+use App\Models\Role;
 use Carbon\Carbon;
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
@@ -13,7 +14,7 @@ class CashCollectionController extends Controller
 {
     public function index()
     {
-        $deliveryBoys = User::where('active', 1)->where('role_id', 3)->get();
+        $deliveryBoys = User::where('active', 1)->where('role_id', Role::DELIVERY_BOY)->get();
 
         return view('admin.pages.tables.manage_cash_collection', ['delivery_boys' => $deliveryBoys]);
     }
@@ -104,7 +105,7 @@ class CashCollectionController extends Controller
 
     public function getDeliveryBoys()
     {
-        $users = User::where('users.role_id', 3)
+        $users = User::where('users.role_id', Role::DELIVERY_BOY)
             ->where('users.active', 1)
             ->get(['users.*'])
             ->toArray();

@@ -3099,13 +3099,13 @@ class OrderService
         $query = Order::where('store_id', $store_id);
 
         // If user is a delivery boy (role_id = 3), join with order_items
-        if (!empty($type) && $type !== 'api' && $user && $user->role_id == 3) {
+        if (!empty($type) && $type !== 'api' && $user && $user->isDeliveryBoy()) {
             $query->whereHas('orderItems', function ($q) use ($user) {
                 $q->where('delivery_boy_id', $user->id);
             });
         }
 
-        if ($user && $user->role_id == 3 && (empty($type) || $type === 'api')) {
+        if ($user && $user->isDeliveryBoy() && (empty($type) || $type === 'api')) {
             $query->whereHas('orderItems', function ($q) use ($user) {
                 $q->where('delivery_boy_id', $user->id);
             });

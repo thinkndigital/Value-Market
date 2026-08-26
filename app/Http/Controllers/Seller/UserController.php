@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Seller;
 use App\Models\City;
 use App\Models\Media;
 use App\Models\Seller;
+use App\Models\Role;
 use App\Models\SellerStore;
 use App\Models\StorageType;
 use App\Models\Store;
@@ -111,7 +112,7 @@ class UserController extends Controller
 
 
             $user_data = [
-                'role_id' => 4,
+                'role_id' => Role::SELLER,
                 'active' => 1,
 
                 'address' => $request->address,

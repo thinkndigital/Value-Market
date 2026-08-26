@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\ComboProduct;
 use App\Models\Product_variants;
 use App\Models\User;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use App\Traits\HandlesValidation;
 use App\Services\ProductService;
@@ -48,7 +49,7 @@ class ManageStockController extends Controller
         $sellers = User::select('users.username as seller_name', 'users.id as seller_id', 'seller_store.category_ids', 'seller_data.id as seller_data_id')
             ->join('seller_data', 'seller_data.user_id', '=', 'users.id')
             ->join('seller_store', 'seller_data.user_id', '=', 'users.id')
-            ->where('users.role_id', 4)
+            ->where('users.role_id', Role::SELLER)
             ->get();
 
 
@@ -65,7 +66,7 @@ class ManageStockController extends Controller
         $sellers = User::select('users.username as seller_name', 'users.id as seller_id', 'seller_store.category_ids', 'seller_data.id as seller_data_id')
             ->join('seller_data', 'seller_data.user_id', '=', 'users.id')
             ->join('seller_store', 'seller_data.user_id', '=', 'users.id')
-            ->where('users.role_id', 4)
+            ->where('users.role_id', Role::SELLER)
             ->get();
 
 

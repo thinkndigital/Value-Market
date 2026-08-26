@@ -100,7 +100,7 @@ class SellerController extends Controller
         $seller_data = [];
         $seller_store_data = [];
         $store_id = isset($request->store_id) && !empty($request->store_id) ? $request->store_id : app(StoreService::class)->getStoreId();
-        $user = User::where('mobile', $request->mobile)->where('role_id', 4)->first();
+        $user = User::where('mobile', $request->mobile)->where('role_id', Role::SELLER)->first();
 
         $media_storage_settings = fetchDetails(StorageType::class, ['is_default' => 1], '*');
         $mediaStorageType = !$media_storage_settings->isEmpty() ? $media_storage_settings[0]->id : 1;
@@ -282,7 +282,7 @@ class SellerController extends Controller
             ]);
         }
         $user_data = [
-            'role_id' => 4,
+            'role_id' => Role::SELLER,
             'active' => $request->status,
             'password' => bcrypt($request->password),
             'address' => $request->address,
@@ -640,7 +640,7 @@ class SellerController extends Controller
             }
             $user_details = fetchDetails(User::class, ['id' => $id], '*');
             $user_data = [
-                'role_id' => 4,
+                'role_id' => Role::SELLER,
                 'active' => $request->status ?? 1,
                 'address' => $request->address ?? $user_details[0]->address,
                 'username' => $request->name ?? $user_details[0]->username,
@@ -1138,7 +1138,7 @@ class SellerController extends Controller
 
         $sellers = User::with('seller_data')
             ->select('users.*', 'seller_store.*', 'seller_data.*', 'seller_data.status as seller_status')
-            ->where('role_id', 4)
+            ->where('role_id', Role::SELLER)
             ->where(function ($query) use ($search) {
                 $query->where('users.username', 'like', '%' . $search . '%')
                     ->orWhere('users.id', 'like', '%' . $search . '%')
@@ -1427,7 +1427,7 @@ class SellerController extends Controller
             $q->where('user_id', $user_id);
         }])
             ->where('active', 1)
-            ->where('role_id', 4)
+            ->where('role_id', Role::SELLER)
             ->whereHas('sellerStore', function ($q) use ($store_id, $filter) {
                 $q->where('status', 1)->where('store_id', $store_id);
 
@@ -1665,7 +1665,7 @@ class SellerController extends Controller
 
         $transactionsQuery = Transaction::with(['user', 'orderItem'])
             ->whereHas('user', function ($q) {
-                $q->where('role_id', 4); // Seller
+                $q->where('role_id', Role::SELLER); // Seller
             })
             ->whereHas('orderItem', function ($q) use ($store_id) {
                 $q->where('store_id', $store_id);

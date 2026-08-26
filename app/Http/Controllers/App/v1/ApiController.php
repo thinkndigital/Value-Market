@@ -1337,7 +1337,7 @@ Defined Methods:-
                 'referral_code' => $request->referral_code,
                 'friends_code' => $request->friends_code,
                 'type' => 'phone',
-                'role_id' => 2,
+                'role_id' => Role::CUSTOMER,
             ];
 
             $identity_column = config('auth.defaults.passwords') === 'users.email' ? 'email' : 'mobile';
@@ -4699,7 +4699,7 @@ Defined Methods:-
                 'latitude' => request('latitude'),
                 'longitude' => request('longitude'),
                 'active' => 1,
-                'role_id' => 2,
+                'role_id' => Role::CUSTOMER,
             ];
 
             $user_id = User::insertGetId($additional_data);

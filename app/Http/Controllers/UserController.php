@@ -60,7 +60,7 @@ class UserController extends Controller
                 'referral_code' => $request->referral_code,
                 'friends_code' => $request->friends_code,
                 'type' => 'phone',
-                'role_id' => 2,
+                'role_id' => Role::CUSTOMER,
             ];
             $identity_column = config('auth.defaults.passwords') === 'users.email' ? 'email' : 'mobile';
             $identity = ($identity_column == 'mobile') ? $request->mobile : $request->email;

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CustomMessage;
 use App\Models\OrderItems;
 use App\Models\ReturnRequest;
+use App\Models\Role;
 use App\Models\Product;
 use App\Models\Store;
 use App\Models\Seller;
@@ -25,7 +26,7 @@ class ReturnRequestController extends Controller
     use HandlesValidation;
     public function index()
     {
-        $deliveryRes = User::where('role_id', 3)
+        $deliveryRes = User::where('role_id', Role::DELIVERY_BOY)
             ->where('active', 1)
             ->get();
         return view('seller.pages.tables.return_request', compact('deliveryRes'));

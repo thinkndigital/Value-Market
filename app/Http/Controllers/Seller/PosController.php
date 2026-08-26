@@ -7,6 +7,7 @@ use App\Models\Address;
 use App\Models\ComboProduct;
 use App\Models\Country;
 use App\Models\Currency;
+use App\Models\Role;
 use App\Models\Order;
 use App\Models\OrderItems;
 use App\Models\Product_variants;
@@ -52,7 +53,7 @@ class PosController extends Controller
 
         $search = trim($request->input('search', ''));
 
-        $users = User::where('role_id', 2)
+        $users = User::where('role_id', Role::CUSTOMER)
             ->where(function ($query) use ($search) {
                 $query->where('username', 'LIKE', '%' . $search . '%')
                     ->orWhere('mobile', 'like', '%' . $search . '%')
@@ -86,7 +87,7 @@ class PosController extends Controller
                 'mobile' => $mobile,
                 'username' => $username,
                 'password' => $password,
-                'role_id' => 2,
+                'role_id' => Role::CUSTOMER,
             ]);
 
             User::where('mobile', $mobile)->update(['active' => 1]);
@@ -117,7 +118,7 @@ class PosController extends Controller
     {
         $search = trim($request->input('search', ''));
 
-        $users = User::where('role_id', 2)->where('active', 1)
+        $users = User::where('role_id', Role::CUSTOMER)->where('active', 1)
             ->where(function ($query) use ($search) {
                 $query->where('username', 'LIKE', '%' . $search . '%')
                     ->orWhere('mobile', 'like', '%' . $search . '%');
@@ -146,7 +147,7 @@ class PosController extends Controller
         $store_id = app(StoreService::class)->getStoreId();
         $max_limit = 8;
         // $max_limit = 25;
-        if (Auth::user()->role_id === 4) {
+        if (Auth::user()->isSeller()) {
             $user_id = Auth::user()->id;
             $seller_id = Seller::where('user_id', $user_id)->value('id');
         }

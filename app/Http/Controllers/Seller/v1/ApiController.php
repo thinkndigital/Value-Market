@@ -201,7 +201,7 @@ class ApiController extends Controller
                     }
                 }
 
-                if ($user->role_id == 4) {
+                if ($user->isSeller()) {
                     if (isset($request->fcm_id) && $request->fcm_id != '') {
                         $fcm_data = [
                             'fcm_id' => $request->fcm_id,
@@ -482,7 +482,7 @@ class ApiController extends Controller
                     }
                 }
 
-                if ($user->role_id == 4) {
+                if ($user->isSeller()) {
                     if (isset($request->fcm_id) && $request->fcm_id != '') {
 
                         $fcm_data = [
@@ -1658,7 +1658,7 @@ class ApiController extends Controller
                 }
             }
 
-            if ($user->role_id == 4) {
+            if ($user->isSeller()) {
 
                 unset($data[0]->password);
 
@@ -3321,7 +3321,7 @@ class ApiController extends Controller
             ]);
         }
 
-        if ($user->role_id != 4) {
+        if (!$user->isSeller()) {
             return response()->json([
                 'error' => true,
                 'message' => 'Details do not match',
@@ -3870,7 +3870,7 @@ class ApiController extends Controller
         }
 
         $language_code = $request->attributes->get('language_code');
-        $user = User::where('mobile', $request->mobile)->where('role_id', 4)->first();
+        $user = User::where('mobile', $request->mobile)->where('role_id', \App\Models\Role::SELLER)->first();
         $store_id = $request->input('store_id') ?? "";
         $seller_store_details = SellerStore::select('store_id')->where('user_id', $user->id)->get();
         $seller_store_details = isset($seller_store_details) && !empty($seller_store_details) ? $seller_store_details[0]->store_id : "";

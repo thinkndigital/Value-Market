@@ -7,6 +7,7 @@ use App\Libraries\Shiprocket;
 use App\Models\Address;
 use App\Models\City;
 use App\Models\Currency;
+use App\Models\Role;
 use App\Models\CustomMessage;
 use App\Models\DigitalOrdersMail;
 use App\Models\Order;
@@ -537,7 +538,7 @@ class OrderController extends Controller
             return view('admin.pages.views.no_data_found');
         } else {
             $delivery_res = User::with('city')
-                ->where('role_id', 3)
+                ->where('role_id', Role::DELIVERY_BOY)
                 ->when($deliverable_type != 1 && !empty($seller_zone_ids), function ($query) use ($seller_zone_ids) {
                     $query->where(function ($q) use ($seller_zone_ids) {
                         foreach ($seller_zone_ids as $zone_id) {

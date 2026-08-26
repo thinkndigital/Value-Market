@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\City;
 use App\Models\User;
+use App\Models\Role;
 use App\Models\Deliveryboy;
 use App\Models\Media;
 use App\Models\StorageType;
@@ -239,7 +240,7 @@ class Delivery_boyController extends Controller
 
         $delivery_boys_data = User::when($search, function ($query) use ($search) {
             return $query->where('username', 'like', '%' . $search . '%');
-        })->where('role_id', 3);
+        })->where('role_id', Role::DELIVERY_BOY);
 
         $total = $delivery_boys_data->count();
         $delivery_boys = $delivery_boys_data

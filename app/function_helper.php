@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\TransactionController;
 use App\Models\Category;
 use App\Models\City;
+use App\Models\Role;
 use App\Models\ComboProduct;
 use App\Models\Order;
 use App\Models\OrderCharges;
@@ -571,7 +572,7 @@ function countNewUsers()
 
 function countDeliveryBoys()
 {
-    $counter = User::where('role_id', 3)
+    $counter = User::where('role_id', Role::DELIVERY_BOY)
         ->count();
 
     return $counter;
@@ -663,13 +664,13 @@ function countProductsStockLowStatus($seller_id = "", $store_id = "")
 }
 function count_new_user()
 {
-    return User::where('role_id', 2)->count();
+    return User::where('role_id', Role::CUSTOMER)->count();
 }
 
 function getDeliveryBoys($id, $search, $offset, $limit, $sort, $order, $seller_city = '', $seller_zipcode = '', $store_deliverability_type = '', $seller_zone_ids = [], $deliverable_type = "")
 {
     $query = User::with('city')
-        ->where('role_id', 3);
+        ->where('role_id', Role::DELIVERY_BOY);
 
     // Filter by specific delivery boy ID
     if (!empty($id)) {

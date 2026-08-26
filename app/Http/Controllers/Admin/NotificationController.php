@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Models\User;
 use App\Models\Category;
 use App\Models\Notification;
+use App\Models\Role;
 use App\Models\Setting;
 use App\Models\UserFcm;
 use Illuminate\Http\Request;
@@ -209,7 +210,7 @@ class NotificationController extends Controller
             $user_fcm1 = UserFcm::with('user:id,id,is_notification_on,role_id')
                 ->get()
                 ->filter(function ($fcm) {
-                    return $fcm->user && $fcm->user->is_notification_on == 1 && $fcm->user->role_id == 4;
+                    return $fcm->user && $fcm->user->is_notification_on == 1 && $fcm->user->isSeller();
                 });
             $user_fcm1 = $user_fcm1->pluck('fcm_id')->all();
             // dd($user_fcm1);
@@ -228,7 +229,7 @@ class NotificationController extends Controller
             $user_fcm1 = UserFcm::with('user:id,id,is_notification_on,role_id')
                 ->get()
                 ->filter(function ($fcm) {
-                    return $fcm->user && $fcm->user->is_notification_on == 1 && $fcm->user->role_id != 4;
+                    return $fcm->user && $fcm->user->is_notification_on == 1 && !$fcm->user->isSeller();
                 });
             $user_fcm1 = $user_fcm1->pluck('fcm_id')->all();
 
@@ -349,7 +350,7 @@ class NotificationController extends Controller
         $messageContent = $request->input('message');
         if ($sendTo === 'all_sellers') {
             // Get all users with status 1 and role_id 4
-            $users = User::where('status', 1)->where('role_id', 4)->get();
+            $users = User::where('status', 1)->where('role_id', Role::SELLER)->get();
         } else {
             // Get specific users from the request
             $userIds = $request->input('select_user_id', []);

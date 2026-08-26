@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Models\Address;
 use App\Models\Category;
 use App\Models\Media;
+use App\Models\Role;
 use App\Models\StorageType;
 use App\Models\Store;
 use App\Models\User;
@@ -290,7 +291,7 @@ class UserController extends Controller
         $formFields['email'] = $request->email;
         $formFields['password'] = bcrypt($request->password);
         $formFields['photo'] = "photos/no-image.png";
-        $formFields['role_id'] = 2;
+        $formFields['role_id'] = Role::CUSTOMER;
         $formFields['status'] = 1;
 
         $user = User::create($formFields);
@@ -311,7 +312,7 @@ class UserController extends Controller
         $users = User::select('id', 'username', 'active')
             ->where('username', 'like', '%' . $search_term . '%')
             ->where('active', '1')
-            ->where('role_id', '!=', '4')
+            ->where('role_id', '!=', Role::SELLER)
             ->get();
 
         $data = [];
@@ -332,7 +333,7 @@ class UserController extends Controller
             ->join('seller_data', 'seller_data.user_id', '=', 'users.id')
             ->where('users.username', 'like', '%' . $search_term . '%')
             ->where('users.active', '1')
-            ->where('users.role_id', '4')
+            ->where('users.role_id', Role::SELLER)
             ->where('seller_data.status', '1')
             ->get();
 
@@ -348,7 +349,7 @@ class UserController extends Controller
     }
     public function customers()
     {
-        $customers = User::where('role_id', 2)->get();
+        $customers = User::where('role_id', Role::CUSTOMER)->get();
 
         return view('admin.pages.tables.customers', ['customers' => $customers]);
     }
@@ -364,7 +365,7 @@ class UserController extends Controller
         $status = request('status', '');
         $allowModification = config('constants.ALLOW_MODIFICATION') == 1;
         // dd($status);
-        $query = User::where('role_id', 2);
+        $query = User::where('role_id', Role::CUSTOMER);
 
         if ($search) {
             $query->where(function ($subquery) use ($search) {

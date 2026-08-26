@@ -69,6 +69,50 @@ class User extends Authenticatable implements HasMedia
     }
 
     /**
+     * Phase 2 (docs/PHASE_2_RBAC_ARCHITECTURE.md, Task 4): semantic role helpers, all null-safe by
+     * construction - a user with role_id = NULL (a legitimate, nullable column) or a role_id pointing at a
+     * deleted/nonexistent row simply isn't any of these, rather than the app crashing on `$user->role->name`
+     * (the pre-existing bug fixed in AuthServiceProvider/RoleMiddleware/CheckPermissions - see Task 3 in
+     * the same doc). These compare against the plain role_id column directly, not the role() relation, so
+     * no query/eager-load is needed to use them.
+     */
+    public function isSuperAdmin(): bool
+    {
+        return (int) $this->role_id === Role::SUPER_ADMIN;
+    }
+
+    public function isAdmin(): bool
+    {
+        return (int) $this->role_id === Role::ADMIN;
+    }
+
+    public function isEditor(): bool
+    {
+        return (int) $this->role_id === Role::EDITOR;
+    }
+
+    public function isSeller(): bool
+    {
+        return (int) $this->role_id === Role::SELLER;
+    }
+
+    public function isDeliveryBoy(): bool
+    {
+        return (int) $this->role_id === Role::DELIVERY_BOY;
+    }
+
+    public function isCustomer(): bool
+    {
+        return (int) $this->role_id === Role::CUSTOMER;
+    }
+
+    /** True for any of the three admin-panel roles the 'role:super_admin,admin,editor' route group allows. */
+    public function isPlatformStaff(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin() || $this->isEditor();
+    }
+
+    /**
      * The attributes that should be cast.
      *
      * @var array<string, string>

@@ -33,7 +33,14 @@ class RoleMiddleware
         }
         $user = User::with('role')->find(Auth::user()->id);
         $allowedRoles = is_array($roles) ? $roles : [$roles];
-        if (in_array($user->role->name, $allowedRoles)) {
+
+        // Phase 2 (docs/PHASE_2_RBAC_ARCHITECTURE.md, Task 3): previously `$user->role->name` with no null
+        // check - a user with role_id = NULL, or pointing at a deleted role row, crashed the request
+        // instead of being denied. A missing role is not a special case that deserves a crash; it just
+        // means this user has no role to match against $allowedRoles, so it fails the same way a
+        // mismatched role does - one UnauthorizedException, no new response shape, no information about
+        // *why* it failed beyond what the pre-existing exception already conveys.
+        if ($user !== null && $user->role !== null && in_array($user->role->name, $allowedRoles)) {
             return $next($request);
         }
 

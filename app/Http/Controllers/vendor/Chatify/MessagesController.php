@@ -5,6 +5,7 @@ namespace App\Http\Controllers\vendor\Chatify;
 
 use App\Models\ChFavorite as Favorite;
 use App\Models\ChMessage as Message;
+use App\Models\Role;
 use App\Models\Store;
 use App\Models\User;
 use App\Models\UserFcm;
@@ -436,8 +437,8 @@ class MessagesController extends Controller
         $input = trim(filter_var($request['input']));
         $records = User::where('id', '!=', Auth::user()->id)
             ->where('username', 'LIKE', "%{$input}%")
-            ->when(Auth::user()->role_id == 2, function ($query) {
-                return $query->whereNotIn('role_id', [2, 3]);
+            ->when(Auth::user()->isCustomer(), function ($query) {
+                return $query->whereNotIn('role_id', [Role::CUSTOMER, Role::DELIVERY_BOY]);
             })
             ->paginate($request->per_page ?? $this->perPage);
         foreach ($records->items() as $record) {

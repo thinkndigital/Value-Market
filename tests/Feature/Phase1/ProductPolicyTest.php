@@ -103,14 +103,18 @@ class ProductPolicyTest extends TestCase
     {
         [, , $product] = $this->makeSellerWithProduct();
 
-        $superAdminRoleId = $this->makeRole('super_admin');
+        // Phase 2 (docs/PHASE_2_RBAC_ARCHITECTURE.md, Task 4): super-admin status is now determined by
+        // User::isSuperAdmin(), which compares role_id against the real Role::SUPER_ADMIN constant (1) -
+        // not by a role row's *name*. Use the real seeded super_admin role (id 1, from the Phase 2
+        // roles-seed migration) rather than fabricating a same-named role with an unrelated auto-generated
+        // id, which would no longer be treated as super admin at all.
         $superAdmin = User::forceCreate([
             'username' => 'super_admin_' . uniqid(),
             'password' => 'x',
             'disk' => 'public',
             'serviceable_cities' => '',
             'type' => 'phone',
-            'role_id' => $superAdminRoleId,
+            'role_id' => \App\Models\Role::SUPER_ADMIN,
         ]);
 
         $this->assertTrue(Gate::forUser($superAdmin)->allows('update', $product));

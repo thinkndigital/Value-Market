@@ -19,6 +19,7 @@ use App\Models\PickupLocation;
 use App\Models\Product;
 use App\Models\Product_variants;
 use App\Models\Promocode;
+use App\Models\Role;
 use App\Models\Seller;
 use App\Models\Transaction;
 use App\Models\User;
@@ -673,25 +674,25 @@ class OrderController extends Controller
 
                     if (!$zipcode_id->isEmpty()) {
 
-                        $delivery_res = User::where('role_id', 3)
+                        $delivery_res = User::where('role_id', Role::DELIVERY_BOY)
                             ->where('active', 1)
                             ->whereRaw('FIND_IN_SET(?, serviceable_zipcodes) != 0', [$zipcode_id[0]->id])
                             ->get()->toArray();
                     } else {
 
-                        $delivery_res = User::where('role_id', 3)
+                        $delivery_res = User::where('role_id', Role::DELIVERY_BOY)
                             ->where('active', 1)
                             ->get()->toArray();
                     }
                 } else {
-                    $delivery_res = User::where('role_id', 3)
+                    $delivery_res = User::where('role_id', Role::DELIVERY_BOY)
                         ->where('active', 1)
                         ->get()
                         ->toArray();
                 }
             } else {
 
-                $delivery_res = User::where('role_id', 3)
+                $delivery_res = User::where('role_id', Role::DELIVERY_BOY)
                     ->where('active', 1)
                     ->get()
                     ->toArray();

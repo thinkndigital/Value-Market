@@ -26,10 +26,15 @@ class AuthServiceProvider extends ServiceProvider
     {
         // Implicitly grant "Super Admin" role all permissions
         // This works in the app by using gate-related functions like auth()->user->can() and @can()
+        //
+        // Phase 2 (docs/PHASE_2_RBAC_ARCHITECTURE.md, Task 3): previously did `$user->role->name` with no
+        // null check - a user with role_id = NULL (a legitimate, nullable column; most plain customers
+        // likely have no role_id at all) hitting ANY Gate/Policy check crashed the request with
+        // "Attempt to read property 'name' on null", confirmed empirically. Now uses the null-safe
+        // isSuperAdmin() helper (compares role_id directly, no relation load, no null dereference
+        // possible) instead of loading and reading the role relation.
         Gate::before(function ($user, $ability) {
-            // dd($user->role);
-            $user_role = $user->role;
-            return $user_role->name == 'super_admin' ? true : null;
+            return $user->isSuperAdmin() ? true : null;
         });
     }
 }
