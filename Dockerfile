@@ -34,7 +34,18 @@ FROM php:8.4-cli AS vendor
 # xmlwriter, zlib - all enabled by default in the official php:8.4-cli image, same as they were in 8.1),
 # exif is not compiled in by default and needs an explicit install step. No extra system libraries are
 # required for it (unlike gd, it doesn't link against libjpeg/libpng - it parses EXIF metadata directly).
-RUN docker-php-ext-install exif
+#
+# ext-zip + unzip: a third Cloud Build failure, fixed here - "The zip extension and unzip/7z commands are
+# both missing" while downloading aws/aws-crt-php's --prefer-dist archive. This minimal php:8.4-cli base
+# (unlike Stage 3's runtime image, which already installs both for the application's own use) had neither -
+# Composer needs at least one of them to extract any --prefer-dist zip package, not just this one. Same
+# libzip-dev + docker-php-ext-install pattern already used in Stage 3, kept consistent between the two
+# stages; every other system package/extension already present in either stage is unchanged.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libzip-dev \
+        unzip \
+    && docker-php-ext-install exif zip \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
