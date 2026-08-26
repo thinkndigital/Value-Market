@@ -101,7 +101,14 @@ FROM php:8.4-apache AS runtime
 #   - pdo_mysql / pdo_pgsql: MySQL/MariaDB is this app's actual, exclusively-used database driver (every
 #     migration and query in this codebase is MySQL/MariaDB-specific) - pdo_pgsql is included only because
 #     Laravel's config/database.php declares a pgsql connection and it was explicitly requested; nothing in
-#     this app's schema or queries currently targets Postgres.
+#     this app's schema or queries currently targets Postgres. A fourth Cloud Build failure (`configure:
+#     error: Cannot find libpq-fe.h or pq library (libpq)` while compiling pdo_pgsql) was reported as
+#     coming from Stage 1's vendor/build stage, but direct inspection shows Stage 1 never invokes
+#     pdo_pgsql at all - only Stage 3 (this one, `php:8.4-apache AS runtime`) has ever compiled it, via
+#     `docker-php-ext-install ... pdo_pgsql ...` below, and this stage never installed `libpq-dev` for it -
+#     a genuine, latent bug present since the very first draft of this Dockerfile, only surfaced now by a
+#     real Cloud Build run actually reaching this step. Fixed here (added `libpq-dev` to the apt-get list
+#     below) rather than in Stage 1, since that's where the failing compile step actually is.
 #   - gd: intervention/image's default driver (composer.json) for everyday image resizing.
 #   - imagick: NOT in the task's original extension list, but a real, confirmed runtime dependency -
 #     app/Http/Controllers/{Seller,Admin}/MediaController.php instantiate `new Imagick()` directly (no GD
@@ -125,6 +132,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libwebp-dev \
         libzip-dev \
         libicu-dev \
+        libpq-dev \
         libmagickwand-dev \
         libxml2-dev \
         unzip \
