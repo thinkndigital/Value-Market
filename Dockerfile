@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# Value Market (Laravel 10 / PHP 8.1) - Google Cloud Run image.
+# Value Market (Laravel 10 / PHP 8.4) - Google Cloud Run image.
 #
 # Deployment/containerization only - see docs/CLOUD_RUN_DEPLOYMENT.md and
 # docs/CLOUD_RUN_READINESS_REPORT.md. No application/business logic is built or run here beyond the
@@ -10,23 +10,30 @@
 ########################################################################################################
 # Stage 1 - PHP dependencies (Composer)
 ########################################################################################################
-# Fixed (Cloud Build eca498cb-010a-4e87-b968-88ea11b52033): this stage previously used `FROM composer:2`
-# directly, which bundles its own PHP interpreter - a floating version that had reached PHP 8.5.9 by the
-# time of that build, incompatible with composer.lock's `php: ^8.1` platform constraint and several
-# packages' own upper bounds (nette/schema, nette/utils, nicmart/tree, sabberworm/php-css-parser all cap out
-# at PHP 8.4). Fixed by basing this stage on `php:8.1-cli` directly - the exact interpreter version the
-# runtime stage below also uses - and copying in Composer's binary (a version-agnostic PHAR) from the
-# official composer image instead of inheriting its PHP. Not a --ignore-platform-reqs workaround: the
-# platform check now genuinely passes because the PHP it's checking against genuinely is 8.1.
-FROM php:8.1-cli AS vendor
+# Fixed twice against two real Cloud Build failures, in sequence:
+# 1. (eca498cb-010a-4e87-b968-88ea11b52033) This stage originally used `FROM composer:2` directly, which
+#    bundles its own PHP interpreter - a floating version that had reached PHP 8.5.9 by the time of that
+#    build, exceeding several packages' own upper bounds (nette/schema, nette/utils, nicmart/tree,
+#    sabberworm/php-css-parser all cap out at PHP 8.4). First fix: pin this stage to `php:8.1-cli` directly
+#    instead of inheriting composer:2's floating PHP.
+# 2. (next Cloud Build run) PHP 8.1 turned out to be too *old*: composer.lock also locks
+#    spatie/browsershot, spatie/crawler, spatie/laravel-sitemap, and symfony/css-selector|dom-crawler|
+#    event-dispatcher|string at versions requiring PHP >=8.2. Cross-checked directly against
+#    composer.lock (not re-guessed): the real intersection of every locked package's php constraint is
+#    >=8.2, <=8.4 - PHP 8.4 is the only version in the officially released 8.x line that satisfies all of
+#    them simultaneously. This stage and the runtime stage below are now both pinned to `php:8.4-cli`/
+#    `php:8.4-apache`, matching each other, per that intersection.
+# Composer's binary (a version-agnostic PHAR) is still copied in from the official composer image rather
+# than inheriting composer:2's own PHP - that's what actually pins the interpreter version composer.lock is
+# checked against, regardless of which PHP release composer:2 itself bundles.
+FROM php:8.4-cli AS vendor
 
-# ext-exif: also flagged by that build (spatie/image and spatie/laravel-medialibrary both require it) and,
-# unlike most of composer.lock's other ext-* requirements (ctype, curl, dom, fileinfo, filter, hash, iconv,
-# json, libxml, mbstring, openssl, pcre, phar, session, simplexml, tokenizer, xml, xmlwriter, zlib - all
-# enabled by default in the official php:8.1-cli image, confirmed by that same build log only ever flagging
-# exif as missing, never any of these others), exif is not compiled in by default and needs an explicit
-# install step. No extra system libraries are required for it (unlike gd, it doesn't link against
-# libjpeg/libpng - it parses EXIF metadata directly).
+# ext-exif: flagged by the first of those two builds (spatie/image and spatie/laravel-medialibrary both
+# require it) and, unlike most of composer.lock's other ext-* requirements (ctype, curl, dom, fileinfo,
+# filter, hash, iconv, json, libxml, mbstring, openssl, pcre, phar, session, simplexml, tokenizer, xml,
+# xmlwriter, zlib - all enabled by default in the official php:8.4-cli image, same as they were in 8.1),
+# exif is not compiled in by default and needs an explicit install step. No extra system libraries are
+# required for it (unlike gd, it doesn't link against libjpeg/libpng - it parses EXIF metadata directly).
 RUN docker-php-ext-install exif
 
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
@@ -41,9 +48,9 @@ COPY composer.json composer.lock ./
 # package-discovery/post-install scripts can't run correctly here - the final stage's `composer
 # dump-autoload` (once the full source tree and this vendor/ are both present) triggers that instead.
 # --no-dev/--no-interaction/--prefer-dist: standard production-safe flags. No DB, APP_KEY, or other runtime
-# secrets are available or required at this step. No composer.lock regeneration, no version changes, no
-# --ignore-platform-reqs anywhere in this stage - the fix above is entirely about which PHP composer runs
-# under, not about hiding what it checks.
+# secrets are available or required at this step. No composer.lock regeneration, no composer update, no
+# version/package downgrades, no --ignore-platform-reqs anywhere in this stage - both PHP-version fixes
+# above are entirely about which PHP composer runs under, not about hiding what it checks.
 RUN composer install \
     --no-dev \
     --no-scripts \
@@ -76,7 +83,7 @@ RUN npm run build
 ########################################################################################################
 # Stage 3 - Runtime image
 ########################################################################################################
-FROM php:8.1-apache AS runtime
+FROM php:8.4-apache AS runtime
 
 # Required PHP extensions for this application (verified against composer.json's actual dependencies and
 # real usage in app/, not just the generic list a fresh Laravel install would need):
@@ -128,7 +135,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # mbstring, curl, fileinfo, tokenizer, xml (dom/simplexml/xmlwriter) ship enabled by default in the official
-# php:8.1-apache image - no docker-php-ext-install step needed for them; not removed, not disabled.
+# php:8.4-apache image (same as they were in 8.1) - no docker-php-ext-install step needed for them; not
+# removed, not disabled.
 
 # Opcache tuned for a stateless, ephemeral Cloud Run container - validate_timestamps=0 is safe because the
 # image is immutable per revision (no hot-reloading of PHP source in production).
@@ -150,8 +158,8 @@ COPY --from=assets /app/public/build ./public/build
 
 # A second, latent bug caught while fixing Stage 1 above (not yet reached by the failed build, since it
 # never got past Stage 1's composer install): this stage runs `composer dump-autoload` below but is
-# `php:8.1-apache`, not the composer image - it never had the composer binary at all. Same fix as Stage 1:
-# copy the version-agnostic PHAR in and run it under this stage's own PHP 8.1.
+# `php:8.4-apache`, not the composer image - it never had the composer binary at all. Same fix as Stage 1:
+# copy the version-agnostic PHAR in and run it under this stage's own PHP (matching Stage 1's version).
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
 # Now that the full source tree, vendor/, and composer.json all exist together, generate the optimized
