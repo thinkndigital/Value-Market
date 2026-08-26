@@ -13,6 +13,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use App\Services\TranslationService;
 use App\Traits\HandlesValidation;
+use App\Services\TenantContext;
 
 class ComboProductFaqController extends Controller
 {
@@ -126,9 +127,19 @@ class ComboProductFaqController extends Controller
         $product = ComboProduct::find($productId);
         return $product ? app(TranslationService::class)->getDynamicTranslation(ComboProduct::class, 'title', $productId, $language_code) : '';
     }
+    /**
+     * Phase 2 (docs/PHASE_2_MULTITENANCY.md, Tasks 6-7): the combo-product twin of the same confirmed IDOR
+     * fixed in Seller\ProductFaqController - see that file's docblock for the full explanation. Same fix
+     * pattern: explicit ownership check via TenantContext before acting on an id-only lookup.
+     */
     public function update_status($id)
     {
-        $product_faq = ComboProductFaq::findOrFail($id);
+        $product_faq = ComboProductFaq::find($id);
+
+        if (!$product_faq || !app(TenantContext::class)->userOwnsSeller(Auth::user(), (int) $product_faq->seller_id)) {
+            return response()->json(['error' => true, 'message' => labels('admin_labels.data_not_found', 'Data not found')], 404);
+        }
+
         $product_faq->status = $product_faq->status == '1' ? '0' : '1';
         $product_faq->save();
         return response()->json(['success' => labels('admin_labels.status_updated_successfully', 'Status updated successfully.')]);
@@ -140,7 +151,7 @@ class ComboProductFaqController extends Controller
     public function destroy($id)
     {
         $product_faq = ComboProductFaq::find($id);
-        if ($product_faq) {
+        if ($product_faq && app(TenantContext::class)->userOwnsSeller(Auth::user(), (int) $product_faq->seller_id)) {
             $product_faq->delete();
             return response()->json(['error' => false, 'message' => labels('admin_labels.faq_deleted_successfully', 'Faq deleted Successfully')]);
         } else {
@@ -152,7 +163,7 @@ class ComboProductFaqController extends Controller
     {
         $product_faq = ComboProductFaq::find($id);
 
-        if (!$product_faq) {
+        if (!$product_faq || !app(TenantContext::class)->userOwnsSeller(Auth::user(), (int) $product_faq->seller_id)) {
             return response()->json([
                 'error' => true,
                 'message' => labels('admin_labels.data_not_found', 'Data not found')
@@ -164,7 +175,12 @@ class ComboProductFaqController extends Controller
 
     public function update(Request $request, $id)
     {
-        $product_faq = ComboProductFaq::findOrFail($id);
+        $product_faq = ComboProductFaq::find($id);
+
+        if (!$product_faq || !app(TenantContext::class)->userOwnsSeller(Auth::user(), (int) $product_faq->seller_id)) {
+            return response()->json(['error' => true, 'message' => labels('admin_labels.data_not_found', 'Data not found')], 404);
+        }
+
         $product_faq->answer = $request->answer;
         $product_faq->save();
         if ($request->ajax()) {

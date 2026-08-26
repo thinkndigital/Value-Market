@@ -3,8 +3,8 @@
 namespace App\Policies;
 
 use App\Models\OrderItems;
-use App\Models\Seller;
 use App\Models\User;
+use App\Services\TenantContext;
 
 /**
  * Phase 2 (docs/PHASE_2_RBAC_ARCHITECTURE.md, Task 5): this is the actual tenant boundary for orders in
@@ -43,12 +43,8 @@ class OrderItemsPolicy
      */
     public function manage(User $user, OrderItems $orderItem): bool
     {
-        if ($user->isSeller()) {
-            $sellerId = Seller::where('user_id', $user->id)->value('id');
-
-            if ($sellerId !== null && (int) $orderItem->seller_id === (int) $sellerId) {
-                return true;
-            }
+        if ($user->isSeller() && app(TenantContext::class)->userOwnsSeller($user, (int) $orderItem->seller_id)) {
+            return true;
         }
 
         if ($user->isDeliveryBoy() && $orderItem->delivery_boy_id !== null) {

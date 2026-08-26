@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Services\TranslationService;
 use App\Traits\HandlesValidation;
 use App\Services\StoreService;
+use App\Services\TenantContext;
 class ProductFaqController extends Controller
 {
     use HandlesValidation;
@@ -136,9 +137,24 @@ class ProductFaqController extends Controller
         return $user ? $user->username : null;
     }
 
+    /**
+     * Phase 2 (docs/PHASE_2_MULTITENANCY.md, Tasks 6-7): confirmed IDOR - update_status()/destroy()/edit()
+     * all looked up a ProductFaq purely by $id, with no check that it belonged to the requesting seller;
+     * any authenticated seller (web or app API - see Seller\v1\ApiController::edit_product_faq() and
+     * delete_product_faq(), both reachable with an arbitrary id) could view, edit, toggle, or delete
+     * another seller's product FAQ. Fixed the same way as the Phase 1 Address IDOR
+     * (docs/SECURITY_AUDIT.md Task 8): an explicit ownership check via TenantContext before acting, same
+     * "not found"-shaped response on denial so a stranger's FAQ id is indistinguishable from a
+     * nonexistent one.
+     */
     public function update_status($id)
     {
-        $product_faq = ProductFaq::findOrFail($id);
+        $product_faq = ProductFaq::find($id);
+
+        if (!$product_faq || !app(TenantContext::class)->userOwnsSeller(Auth::user(), (int) $product_faq->seller_id)) {
+            return response()->json(['error' => true, 'message' => labels('admin_labels.data_not_found', 'Data not found')], 404);
+        }
+
         $product_faq->status = $product_faq->status == '1' ? '0' : '1';
         $product_faq->save();
         return response()->json(['success' => labels('admin_labels.status_updated_successfully', 'Status updated successfully.')]);
@@ -148,7 +164,7 @@ class ProductFaqController extends Controller
     {
         $product_faq = ProductFaq::find($id);
 
-        if ($product_faq) {
+        if ($product_faq && app(TenantContext::class)->userOwnsSeller(Auth::user(), (int) $product_faq->seller_id)) {
             $product_faq->delete();
             return response()->json(['error' => false, 'message' => labels('admin_labels.product_faq_deleted_successfully', 'Product Faq deleted successfully!')]);
         } else {
@@ -160,7 +176,7 @@ class ProductFaqController extends Controller
     {
         $product_faq = ProductFaq::find($id);
 
-        if (!$product_faq) {
+        if (!$product_faq || !app(TenantContext::class)->userOwnsSeller(Auth::user(), (int) $product_faq->seller_id)) {
             return response()->json([
                 'error' => true,
                 'message' => labels('admin_labels.data_not_found', 'Data not found')
@@ -173,6 +189,12 @@ class ProductFaqController extends Controller
     public function update(Request $request, $id, $fromApp = false)
     {
         $user = Auth::user();
+        $product_faq = ProductFaq::find($id);
+
+        if (!$product_faq || !app(TenantContext::class)->userOwnsSeller($user, (int) $product_faq->seller_id)) {
+            return response()->json(['error' => true, 'message' => labels('admin_labels.data_not_found', 'Data not found')], 404);
+        }
+
         if ($fromApp == true) {
             $seller_id = $request->seller_id;
         } else {
@@ -181,7 +203,6 @@ class ProductFaqController extends Controller
         $seller_user_id = Seller::where('id', $seller_id)->value('user_id');
         // Fetch the username for the answered_by field using user_id from seller_data
         $answered_by_user = User::find($seller_user_id);
-        $product_faq = ProductFaq::findOrFail($id);
         $product_faq->answer = $request->answer;
         $product_faq->answered_by = $answered_by_user ? $answered_by_user->username : $seller_id;
         $product_faq->save();

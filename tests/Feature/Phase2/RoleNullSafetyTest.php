@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\View;
 use Tests\TestCase;
 
 /**
@@ -109,5 +110,21 @@ class RoleNullSafetyTest extends TestCase
         $this->assertSame(403, $response->getStatusCode());
         $payload = json_decode($response->getContent(), true);
         $this->assertTrue($payload['error']);
+    }
+
+    /**
+     * Phase 2 (Task 6, docs/PHASE_2_MULTITENANCY.md): a fourth, more severe site of this same bug class,
+     * found while working on Task 6 - AppServiceProvider's global View::composer('*') did $user->role->name
+     * with no null check, on every page render for every logged-in user, not just at an authorization
+     * checkpoint. Previously this crashed rendering ANY view for a roleless (or dangling-role_id) user.
+     */
+    public function test_view_composer_does_not_crash_rendering_a_page_for_a_roleless_user(): void
+    {
+        $user = $this->makeUser(null);
+        Auth::login($user);
+
+        $html = View::make('welcome')->render();
+
+        $this->assertIsString($html);
     }
 }

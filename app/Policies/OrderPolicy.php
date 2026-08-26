@@ -3,8 +3,8 @@
 namespace App\Policies;
 
 use App\Models\Order;
-use App\Models\Seller;
 use App\Models\User;
+use App\Services\TenantContext;
 
 /**
  * Phase 2 (docs/PHASE_2_RBAC_ARCHITECTURE.md, Task 5): order-level view access. An Order belongs to the
@@ -23,7 +23,7 @@ class OrderPolicy
         }
 
         if ($user->isSeller()) {
-            $sellerId = Seller::where('user_id', $user->id)->value('id');
+            $sellerId = app(TenantContext::class)->sellerIdFor($user);
 
             if ($sellerId === null) {
                 return false;

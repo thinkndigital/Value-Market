@@ -3,8 +3,8 @@
 namespace App\Policies;
 
 use App\Models\Product;
-use App\Models\Seller;
 use App\Models\User;
+use App\Services\TenantContext;
 
 /**
  * Phase 1 architecture convention (docs/PHASE_1_ARCHITECTURE.md): tenant/ownership checks in this codebase
@@ -25,13 +25,9 @@ class ProductPolicy
      */
     public function manage(User $user, Product $product): bool
     {
-        $sellerId = Seller::where('user_id', $user->id)->value('id');
-
-        if ($sellerId === null) {
-            return false;
-        }
-
-        return (int) $product->seller_id === (int) $sellerId;
+        // Phase 2 (docs/PHASE_2_MULTITENANCY.md, Task 6): this lookup now goes through TenantContext,
+        // which centralizes and memoizes it, instead of a locally-repeated query - same rule, same result.
+        return app(TenantContext::class)->userOwnsSeller($user, (int) $product->seller_id);
     }
 
     public function view(User $user, Product $product): bool

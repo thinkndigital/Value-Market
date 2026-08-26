@@ -17,6 +17,7 @@ use Spatie\Permission\Models\Permission;
 use App\Services\MediaService;
 use App\Services\SettingService;
 use App\Services\CurrencyService;
+use App\Services\TenantContext;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -26,6 +27,9 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(PathGenerator::class, CustomPathGenerator::class);
         $this->app->singleton(FileRemover::class, CustomFileRemover::class);
+        // Phase 2 (docs/PHASE_2_MULTITENANCY.md, Task 6): singleton so its per-user seller_id cache is
+        // actually shared across the request instead of being rebuilt on every app(TenantContext::class).
+        $this->app->singleton(TenantContext::class);
     }
 
     /**
@@ -38,11 +42,16 @@ class AppServiceProvider extends ServiceProvider
 
             if ($user) {
                 $permissions = $user->permissions;
-                $user_role = $user->role;
-                if ($user_role->name === 'super_admin') {
+                // Phase 2 (docs/PHASE_2_MULTITENANCY.md, Task 6): this composer runs on every view render
+                // for every logged-in user - previously did $user->role->name with no null check, so any
+                // authenticated request with role_id = NULL or a dangling role_id (same class of bug fixed
+                // elsewhere in Task 3) would crash rendering ANY page, not just an authorization check.
+                // Blade views compare `$user_role == 'super_admin'` with loose ==, so a null value here
+                // degrades safely to "not super admin" rather than granting or crashing.
+                if ($user->isSuperAdmin()) {
                     $permissions = Permission::all();
                 }
-                $view->with(['logged_in_user' => $user, 'user_permissions' => $permissions, 'user_role' => $user_role->name]);
+                $view->with(['logged_in_user' => $user, 'user_permissions' => $permissions, 'user_role' => $user->role->name ?? null]);
             }
         });
         Paginator::useBootstrapFive();
