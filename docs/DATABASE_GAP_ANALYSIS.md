@@ -123,7 +123,18 @@ drop the old columns until the app layer is fully cut over.
 - Geography tree (`countries`→`cities`→`areas`→`zipcodes`, plus `zones`) — reuse as the basis for
   delivery-zone and warehouse-location modeling rather than inventing a parallel geography model.
 
-## 7. Migration Approach
+## 7. Schema Is Not Migration-Tracked (source-verified)
+
+Backend source inspection (see `INITIAL_CODEBASE_AUDIT.md`) found only **3** files under
+`database/migrations/`: `create_users_table`, `add_avatar_to_users`, and one add-google-id migration with a
+stray smart-quote character in its filename. The other ~87 tables in this dump were never created by a
+Laravel migration in this codebase — the product installs via a raw SQL import instead. **Every migration
+plan in this document assumes a starting point that doesn't fully exist yet**: Phase 1 needs to either
+backfill migrations that reproduce the current schema (recommended, so `php artisan migrate` becomes the
+real source of truth going forward) or accept that old tables stay SQL-installer-managed while only new
+tables get migrations (faster, but leaves the reproducibility gap in place indefinitely).
+
+## 8. Migration Approach
 
 Per the master prompt's rule against destructive migrations: every gap above should be closed with
 **additive** migrations (new tables, new nullable/defaulted columns) plus a **parallel-write, verify, then

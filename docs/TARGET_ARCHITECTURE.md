@@ -8,9 +8,13 @@ each phase starts, per the master prompt's phase-execution rule.
 
 ## 1. Guiding Decisions Carried Over From the Audit
 
-- **Build on Laravel 10 / Sanctum / Spatie Permission / Inertia+React admin.** Nothing in the audit
-  justifies a framework replacement; the gaps are almost entirely missing *domain* schema and modules, not
-  a wrong foundation.
+- **Build on Laravel 10 / Sanctum / Spatie Permission, with the existing server-rendered Blade admin,
+  seller, and delivery-boy panels.** (Source inspection corrected an earlier draft of this doc set that
+  assumed an Inertia+React admin panel from `package.json` alone — no `Inertia::render()` calls,
+  no `inertiajs/inertia-laravel`, and no Livewire components exist in source; those packages are vestigial.
+  See `INITIAL_CODEBASE_AUDIT.md` §1.) Nothing in the audit justifies a framework replacement; the gaps are
+  almost entirely missing *domain* schema and modules, not a wrong foundation. Whether the admin surface
+  stays Blade or moves to a modern SPA is a deliberate Phase 1 decision, not an assumption either way.
 - **Collapse to one RBAC system** (Spatie Permission) before layering the new user types from Section 6 of
   the master prompt onto it. The legacy `role_id`/`user_permissions` path is retired, not extended.
 - **Tenant unit = `stores`.** The existing schema already treats `stores` as the vendor/business boundary.

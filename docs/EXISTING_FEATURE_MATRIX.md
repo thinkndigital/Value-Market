@@ -24,14 +24,14 @@ columns are not mutually exclusive with status (e.g. an Existing feature can sti
 | Payment gateways (Stripe/PayPal/Razorpay/Flutterwave/Paystack/bank transfer) | ✔ | | | ✔ | | |
 | Support tickets | ✔ | | | ✔ | | |
 | Real-time chat (Chatify) | ✔ | | | ✔ | | |
-| RBAC (roles/permissions) | | ✔ | | | ✔ | |
+| RBAC (roles/permissions) — Spatie permissions real; legacy `role_id` still gates access in parallel | | ✔ | | | ✔ | |
 | Multi-currency (order-level) | | ✔ | | ✔ | ✔ | |
 | Multi-language / RTL (Arabic) | | ✔ | | ✔ | | |
 | Push notifications (FCM) | ✔ | | | ✔ | | |
 | Delivery-boy assignment & OTP delivery | ✔ | | | ✔ | | |
 | Delivery cash reconciliation (`fund_transfers`) | | ✔ | | | ✔ | |
 | **Delivery zones / dispatch / driver earnings (full)** | | | ✔ | | | ✔ |
-| **POS (shifts, till, split payment, cash reconciliation)** | | ✔ | | | | ✔ |
+| **POS (shifts, till, split payment, cash reconciliation)** — real seller-side order-placement (`PosController`, `StockController`) confirmed in source; shift/till/split-payment structure still absent | | ✔ | | ✔ | | ✔ |
 | **Inventory: warehouses / branches / stock movements** | | | ✔ | | | ✔ |
 | **Inventory valuation (FIFO / weighted-average)** | | | ✔ | | | ✔ |
 | **Procurement (suppliers, POs, GRNs, supplier payables)** | | | ✔ | | | ✔ |
@@ -57,12 +57,14 @@ columns are not mutually exclusive with status (e.g. an Existing feature can sti
 | **AI Business Intelligence layer** | | | ✔ | | | ✔ |
 | **Audit log** | | | ✔ | | | ✔ |
 | Tenant data isolation (enforced at query/authorization layer) | | ✔ | | | ✔ | |
-| API-first architecture (Sanctum present; endpoint coverage unverified) | | ✔ | | ✔ | ? unverified | |
+| API-first architecture — 3 monolithic controllers (7.5k/5k/1.5k lines), no FormRequests/Policies/Repositories | | ✔ | | ✔ | ✔ | |
 | Customer mobile app | ? unverified | | | ? | | |
 | Vendor/seller mobile app | ? unverified | | | ? | | |
 | Delivery driver mobile app | ? unverified | | | ? | | |
 | Automated test suite | ? unverified | | | ? | | |
 
-**Rows marked "? unverified"**: mobile app source and PHP source were not available in this session — see
-`INITIAL_CODEBASE_AUDIT.md` §9–10. Status will move from "?" to a real value once the source is pushed and
-inspected; do not treat "?" as "missing."
+**Rows marked "? unverified"**: as of the second audit pass, PHP backend source (`app/`, `routes/`,
+`config/`, `resources/views`) has been inspected and every row above reflects that. The mobile apps, the
+JS build (`resources/js` is effectively empty — see `INITIAL_CODEBASE_AUDIT.md` §1), `database/factories`,
+`database/seeders`, and `tests/` remain unverified — see `INITIAL_CODEBASE_AUDIT.md` §9, §13. Status will
+move from "?" once that source is pushed and inspected; do not treat "?" as "missing."

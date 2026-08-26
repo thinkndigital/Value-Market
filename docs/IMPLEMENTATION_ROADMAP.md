@@ -4,44 +4,50 @@ This roadmap follows the master prompt's phase list (Section 43) and phase-execu
 each phase is analyze → define → implement → migrate → test → fix → verify existing functionality →
 document → phase report. No phase is marked complete on UI placeholders alone.
 
-## Blocking Item — Must Be Resolved Before Phase 1 Can Start
+## Remaining Gap — Should Close Before Mobile/Frontend Phases
 
-**The actual application source code (Laravel `app/`, `routes/`, `resources/`, config, tests, and the
-Flutter mobile apps) is not yet in this repository.** This Phase 0 audit was produced from
-`composer.json/.lock`, `package.json/.lock`, and a full database dump only — see
-`INITIAL_CODEBASE_AUDIT.md` for exactly what that does and doesn't prove.
+**Backend PHP source is now verified** (`app/`, `routes/`, `config/`, `resources/views`, and the 3 actual
+migration files — see `INITIAL_CODEBASE_AUDIT.md`, second pass). Still not in this repository: the **Flutter
+mobile apps**, the **`resources/js` build pipeline** (currently just an empty `bootstrap.js` in what was
+provided), **`database/factories`/`database/seeders`**, and **`tests/`**. Phases 1–2 (architecture, RBAC,
+DB migrations, commerce/vendor/inventory/POS/affiliate/delivery/accounting schema and backend logic) can
+proceed on the current evidence. **Phase 13 (mobile apps) and any frontend-asset-pipeline work cannot be
+scoped until the Flutter source and the real `resources/js` are available** — same request as before, just
+narrower now: push those two pieces (zipped subfolders under GitHub's size limit worked well for the
+backend pass) when convenient, no need to block Phase 1 on it.
 
-Everything from Phase 2 onward in the master prompt depends on code-level facts this audit could not
-verify: actual RBAC enforcement, actual API endpoints, actual controller/policy authorization, actual
-mobile app structure, actual test coverage. Proceeding into those phases on schema-only evidence would
-mean guessing at controller logic — exactly what the master prompt's "do not blindly assume" and "do not
-claim completion without inspecting the actual files" rules forbid.
-
-**Requested action**: push the extracted eShop Plus 1.0.6 source (backend + the two/three Flutter mobile
-apps) into this repository, on this branch or a clearly-named subfolder. Once it lands, Phase 0 finishes
-with a source-verified update to `INITIAL_CODEBASE_AUDIT.md` (API list, RBAC enforcement points, mobile
-app inventory, real security findings) before Phase 1 architecture work begins.
-
-## Phase 0 — Audit ✅ (this document set, partial as noted above)
+## Phase 0 — Audit ✅ (this document set)
 
 Delivered: `INITIAL_CODEBASE_AUDIT.md`, `TARGET_ARCHITECTURE.md`, `DATABASE_GAP_ANALYSIS.md`,
-`EXISTING_FEATURE_MATRIX.md`, this roadmap. Outstanding: source-verified update once code is available
-(see blocking item).
+`EXISTING_FEATURE_MATRIX.md`, this roadmap — updated with source-verified findings (RBAC's actual dual
+mechanism, the real POS/StockController code, zero `DB::transaction` usage, the schema-vs-migrations gap,
+and the Blade-not-Inertia admin-panel correction). Outstanding: mobile apps, JS build, factories/seeders,
+tests (see gap above).
 
 ## Phase 1 — Architecture & Database Design
 
 - Resolve the multi-company-vs-multi-vendor tenant question (`TARGET_ARCHITECTURE.md` §1) with the user.
+- Backfill Laravel migrations that reproduce the current live schema (`INITIAL_CODEBASE_AUDIT.md` §3 /
+  `DATABASE_GAP_ANALYSIS.md` §7) so `php artisan migrate` becomes the real source of truth going forward,
+  before adding a single new table on top of an untracked schema.
 - Design `companies`/`branches`/`warehouses` schema nested under the resolved tenant unit.
 - Write the additive migrations for Section 3–4 of `DATABASE_GAP_ANALYSIS.md`: MyISAM→InnoDB on the 11
   affected tables, `double`→`DECIMAL` money-column migration plan (parallel-write/verify/cutover, not a
-  single destructive pass).
+  single destructive pass), and start wrapping money-moving code paths in `DB::transaction` (currently
+  zero usage anywhere — `INITIAL_CODEBASE_AUDIT.md` §3).
 - Produce `DATABASE.md`.
 
 ## Phase 2 — RBAC + Multi-Tenancy
 
-- Inspect actual Spatie usage and the legacy `role_id` path in source; retire the legacy path.
+- Decide the fate of the legacy `role_id`/`Role::belongsTo` mechanism vs. Spatie roles, given the concrete
+  split found in source: `RoleMiddleware` and `CheckPermissions`'s super-admin bypass both key off the
+  legacy `$user->role->name`, while granular gates use Spatie's `hasPermissionTo()`
+  (`INITIAL_CODEBASE_AUDIT.md` §1). Sweep for other hardcoded `role_id` comparisons (one found:
+  `Admin\CashCollectionController` hardcodes `role_id === 3` for delivery boys) before retiring anything.
 - Define the full role set from master prompt Section 6 as Spatie roles/permissions.
 - Implement tenant scoping (global scopes/policies) verified against real controllers, plus IDOR tests.
+- Extract FormRequest/Policy classes as each domain's endpoints are touched — none exist today; the three
+  monolithic `ApiController`s (7.5k/5k/1.5k lines) validate inline (`INITIAL_CODEBASE_AUDIT.md` §5).
 
 ## Phase 3 — Commerce Core
 
@@ -59,8 +65,9 @@ Delivered: `INITIAL_CODEBASE_AUDIT.md`, `TARGET_ARCHITECTURE.md`, `DATABASE_GAP_
 
 ## Phase 6 — POS
 
-- Net-new: shifts, till, split payments, cash reconciliation, wired to the same inventory/ledger as
-  e-commerce. Produce `POS.md`.
+- Extend the existing `Seller\PosController`/`StockController` (real order-placement code, confirmed in
+  source) rather than building from scratch: add shifts, till, split payments, cash reconciliation, wired
+  to the same inventory/ledger as e-commerce. Produce `POS.md`.
 
 ## Phase 7 — Affiliate / Reseller Engine
 
