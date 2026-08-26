@@ -3734,6 +3734,18 @@ Defined Methods:-
             $status = request('status', 25);
             $order_item_id = request('order_item_id', 0);
 
+            // Phase 2 (docs/PHASE_2_IDOR_AUDIT.md, Task 11): confirmed IDOR - order_item_id was never
+            // checked against the authenticated customer before mutating its status (with downstream
+            // refund/stock effects). Any customer could cancel/return another customer's order item.
+            if (!OrderItems::where('id', $order_item_id)->where('user_id', auth()->id())->exists()) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Order item not found!',
+                    'language_message_key' => 'order_item_not_found',
+                    'data' => [],
+                ]);
+            }
+
             $order_item_data = fetchDetails(OrderItems::class, ['id' => $order_item_id], 'order_id');
             $order_method = fetchDetails(Order::class, ['id' => $order_item_data[0]->order_id], 'payment_method');
 
@@ -5114,6 +5126,18 @@ Defined Methods:-
             ]);
         }
 
+        // Phase 2 (docs/PHASE_2_IDOR_AUDIT.md, Task 11): confirmed IDOR - ticket_id was never checked
+        // against the authenticated customer before inserting a message into it. Any customer could post
+        // into another customer's support ticket. Matches the ownership check Ticket::edit_ticket()
+        // already applies elsewhere in this file for the same Ticket model.
+        if (!Ticket::where('id', $ticket_id)->where('user_id', $user_id)->exists()) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Ticket not found!',
+                'data' => [],
+            ]);
+        }
+
         $uploaded_images = [];
 
         if (!File::exists('storage/tickets')) {
@@ -5239,6 +5263,14 @@ Defined Methods:-
         }
 
         $order = Order::findOrFail($request->order_id);
+
+        // Phase 2 (docs/PHASE_2_IDOR_AUDIT.md, Task 11): confirmed IDOR - order_id was never checked
+        // against the authenticated customer before mutating its status. Any customer could change (and
+        // trigger a refund for) another customer's order.
+        if ((int) $order->user_id !== (int) auth()->id()) {
+            return response()->json(['error' => true, 'message' => 'Order not found!', 'language_message_key' => 'order_not_found', 'data' => []]);
+        }
+
         $orderMethod = $order->payment_method;
 
         if ($orderMethod == 'bank_transfer') {
@@ -5285,6 +5317,19 @@ Defined Methods:-
         }
 
         $order_id = $request->order_id;
+
+        // Phase 2 (docs/PHASE_2_IDOR_AUDIT.md, Task 11): confirmed IDOR - order_id was only checked for
+        // existence, not ownership. Any customer could permanently delete another customer's order (and
+        // credit that other customer's wallet as a side effect of the deletion logic below).
+        if (!Order::where('id', $order_id)->where('user_id', auth()->id())->exists()) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Order not found!',
+                'language_message_key' => 'order_not_found',
+                'data' => [],
+            ]);
+        }
+
         $order_items = fetchDetails(OrderItems::class, ['order_id' => $order_id], ['user_id', 'product_variant_id', 'quantity', 'store_id', 'order_type']);
         $order = app(OrderService::class)->fetchOrders($order_id, false, false, false, false, false, 'o.id', 'DESC');
         foreach ($order_items as $order_item) {
@@ -5424,6 +5469,21 @@ Defined Methods:-
             }
         }
         $transaction_type = (($request->input('transaction_type') != null) && !empty($request->input('transaction_type'))) ? $request->input('transaction_type') : "transaction";
+
+        // Phase 2 (docs/PHASE_2_IDOR_AUDIT.md, Task 11): confirmed IDOR - order_id was never checked
+        // against the authenticated customer, letting anyone attach a fabricated "success" transaction to
+        // another customer's order (other endpoints treat that as proof of payment). order_id isn't
+        // required to reference a real order (e.g. a standalone wallet recharge) - only block when it
+        // resolves to a real order that isn't this user's, matching existing behavior for every other case.
+        $orderIdInput = $request->input('order_id');
+        if (!empty($orderIdInput) && !Order::where('id', $orderIdInput)->where('user_id', $user_id)->exists()) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Order not found!',
+                'language_message_key' => 'order_not_found',
+                'data' => [],
+            ]);
+        }
 
         $order_item_id = fetchDetails(OrderItems::class, ['order_id' => $request->input('order_id')], ['id', 'sub_total']);
 
@@ -5921,7 +5981,10 @@ Defined Methods:-
         }
 
         $order_id = ($request->input('order_id') != null) ? $request->input('order_id') : 0;
-        $order = fetchDetails(Order::class, ['id' => $order_id], 'id');
+        // Phase 2 (docs/PHASE_2_IDOR_AUDIT.md, Task 11): confirmed IDOR - order_id was only checked for
+        // existence, not ownership, before attaching an uploaded bank-transfer-proof file. Scoping the
+        // lookup by user_id reuses the existing "not found" response for both cases, avoiding info leakage.
+        $order = fetchDetails(Order::class, ['id' => $order_id, 'user_id' => auth()->id()], 'id');
 
         if ($order->isEmpty()) {
             return response()->json([
