@@ -25,6 +25,51 @@ customer-facing behavior was modified — see §"Files created/changed" for the 
 
 Nothing else in the repository was touched.
 
+## Cloud Build failure #1 — fixed
+
+**Build:** `eca498cb-010a-4e87-b968-88ea11b52033` (the first real Cloud Build run, triggered by pushing the
+initial deployment-foundation commit). **Status: fixed, not yet re-verified against an actual Cloud Build
+run** — see "Whether Cloud Build was tested" below.
+
+**Root cause**, from the actual build log (not guessed — the log was requested from and provided by the
+user, since this environment has no `gcloud` access and no way to fetch Cloud Build logs directly):
+`Dockerfile`'s Composer stage was `FROM composer:2 AS vendor` — the official Composer image bundles its
+*own* PHP interpreter, and by the time this build ran, that image's PHP had floated to **8.5.9**. This
+application's `composer.lock` locks a dependency tree resolved against PHP `^8.1`, and several packages
+(`nette/schema`, `nette/utils`, `nicmart/tree`, `sabberworm/php-css-parser`) declare an explicit upper bound
+of PHP 8.4 — so `composer install`'s platform check rejected the lock file outright under PHP 8.5. The same
+log also flagged `spatie/image`/`spatie/laravel-medialibrary` needing `ext-exif`, which the Composer stage
+never installed.
+
+**Exact fix** (`Dockerfile`, Stage 1 only, plus one further stage — see below): replaced `FROM composer:2` with
+`FROM php:8.1-cli AS vendor`, added `RUN docker-php-ext-install exif`, and copied Composer's binary in from
+the official image instead of inheriting its PHP: `COPY --from=composer:2 /usr/bin/composer
+/usr/local/bin/composer`. Composer's binary is a version-agnostic PHAR - it now runs under this stage's own
+PHP 8.1, which is what actually pins the interpreter version composer.lock is checked against.
+`composer.json`/`composer.lock` were **not** modified, no `composer update` was run, and no
+`--ignore-platform-reqs`/`--ignore-platform-req=php` flag was added anywhere - the fix is entirely about
+which PHP Composer runs under, not about hiding what it checks.
+
+**A second, latent bug caught while verifying this fix**, not yet triggered by the failed build (it never got
+past Stage 1): Stage 3 (`php:8.1-apache`, the runtime image) runs `composer dump-autoload --optimize --no-dev`
+but never had the `composer` binary installed in it either - a plain PHP+Apache image, not the Composer
+image. Fixed the same way, in Stage 3: `COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer`
+before that line. Found by reading the full build sequence end-to-end after fixing Stage 1, not by another
+failed build - documented here specifically because it would otherwise have caused a *second* Cloud Build
+failure on the very next attempt.
+
+**`ext-*` requirements verified systematically**, not just reactively fixed for the two the log happened to
+name: extracted every `ext-*` entry from every package in `composer.lock` (`ctype`, `curl`, `dom`, `exif`,
+`fileinfo`, `filter`, `hash`, `iconv`, `json`, `libxml`, `mbstring`, `openssl`, `pcre`, `phar`, `session`,
+`simplexml`, `tokenizer`, `xml`, `xmlwriter`, `zlib`) - 20 extensions total. The failed build log only ever
+flagged `exif` as missing despite running under a PHP that satisfied the other 19, which is direct evidence
+(not assumption) that those 19 are already enabled by default in a standard PHP Docker image; `exif` is the
+one documented exception in the official images. `gd`/`bcmath`/`intl`/`zip`/`pdo_mysql` are genuinely **not**
+in this list - no package in `composer.lock` declares them as a hard `require` - so the earlier build's
+platform check never needed them; they remain installed in the runtime stage (Stage 3) purely because the
+*application* uses them at runtime (documented in "Required PHP extensions" below), not because Composer's
+install step requires them.
+
 ## Build strategy
 
 Three Docker stages:
@@ -140,19 +185,27 @@ scope:
 - Storage (S3) and the scheduler (Cloud Scheduler → Cloud Run Job) are documented but not provisioned —
   see the two sections above; both need real infrastructure decisions (bucket name/region, IAM) beyond a
   generic template.
+- **The Cloud Build → Composer PHP-version fix (see "Cloud Build failure #1" above) has not yet been
+  re-verified against an actual Cloud Build run** — this environment has no `gcloud`/GCP access, so the fix
+  was validated as thoroughly as possible without it (hand-review against the exact failing log, cross-
+  checked every `ext-*` requirement in `composer.lock` systematically rather than reactively, and a second
+  latent bug was caught and fixed before it could cause a follow-up failure) but genuinely running
+  `gcloud builds submit` (or letting the trigger fire again) is the next real verification step, outside
+  this environment's reach.
 
 ## Tests executed and results
 
 | Check | Result |
 |---|---|
-| `php artisan test --testsuite=Feature` | **83 passed (135 assertions), 0 failed** — full existing suite, unaffected by this task's two source changes (confirmed by running it after each) |
+| `php artisan test --testsuite=Feature` | **83 passed (135 assertions), 0 failed** — full existing suite; re-run after the Composer PHP-version fix too, unaffected (that fix touches only the Docker build environment, not application code) |
 | `php -l` on every new/modified PHP file (`routes/web.php`) | Clean |
-| `python3 -c "import yaml; yaml.safe_load(...)"` on `cloudbuild.yaml` | Valid YAML |
-| `sh -n docker/entrypoint.sh` | Valid shell syntax |
+| `python3 -c "import yaml; yaml.safe_load(...)"` on `cloudbuild.yaml` | Valid YAML (unchanged by the build-failure fix) |
+| `sh -n docker/entrypoint.sh` | Valid shell syntax (unchanged by the build-failure fix) |
 | `npm ci --legacy-peer-deps` | Succeeds (710 packages) — plain `npm ci` does not, see above |
-| `npm run build` | Succeeds after adding `resources/js/app.js` — produces `public/build/manifest.json` + hashed CSS/JS assets |
-| `docker build` | **Not run — no Docker daemon available in this environment** (`docker info` fails: `dial unix /var/run/docker.sock: connect: no such file or directory`; attempting to start it failed on a `ulimit` permission error specific to this sandbox). The Dockerfile, `.dockerignore`, and the three `docker/` support files were instead reviewed by hand for correctness, including one real issue caught this way: an initial draft purged `-dev` packages with `apt-get --auto-remove` after installing `gd`/`zip`/`intl`/`imagick`, which risks also removing the runtime shared libraries those extensions link against (nothing else would depend on them once the `-dev` metapackage is gone) — changed to leave them installed, trading image size for not silently breaking image processing in a way this environment can't catch before it reaches production. |
-| `gcloud`/Cloud Run deploy | **Not attempted.** No claim of a working deployed service is made anywhere in this report or the deployment guide — both are unexecuted-but-reviewed instructions, exactly as the task requires. |
+| `npm run build` | Succeeds — produces `public/build/manifest.json` + hashed CSS/JS assets. Re-run again after the Composer fix (which doesn't touch this stage) to confirm nothing regressed |
+| `docker build` (original 3-stage Dockerfile) | **Not run — no Docker daemon available in this environment** (`docker info` fails: `dial unix /var/run/docker.sock: connect: no such file or directory`; attempting to start it failed on a `ulimit` permission error specific to this sandbox). The Dockerfile, `.dockerignore`, and the three `docker/` support files were instead reviewed by hand for correctness, including one real issue caught this way: an initial draft purged `-dev` packages with `apt-get --auto-remove` after installing `gd`/`zip`/`intl`/`imagick`, which risks also removing the runtime shared libraries those extensions link against (nothing else would depend on them once the `-dev` metapackage is gone) — changed to leave them installed, trading image size for not silently breaking image processing in a way this environment can't catch before it reaches production. |
+| `docker build` (after the Composer PHP-version fix) | **Also not run — Docker daemon still unavailable, re-checked at the start of this fix (same `ulimit` permission error).** The fix itself is grounded in the actual Cloud Build failure log (not a static guess) and in a systematic cross-check of every `ext-*` requirement in `composer.lock`, plus a full manual re-read of the entire build sequence stage-by-stage (which is how the second, not-yet-triggered `composer dump-autoload` bug in Stage 3 was caught before it could cause another failure). This is the strongest verification available without Docker or `gcloud` access in this environment; it is not a substitute for an actual `docker build` or Cloud Build run. |
+| `gcloud`/Cloud Run deploy | **Not attempted, either before or after this fix.** No claim of a working deployed service, or of a passing Cloud Build run, is made anywhere in this report or the deployment guide — an actual `gcloud builds submit` (or the trigger firing again on push) is the real verification this fix still needs. |
 
 ## What was NOT done (explicitly, per the task's own boundaries)
 

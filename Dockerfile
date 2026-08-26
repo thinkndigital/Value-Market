@@ -10,7 +10,26 @@
 ########################################################################################################
 # Stage 1 - PHP dependencies (Composer)
 ########################################################################################################
-FROM composer:2 AS vendor
+# Fixed (Cloud Build eca498cb-010a-4e87-b968-88ea11b52033): this stage previously used `FROM composer:2`
+# directly, which bundles its own PHP interpreter - a floating version that had reached PHP 8.5.9 by the
+# time of that build, incompatible with composer.lock's `php: ^8.1` platform constraint and several
+# packages' own upper bounds (nette/schema, nette/utils, nicmart/tree, sabberworm/php-css-parser all cap out
+# at PHP 8.4). Fixed by basing this stage on `php:8.1-cli` directly - the exact interpreter version the
+# runtime stage below also uses - and copying in Composer's binary (a version-agnostic PHAR) from the
+# official composer image instead of inheriting its PHP. Not a --ignore-platform-reqs workaround: the
+# platform check now genuinely passes because the PHP it's checking against genuinely is 8.1.
+FROM php:8.1-cli AS vendor
+
+# ext-exif: also flagged by that build (spatie/image and spatie/laravel-medialibrary both require it) and,
+# unlike most of composer.lock's other ext-* requirements (ctype, curl, dom, fileinfo, filter, hash, iconv,
+# json, libxml, mbstring, openssl, pcre, phar, session, simplexml, tokenizer, xml, xmlwriter, zlib - all
+# enabled by default in the official php:8.1-cli image, confirmed by that same build log only ever flagging
+# exif as missing, never any of these others), exif is not compiled in by default and needs an explicit
+# install step. No extra system libraries are required for it (unlike gd, it doesn't link against
+# libjpeg/libpng - it parses EXIF metadata directly).
+RUN docker-php-ext-install exif
+
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
 WORKDIR /app
 
@@ -22,7 +41,9 @@ COPY composer.json composer.lock ./
 # package-discovery/post-install scripts can't run correctly here - the final stage's `composer
 # dump-autoload` (once the full source tree and this vendor/ are both present) triggers that instead.
 # --no-dev/--no-interaction/--prefer-dist: standard production-safe flags. No DB, APP_KEY, or other runtime
-# secrets are available or required at this step.
+# secrets are available or required at this step. No composer.lock regeneration, no version changes, no
+# --ignore-platform-reqs anywhere in this stage - the fix above is entirely about which PHP composer runs
+# under, not about hiding what it checks.
 RUN composer install \
     --no-dev \
     --no-scripts \
@@ -126,6 +147,12 @@ COPY . .
 # built without requiring the full application source, then composed into the final image here.
 COPY --from=vendor /app/vendor ./vendor
 COPY --from=assets /app/public/build ./public/build
+
+# A second, latent bug caught while fixing Stage 1 above (not yet reached by the failed build, since it
+# never got past Stage 1's composer install): this stage runs `composer dump-autoload` below but is
+# `php:8.1-apache`, not the composer image - it never had the composer binary at all. Same fix as Stage 1:
+# copy the version-agnostic PHAR in and run it under this stage's own PHP 8.1.
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
 # Now that the full source tree, vendor/, and composer.json all exist together, generate the optimized
 # autoloader. This also fires composer.json's own post-autoload-dump hook (Laravel's normal

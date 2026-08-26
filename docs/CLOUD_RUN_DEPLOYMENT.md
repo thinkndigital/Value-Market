@@ -4,6 +4,14 @@ Deployment/containerization documentation only. Nothing here changes application
 inventory, POS, or any other business logic — see `docs/CLOUD_RUN_READINESS_REPORT.md` for the exact list
 of files this preparation touched and why each one was necessary.
 
+**Build status:** the first real Cloud Build run (`eca498cb-010a-4e87-b968-88ea11b52033`) failed - the
+Composer build stage inherited a floating PHP version (8.5.9) incompatible with `composer.lock`, which locks
+against PHP `^8.1`. Fixed in `Dockerfile` (pinned that stage to `php:8.1-cli` explicitly); full root cause
+and fix detail in `docs/CLOUD_RUN_READINESS_REPORT.md` §"Cloud Build failure #1". **Not yet re-verified
+against an actual Cloud Build run** - this environment has no `gcloud`/GCP access, so the next real
+verification step is pushing this fix and watching the trigger fire again (or running `gcloud builds submit`
+manually).
+
 ## 1. Prerequisites
 
 - A Google Cloud project. This guide assumes project id `value-market` (adjust `PROJECT_ID` below if
