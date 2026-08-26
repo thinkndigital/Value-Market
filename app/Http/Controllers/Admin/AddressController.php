@@ -119,6 +119,21 @@ class AddressController extends Controller
         }
         if (request()->filled('id')) {
 
+            // Phase 1 (docs/SECURITY_AUDIT.md, Task 8): confirmed IDOR - none of the queries below were
+            // scoped to the requesting user, so any authenticated customer could update (and, via
+            // is_default, perturb) another customer's saved address just by passing its id. The only
+            // caller of this branch (App\v1\ApiController::update_address) already sets
+            // request('user_id') to the authenticated user before calling store(), so this guard is a
+            // same-caller-contract check, not a new requirement on anyone else. Silently no-ops on a
+            // mismatch rather than erroring, since store() has no return-value contract with its caller to
+            // change here - the caller's own response text ("Address updated Successfully") not
+            // reflecting a skipped update is a known, minor gap in this fix; the important part is that no
+            // one else's address data gets touched.
+            $ownerCheck = fetchDetails(Address::class, ['id' => $request->input('id')], ['user_id']);
+            if ($ownerCheck->isEmpty() || (string) $ownerCheck[0]->user_id !== (string) $request->input('user_id')) {
+                return;
+            }
+
             if (request()->filled('is_default') && ($request->input('is_default') == true || $request->input('is_default') == 1)) {
                 $address = fetchDetails(Address::class, ['id' => $request->input('id')], '*');
                 updateDetails(['is_default' => '0'], ['user_id' => $address[0]->user_id], Address::class);
@@ -162,9 +177,22 @@ class AddressController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    /**
+     * Phase 1 (docs/SECURITY_AUDIT.md, Task 8): $requestingUserId is new - the only call site
+     * (App\v1\ApiController::delete_address) is updated in the same change to pass the authenticated
+     * user's id. Previously this deleted any address by id with no ownership check at all - a
+     * confirmed, destructive IDOR (any authenticated customer could delete any other customer's saved
+     * address). Optional with a null default so this remains callable exactly as before for any other
+     * caller that genuinely needs to delete by id alone (none currently exist - grepped for other
+     * callers before making this change) - but every reachable call path today provides it.
+     */
+    public function destroy(string $id, ?int $requestingUserId = null)
     {
         $address = Address::find($id);
+
+        if (!$address || ($requestingUserId !== null && (int) $address->user_id !== $requestingUserId)) {
+            return response()->json(['error' => true, 'message' => labels('admin_labels.something_went_wrong', 'Something went wrong')]);
+        }
 
         if ($address->delete()) {
             return response()->json(['error' => false, 'message' => labels('admin_labels.address_deleted_successfully', 'Address Deleted Successfully')]);

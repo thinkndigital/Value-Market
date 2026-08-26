@@ -5,6 +5,17 @@ the phase and task they belong to per `docs/IMPLEMENTATION_ROADMAP.md`.
 
 ## Phase 1 — Foundation
 
+### Security (Task 8, added in the second Phase 1 pass)
+- Fixed a confirmed, destructive IDOR: `AddressController::store()`'s update path and `destroy()` operated
+  purely by address id with no ownership check, so any authenticated customer could edit or delete any
+  other customer's saved address. Both now verify the address belongs to the requesting user first.
+  Verified with `tests/Feature/Phase1/AddressOwnershipTest.php` (4 tests: attacker blocked, legitimate
+  owner unaffected, for both update and delete).
+- Documented (not fixed — Phase 2) a second confirmed IDOR: `Seller\OrderController::generatParcelInvoicePDF()`
+  lets any seller view another seller's order and customer PII by guessing a parcel id.
+- Added `docs/SECURITY_AUDIT.md` and `docs/TECHNICAL_DEBT.md`, consolidating every security and
+  technical-debt finding from both phases in one place.
+
 ### Database
 - Added 12 baseline migrations (`database/migrations/2025_01_01_*_baseline_*.php`) reproducing the audited
   eShop Plus 1.0.6 schema (89 tables) verbatim, idempotent against both a fresh database and an existing
@@ -62,17 +73,19 @@ the phase and task they belong to per `docs/IMPLEMENTATION_ROADMAP.md`.
   key in the live schema.
 
 ### Tests
-- Added `tests/Feature/Phase1/` (6 test classes, 36 tests, 55 assertions, all passing): migration baseline
+- `tests/Feature/Phase1/` — 7 test classes, 40 tests, 59 assertions, all passing: migration baseline
   fidelity, transaction atomicity (proven on the real InnoDB-converted `orders` table), wallet service
-  correctness, tenant-isolation policy enforcement, and both new artisan commands' actual detection
-  behavior (seeded orphans/bad values, confirmed caught).
+  correctness, tenant-isolation policy enforcement, both new artisan commands' actual detection behavior
+  (seeded orphans/bad values, confirmed caught), and the address-ownership IDOR fix (attacker blocked,
+  owner unaffected).
 - Configured `phpunit.xml` to run against a real MySQL/MariaDB database rather than sqlite — the baseline
   migrations use MySQL-specific raw DDL that sqlite cannot execute.
 
 ### Documentation
 - Added `docs/PHASE_1_DATABASE_MIGRATION_PLAN.md`, `docs/PHASE_1_DATA_INTEGRITY_REPORT.md`,
   `docs/PHASE_1_FINANCIAL_PRECISION.md`, `docs/PHASE_1_TRANSACTION_BOUNDARIES.md`,
-  `docs/PHASE_1_ARCHITECTURE.md`, this changelog.
+  `docs/PHASE_1_ARCHITECTURE.md`, `docs/SECURITY_AUDIT.md`, `docs/TECHNICAL_DEBT.md`,
+  `docs/PHASE_1_FINAL_REPORT.md`, this changelog.
 
 ## Phase 0 — Audit
 

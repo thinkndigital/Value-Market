@@ -2287,8 +2287,18 @@ Defined Methods:-
         if ($response = $this->HandlesValidation($request, $rules, [], null, true)) {
             return $response;
         } else {
+            if (!auth()->check()) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Please Login first.',
+                    'language_message_key' => 'please_login_first',
+                    'code' => 102,
+                ]);
+            }
             $id = $request->input('id');
-            $addressController->destroy($id);
+            // Phase 1 (docs/SECURITY_AUDIT.md, Task 8): pass the authenticated user so destroy() can
+            // verify ownership - see AddressController::destroy() for what this fixes.
+            $addressController->destroy($id, auth()->user()->id);
             $response = [
                 'error' => false,
                 'message' => 'Address Deleted Successfully',

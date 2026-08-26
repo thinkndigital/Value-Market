@@ -24,7 +24,14 @@ mechanism, the real POS/StockController code, zero `DB::transaction` usage, the 
 and the Blade-not-Inertia admin-panel correction). Outstanding: mobile apps, JS build, factories/seeders,
 tests (see gap above).
 
-## Phase 1 — Architecture & Database Design
+## Phase 1 — Architecture & Database Design ✅
+
+**Complete and verified** — see `PHASE_1_FINAL_REPORT.md` for exact numbers, `CHANGELOG.md` for the itemized
+list, and `PHASE_1_DATABASE_MIGRATION_PLAN.md`/`PHASE_1_DATA_INTEGRITY_REPORT.md`/
+`PHASE_1_FINANCIAL_PRECISION.md`/`PHASE_1_TRANSACTION_BOUNDARIES.md`/`PHASE_1_ARCHITECTURE.md`/
+`SECURITY_AUDIT.md`/`TECHNICAL_DEBT.md` for the full detail behind each task. The tenant question below was
+resolved (`seller_data`, not `stores` — see `PHASE_1_ARCHITECTURE.md` Task G), the baseline migrations were
+built and verified, and the original task list is kept below for historical record:
 
 - Resolve the multi-company-vs-multi-vendor tenant question (`TARGET_ARCHITECTURE.md` §1) with the user.
 - Backfill Laravel migrations that reproduce the current live schema (`INITIAL_CODEBASE_AUDIT.md` §3 /
@@ -106,8 +113,11 @@ tests (see gap above).
 
 ## Phase 15 — Security Hardening
 
-- Full pass once source is available: IDOR testing, the CodeIgniter-pattern auth columns flagged in
-  `INITIAL_CODEBASE_AUDIT.md` §11, audit logging. Produce `SECURITY.md`.
+- Full pass, building on Phase 1's `SECURITY_AUDIT.md` (which already found and fixed one destructive IDOR,
+  documented a second, and flagged that the pattern likely recurs — a systematic sweep across the three
+  monolithic API controllers is this phase's most concrete starting point) and `TECHNICAL_DEBT.md`'s
+  `role_id = NULL` crash-risk finding: full IDOR sweep, RBAC redesign (dual role_id/Spatie mechanism →
+  one), audit logging. Extend `SECURITY_AUDIT.md` rather than starting a new `SECURITY.md`.
 
 ## Phase 16 — Performance Optimization
 
