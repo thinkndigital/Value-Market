@@ -32,9 +32,6 @@ use App\Http\Controllers\vendor\Chatify\MessagesController;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Artisan;
 
-Route::get('seller/orders/generatParcelInvoicePDF/{id}', [OrderController::class, 'generatParcelInvoicePDF'])->name('seller.orders.generatParcelInvoicePDF');
-Route::get('seller/orders/generatInvoicePDF/{id}/{seller_id?}', [OrderController::class, 'generatInvoicePDF'])
-    ->name('seller.orders.generatInvoicePDF');
 Route::get('seller/zones/zones_data', [AreaController::class, 'zone_data']);
 Route::get("seller/area/get_cities", [AreaController::class, 'getCities']);
 Route::get("seller/area/get_zipcodes", [AreaController::class, 'get_zipcodes']);
@@ -47,6 +44,19 @@ Route::group(
         Route::get('seller/account/{id}', [UserController::class, 'edit']);
 
         Route::put('seller/account/update/{id}', [UserController::class, 'update'])->name('seller.account.update')->middleware(['demo_restriction']);
+
+        // orders - invoice PDFs
+        // Phase 2 (docs/PHASE_2_IDOR_AUDIT.md, Tasks 8-9): these two were previously registered at the top
+        // of this file, outside this auth/role:seller group. web.php's own outer `Route::group(['middleware'
+        // => ['auth']], ...)` wrapper (which include_once()'s this whole file) still applied plain `auth` to
+        // them - confirmed empirically via route:list, not assumed - so this was not fully unauthenticated,
+        // but `role:seller` and `CheckPurchaseCode` were missing: any authenticated user of ANY role
+        // (a customer, a delivery boy, an unapproved seller) could fetch another seller's order or parcel
+        // invoice PDF (customer name, address, mobile number, items, pricing) by guessing an id. Moved into
+        // this group so `role:seller` is actually enforced too, matching every other seller-panel order route.
+        Route::get('seller/orders/generatParcelInvoicePDF/{id}', [OrderController::class, 'generatParcelInvoicePDF'])->name('seller.orders.generatParcelInvoicePDF');
+        Route::get('seller/orders/generatInvoicePDF/{id}/{seller_id?}', [OrderController::class, 'generatInvoicePDF'])
+            ->name('seller.orders.generatInvoicePDF');
 
         // categories
     
@@ -297,9 +307,7 @@ Route::group(
         Route::get('seller/orders/destroy/{id}', [OrderController::class, 'destroy'])->name('orders.destroy')->middleware(['demo_restriction']);
 
         Route::post('seller/orders/send_digital_product', [OrderController::class, 'send_digital_product'])->name('seller.orders.send_digital_product')->middleware(['demo_restriction']);
-        // Route::get('seller/orders/generatInvoicePDF/{id}', [OrderController::class, 'generatInvoicePDF'])->name('seller.orders.generatInvoicePDF');
-        // Route::get('seller/orders/generatParcelInvoicePDF/{id}', [OrderController::class, 'generatParcelInvoicePDF'])->name('seller.orders.generatParcelInvoicePDF');
-    
+
 
 
         Route::post('seller/set_store', function (Request $request) {

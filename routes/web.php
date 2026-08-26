@@ -146,9 +146,18 @@ Route::middleware(['CheckInstallation'])->group(function () {
 
     Route::group(['middleware' => ['auth']], function () {
         // Routes that only admins can access
-        include_once("admin_routes.php");
-        include_once("seller_routes.php");
-        include_once("delivery_boy_routes.php");
+        // Phase 2 (docs/PHASE_2_IDOR_AUDIT.md, Tasks 8-9): include_once() only executes a file's top-level
+        // code on its FIRST load within a PHP process. Traditional PHP-FPM (one process per request) never
+        // notices, but any persistent-process context that boots this application more than once in the
+        // same process - PHPUnit running this file's own regression tests, Laravel Octane, a queue worker -
+        // does: every route in admin_routes.php/seller_routes.php/delivery_boy_routes.php silently vanishes
+        // from every Application boot after the first in that process. Found while writing a test that
+        // called route('seller.orders...') and got RouteNotFoundException only when run after another test
+        // in the same run had already triggered these includes once. include() re-executes every time, as
+        // intended here (each fresh Application boot should re-register these routes).
+        include("admin_routes.php");
+        include("seller_routes.php");
+        include("delivery_boy_routes.php");
     });
 
     Route::get('admin/media/image', [MediaController::class, 'dynamic_image'])->name('admin.dynamic_image');
@@ -160,7 +169,7 @@ Route::middleware(['CheckInstallation'])->group(function () {
 
     Route::get('/seller/media/list', [SellerMediaController::class, 'list']);
 
-    include_once("front_end_routes.php");
+    include("front_end_routes.php");
 
     //webhook route
 
@@ -170,7 +179,13 @@ Route::middleware(['CheckInstallation'])->group(function () {
     Route::get('admin/webhook/phonepe_webhook', [Webhook::class, 'phonepe_webhook'])->name('admin.phonepe_webhook');
     Route::get('admin/webhook/spr_webhook', [Webhook::class, 'spr_webhook'])->name('admin.spr_webhook');
 });
-Route::get('admin/orders/generat_invoice_PDF/{id}', [OrderController::class, 'generatInvoicePDF'])->name('admin.orders.generatInvoicePDF');
+// Phase 2 (docs/PHASE_2_IDOR_AUDIT.md, Tasks 8-9): this used to duplicate
+// admin_routes.php:541's route (identical name, URI, and method), registered outside any auth group. Since
+// Laravel's RouteCollection keys routes by method+URI, this later registration silently replaced the
+// properly `auth`+`role:super_admin,admin,editor`-gated one entirely - route:list showed only one entry,
+// with `web` as its only middleware. Confirmed: any unauthenticated visitor could fetch any order's
+// invoice PDF (customer name, address, mobile number, items, pricing) by guessing an order id. Removed
+// here; the correctly-gated declaration in admin_routes.php:541 is now the only registration.
 Route::get('/admin/stores', [StoreController::class, 'index'])->name('admin.stores.index');
 Route::post('admin/store', [StoreController::class, 'store'])->middleware(['demo_restriction'])->middleware('permissions:create store')->name('admin.stores.store');
 Route::get("settings/registration", [SettingController::class, 'registration'])->name('admin.system_registration');

@@ -61,16 +61,23 @@ class OrderController extends Controller
     }
 
 
+    /**
+     * Phase 2 (docs/PHASE_2_IDOR_AUDIT.md, Tasks 8-9): the optional {seller_id} route parameter is a
+     * request-controllable value - previously trusted as-is whenever Auth::id() was empty. Now that the
+     * route requires auth+role:seller (routes/seller_routes.php), that branch is unreachable in practice,
+     * but $seller_id is now always re-derived from the authenticated user regardless, rather than ever
+     * trusting the route parameter - defense in depth, not reliance on the route middleware alone.
+     */
     public function generatInvoicePDF($id, $seller_id = '')
     {
-
-        $user_id = Auth::id();
-
-        if (isset($user_id) && !empty($user_id)) {
-            $seller_id = Seller::where('user_id', $user_id)->value('id');
-        }
+        $seller_id = Seller::where('user_id', Auth::id())->value('id');
 
         $res = app(OrderService::class)->getOrderDetails(['o.id' => $id, 'oi.seller_id' => $seller_id], true);
+
+        if (empty($res)) {
+            abort(404);
+        }
+
         $seller_ids = array_values(array_unique(array_column($res, "seller_id")));
         $seller_user_ids = [];
         foreach ($seller_ids as $id) {
@@ -139,6 +146,17 @@ class OrderController extends Controller
 
         return $invoice->stream();
     }
+    /**
+     * Phase 2 (docs/PHASE_2_IDOR_AUDIT.md, Tasks 8-9): confirmed IDOR, documented since Phase 1
+     * (docs/SECURITY_AUDIT.md §1b) - the parcel/order lookup below was never scoped to the requesting
+     * seller before rendering order details, product names, prices, delivery-boy info, and the customer's
+     * mobile number into the response. Fixed by verifying this seller owns at least one item in the
+     * parcel before continuing - "at least one", not "every item", because a parcel can span order items
+     * from multiple sellers (see the per-item seller_id enrichment loop below, which already handles that
+     * case for the items themselves). Also see routes/seller_routes.php: this endpoint was additionally
+     * reachable by any authenticated user of any role (not just sellers) until this same phase's routing
+     * fix added `role:seller` back to its middleware.
+     */
     public function generatParcelInvoicePDF($id, $from_app = false)
     {
         $user_id = Auth::id();
@@ -146,7 +164,19 @@ class OrderController extends Controller
 
         $parcels = fetchDetails(Parcel::class, ['id' => $id]);
 
+        if ($parcels->isEmpty()) {
+            abort(404);
+        }
+
         $parcel_items = fetchDetails(ParcelItem::class, ['parcel_id' => $id]);
+
+        $ownsAnItemInParcel = $seller_id !== null && OrderItems::whereIn('id', $parcel_items->pluck('order_item_id'))
+            ->where('seller_id', $seller_id)
+            ->exists();
+
+        if (!$ownsAnItemInParcel) {
+            abort(403);
+        }
 
         $orders = app(OrderService::class)->fetchOrderItems('', '', '', '', 10, 0, 'id', 'DESC', '', '', '', $seller_id, $parcels[0]->order_id, $parcels[0]->store_id);
 
