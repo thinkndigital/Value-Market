@@ -49,13 +49,19 @@ CONSTRAINT` migration is written. This is a **deferred, documented decision**, n
 
 ## Files changed
 
-- **This pass** (security fixes on top of the first Phase 1 commit): 2 controllers modified
-  (`AddressController.php`, `ApiController.php`), 1 doc updated (`CHANGELOG.md`), 4 files added
-  (`SECURITY_AUDIT.md`, `TECHNICAL_DEBT.md`, `PHASE_1_FINAL_REPORT.md`, `AddressOwnershipTest.php`).
-- **First Phase 1 pass** (prior commit `434cff9`): 564 files, +172,722 lines — brought the real eShop Plus
-  application source into the repo for the first time (`app/`, `config/`, `routes/`, `resources/`) plus
-  generic Laravel skeleton scaffolding needed to boot and test it, alongside the substantive Phase 1 changes
-  (14 migrations, 2 artisan commands, 1 policy, 1 form request, 6 test files, 5 docs).
+Three commits on `claude/eshop-plus-production-transform-nph191`:
+
+- **`434cff9`** (first Phase 1 pass): 564 files, +172,722 lines — brought the real eShop Plus application
+  source into the repo for the first time (`app/`, `config/`, `routes/`, `resources/`) plus generic Laravel
+  skeleton scaffolding needed to boot and test it, alongside the substantive Phase 1 changes (14
+  migrations, 2 artisan commands, 1 policy, 1 form request, 6 test files, 5 docs).
+- **`35c9b12`** (security audit, technical debt register, final report): 8 files changed, +525/-9 — 2
+  controllers modified for the address IDOR fix, `SECURITY_AUDIT.md`/`TECHNICAL_DEBT.md`/
+  `PHASE_1_FINAL_REPORT.md` added, `AddressOwnershipTest.php` added, `CHANGELOG.md`/
+  `IMPLEMENTATION_ROADMAP.md` updated for consistency.
+- **`a7e7ba7`** (POS sale and stock-modification tests): 6 files changed, +365/-26 — `StockUpdateTest.php`
+  and `PosSaleTest.php` added (closing the Task 11 gap), 4 docs updated with the 2 further POS bugs the new
+  test surfaced.
 
 ## Migrations created
 
