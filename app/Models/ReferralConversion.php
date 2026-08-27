@@ -9,6 +9,9 @@ class ReferralConversion extends Model
     const STATUS_PENDING = 'pending';
     const STATUS_APPROVED = 'approved';
     const STATUS_REJECTED = 'rejected';
+    /** Security audit finding (docs/SECURITY_AUDIT.md §6, Finding 4): an already-paid commission clawed
+     * back because the underlying order was returned/cancelled - see AffiliateService::reverseConversionsForOrder(). */
+    const STATUS_REVERSED = 'reversed';
 
     protected $fillable = [
         'affiliate_link_id', 'order_id', 'buyer_user_id', 'order_total',

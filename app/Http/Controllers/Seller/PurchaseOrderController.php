@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Seller;
 
 use App\Models\Branch;
+use App\Models\Product_variants;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
 use App\Services\PurchaseOrderService;
@@ -54,6 +55,20 @@ class PurchaseOrderController extends Controller
             if (!$ownsBranch) {
                 return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
             }
+        }
+
+        // Security audit finding (docs/SECURITY_AUDIT.md §6, Finding 1): supplier_id and branch_id were
+        // ownership-checked above but product_variant_id wasn't - a seller could buy stock into ANY other
+        // seller's product by guessing a variant id (they're small sequential integers, visible on the
+        // public storefront), inflating that seller's stock/availability and poisoning their weighted-
+        // average cost basis. Every item's variant must belong to a product this seller owns.
+        $variantIds = collect($request->input('items'))->pluck('product_variant_id')->unique();
+        $ownedVariantCount = Product_variants::whereIn('product_variants.id', $variantIds)
+            ->join('products', 'products.id', '=', 'product_variants.product_id')
+            ->where('products.seller_id', $sellerId)
+            ->count();
+        if ($ownedVariantCount !== $variantIds->count()) {
+            return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
         }
 
         try {

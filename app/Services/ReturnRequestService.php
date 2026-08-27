@@ -73,6 +73,13 @@ class ReturnRequestService
                 app(ProductService::class)->updateStock($data[0]->product_variant_id, $data[0]->quantity, 'plus');
             }
             app(OrderService::class)->update_order_item($itemId, 'returned', 1);
+
+            // Security audit finding (docs/SECURITY_AUDIT.md §6, Finding 4): claw back any already-paid
+            // affiliate commission for this order now that it's being refunded - see
+            // AffiliateService::reverseConversionsForOrder()'s docblock for why.
+            if (!empty($returnRequest->order_id)) {
+                app(AffiliateService::class)->reverseConversionsForOrder((int) $returnRequest->order_id);
+            }
         } elseif ($newStatus === ReturnRequest::STATUS_APPROVED) {
             updateDetails(['delivery_boy_id' => $deliverBy], ['id' => $itemId], OrderItems::class);
             app(OrderService::class)->update_order_item($itemId, 'return_request_approved', 1);

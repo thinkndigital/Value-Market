@@ -143,10 +143,14 @@ class AnalyticsServiceTest extends TestCase
             'serviceable_cities' => '', 'type' => 'phone', 'role_id' => Role::CUSTOMER, 'balance' => 0,
         ]);
         $link = app(AffiliateService::class)->createLink($affiliate->id, AffiliateLink::TARGET_PLATFORM);
+        $buyer = User::forceCreate([
+            'username' => 'buyer_' . uniqid(), 'password' => 'x', 'disk' => 'public',
+            'serviceable_cities' => '', 'type' => 'phone', 'role_id' => Role::CUSTOMER, 'balance' => 0,
+        ]);
         LinkClick::forceCreate(['affiliate_link_id' => $link->id, 'clicked_at' => now()]);
         LinkClick::forceCreate(['affiliate_link_id' => $link->id, 'clicked_at' => now()]);
         CommissionRule::forceCreate(['scope' => CommissionRule::SCOPE_PLATFORM, 'scope_id' => null, 'rate_type' => 'flat', 'rate_value' => 20, 'status' => 1]);
-        app(AffiliateService::class)->recordConversion($link->code, 5001, $affiliate->id, 100.0);
+        app(AffiliateService::class)->recordConversion($link->code, 5001, $buyer->id, 100.0);
         app(AffiliateService::class)->approveConversionsForOrder(5001);
 
         $perf = app(AnalyticsService::class)->affiliatePerformance($affiliate->id);

@@ -1206,6 +1206,12 @@ class OrderController extends Controller
                         if ($data[0]->order_type == 'combo_order') {
                             app(ComboProductService::class)->updateComboStock($data[0]->product_variant_id, $data[0]->quantity, 'plus');
                         }
+
+                        // Security audit finding (docs/SECURITY_AUDIT.md §6, Finding 4): admin-driven
+                        // cancel/return of an order item is a second path to the same shortfall
+                        // ReturnRequestService::applyTransition() closes for the customer-return-request
+                        // path - claw back any already-paid affiliate commission here too.
+                        app(\App\Services\AffiliateService::class)->reverseConversionsForOrder($order_item_res[0]->order_id);
                     }
 
                     if (($order_item_res[0]->order_counter == intval($order_item_res[0]->order_cancel_counter) + 1 && $request->input('status') == 'cancelled') || ($order_item_res[0]->order_counter == intval($order_item_res[0]->order_return_counter) + 1 && $request->input('status') == 'returned') || ($order_item_res[0]->order_counter == intval($order_item_res[0]->order_delivered_counter) + 1 && $request->input('status') == 'delivered') || ($order_item_res[0]->order_counter == intval($order_item_res[0]->order_processed_counter) + 1 && $request->input('status') == 'processed') || ($order_item_res[0]->order_counter == intval($order_item_res[0]->order_shipped_counter) + 1 && $request->input('status') == 'shipped')) {

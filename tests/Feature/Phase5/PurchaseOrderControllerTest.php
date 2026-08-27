@@ -64,6 +64,32 @@ class PurchaseOrderControllerTest extends TestCase
         $this->assertSame(0, PurchaseOrder::where('seller_id', $seller->id)->count());
     }
 
+    /**
+     * Security audit finding (docs/SECURITY_AUDIT.md §6, Finding 1): supplier_id and branch_id were
+     * ownership-checked but product_variant_id wasn't - a seller could buy stock into ANY other seller's
+     * product by guessing a variant id, inflating that seller's stock and poisoning their weighted-average
+     * cost basis.
+     */
+    public function test_a_seller_cannot_create_a_po_against_another_sellers_product_variant(): void
+    {
+        $seller = $this->makeSeller();
+        $stranger = $this->makeSeller();
+        $supplier = Supplier::forceCreate(['seller_id' => $seller->id, 'name' => 'Supplier', 'status' => Supplier::STATUS_ACTIVE]);
+        $strangerVariant = $this->makeVariant($stranger);
+
+        Auth::login(User::find($seller->user_id));
+
+        $response = app(PurchaseOrderController::class)->store(new Request([
+            'supplier_id' => $supplier->id,
+            'items' => [['product_variant_id' => $strangerVariant->id, 'quantity' => 5, 'unit_cost' => 3]],
+        ]));
+        $data = json_decode($response->getContent(), true);
+
+        $this->assertTrue($data['error']);
+        $this->assertSame(0, PurchaseOrder::where('seller_id', $seller->id)->count());
+        $this->assertSame(0, (int) $strangerVariant->fresh()->stock);
+    }
+
     public function test_a_seller_cannot_receive_goods_against_another_sellers_purchase_order(): void
     {
         $owner = $this->makeSeller();

@@ -103,6 +103,15 @@ class AffiliateService
             return null;
         }
 
+        // Security audit finding (docs/SECURITY_AUDIT.md §6, Finding 3): without this, an affiliate could
+        // buy from their own link and get paid real wallet money on their own purchase, repeatably, with
+        // the attacker controlling the order total. No conversion is recorded for a self-referral - the
+        // sale still completes normally, it's just not commission-attributed, same as the existing
+        // no-matching-rule case just below.
+        if ($buyerUserId !== null && $buyerUserId === $link->user_id) {
+            return null;
+        }
+
         // A link that specifically promotes a product/category carries that as its own commission context,
         // even if the caller (e.g. a multi-vendor cart checkout) can't cleanly derive one product/category
         // for the whole order - the link's own target is more meaningful than nothing.
@@ -167,6 +176,50 @@ class AffiliateService
                 'Affiliate commission credited',
                 $referenceId
             );
+        }
+    }
+
+    /**
+     * Security audit finding (docs/SECURITY_AUDIT.md §6, Finding 4): approveConversionsForOrder() had no
+     * counterpart - a return or cancellation after delivery left the affiliate's already-paid commission
+     * in place permanently, letting a colluding buyer/affiliate pair (or a self-referring one, closed
+     * separately in recordConversion()) buy, get paid, then return for a full refund while keeping the
+     * commission. Called from the same places order cancellation/return already reach.
+     *
+     * If the affiliate's wallet balance is now too low to debit back (they already spent or withdrew it),
+     * the conversion is still marked reversed - retrying forever wouldn't recover the money either - and
+     * the shortfall is recorded via auditLog() rather than silently lost, so it can be pursued outside the
+     * wallet system (the platform now has an uncollected receivable from that affiliate).
+     */
+    public function reverseConversionsForOrder(int $orderId): void
+    {
+        $approved = ReferralConversion::where('order_id', $orderId)->where('status', ReferralConversion::STATUS_APPROVED)->get();
+
+        foreach ($approved as $conversion) {
+            $referenceId = 'affiliate-commission-reversal-' . $conversion->id;
+            if (Transaction::where('order_id', $referenceId)->exists()) {
+                continue;
+            }
+
+            $conversion->status = ReferralConversion::STATUS_REVERSED;
+            $conversion->save();
+
+            $result = app(WalletService::class)->updateWalletBalance(
+                'debit',
+                $conversion->link->user_id,
+                (float) $conversion->commission_amount,
+                'Affiliate commission reversed (order returned/cancelled)',
+                $referenceId
+            );
+
+            if (!empty($result['error'])) {
+                auditLog('affiliate.commission_reversal_shortfall', [
+                    'conversion_id' => $conversion->id,
+                    'affiliate_user_id' => $conversion->link->user_id,
+                    'amount' => (float) $conversion->commission_amount,
+                    'reason' => $result['error_message'] ?? 'unknown',
+                ]);
+            }
         }
     }
 }

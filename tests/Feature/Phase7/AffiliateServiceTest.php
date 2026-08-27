@@ -89,10 +89,11 @@ class AffiliateServiceTest extends TestCase
     public function test_record_conversion_computes_percentage_commission_and_marks_pending(): void
     {
         $user = $this->makeUser();
+        $buyer = $this->makeUser();
         $link = app(AffiliateService::class)->createLink($user->id, AffiliateLink::TARGET_PLATFORM);
         CommissionRule::forceCreate(['scope' => CommissionRule::SCOPE_PLATFORM, 'scope_id' => null, 'rate_type' => 'percentage', 'rate_value' => 10, 'status' => 1]);
 
-        $conversion = app(AffiliateService::class)->recordConversion($link->code, 1001, $user->id, 200.0);
+        $conversion = app(AffiliateService::class)->recordConversion($link->code, 1001, $buyer->id, 200.0);
 
         $this->assertNotNull($conversion);
         $this->assertSame(ReferralConversion::STATUS_PENDING, $conversion->status);
@@ -127,5 +128,54 @@ class AffiliateServiceTest extends TestCase
         // Calling it again for the same order must not pay twice.
         app(AffiliateService::class)->approveConversionsForOrder(2001);
         $this->assertSame(15.0, (float) $affiliate->fresh()->balance);
+    }
+
+    /**
+     * Security audit finding (docs/SECURITY_AUDIT.md §6, Finding 3): an affiliate buying from their own
+     * link must not be recorded as a conversion - otherwise they can pay themselves real wallet money on
+     * their own purchases, repeatably, with the attacker controlling the order total.
+     */
+    public function test_a_self_referral_is_not_recorded_as_a_conversion(): void
+    {
+        $affiliate = $this->makeUser();
+        $link = app(AffiliateService::class)->createLink($affiliate->id, AffiliateLink::TARGET_PLATFORM);
+        CommissionRule::forceCreate(['scope' => CommissionRule::SCOPE_PLATFORM, 'scope_id' => null, 'rate_type' => 'percentage', 'rate_value' => 10, 'status' => 1]);
+
+        $conversion = app(AffiliateService::class)->recordConversion($link->code, 3001, $affiliate->id, 200.0);
+
+        $this->assertNull($conversion);
+        $this->assertSame(0, ReferralConversion::where('order_id', 3001)->count());
+    }
+
+    /**
+     * Security audit finding (docs/SECURITY_AUDIT.md §6, Finding 4): a return/cancellation after an
+     * affiliate commission was already paid out must claw the money back, otherwise a colluding
+     * buyer/affiliate pair can buy, get paid, then return for a full refund while keeping the commission.
+     */
+    public function test_reverse_conversions_for_order_debits_back_an_approved_commission(): void
+    {
+        $affiliate = $this->makeUser();
+        $buyer = $this->makeUser();
+        $link = app(AffiliateService::class)->createLink($affiliate->id, AffiliateLink::TARGET_PLATFORM);
+        CommissionRule::forceCreate(['scope' => CommissionRule::SCOPE_PLATFORM, 'scope_id' => null, 'rate_type' => 'flat', 'rate_value' => 15, 'status' => 1]);
+        app(AffiliateService::class)->recordConversion($link->code, 4001, $buyer->id, 100.0);
+        app(AffiliateService::class)->approveConversionsForOrder(4001);
+        $this->assertSame(15.0, (float) $affiliate->fresh()->balance);
+
+        app(AffiliateService::class)->reverseConversionsForOrder(4001);
+
+        $this->assertSame(0.0, (float) $affiliate->fresh()->balance);
+        $this->assertSame(ReferralConversion::STATUS_REVERSED, ReferralConversion::where('order_id', 4001)->first()->status);
+
+        // Calling it again for the same order must not debit twice.
+        app(AffiliateService::class)->reverseConversionsForOrder(4001);
+        $this->assertSame(0.0, (float) $affiliate->fresh()->balance);
+    }
+
+    public function test_reverse_conversions_for_order_is_a_no_op_when_nothing_was_approved(): void
+    {
+        // Never recorded/approved for this order id - must not throw or create anything.
+        app(AffiliateService::class)->reverseConversionsForOrder(9999);
+        $this->assertSame(0, ReferralConversion::where('order_id', 9999)->count());
     }
 }
