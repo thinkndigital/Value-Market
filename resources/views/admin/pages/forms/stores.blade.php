@@ -830,7 +830,7 @@
                                                             <input class="form-check-input" type="radio"
                                                                 id="city_wise_deliverability_switch"
                                                                 name="product_deliverability"
-                                                                <?= $shipping_settings['shiprocket_shipping_method'] == 1 ? 'disabled' : '' ?>>
+                                                                <?= (isset($shipping_settings['shiprocket_shipping_method']) && $shipping_settings['shiprocket_shipping_method'] == 1) ? 'disabled' : '' ?>>
                                                         </div>
                                                     </div>
                                                 </div>

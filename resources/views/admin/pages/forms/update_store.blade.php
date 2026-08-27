@@ -1144,7 +1144,7 @@
                                                             <input class="form-check-input" type="radio"
                                                                 id="city_wise_deliverability_switch"
                                                                 name="product_deliverability"
-                                                                <?= $shipping_settings['shiprocket_shipping_method'] == 1 ? 'disabled' : '' ?>
+                                                                <?= (isset($shipping_settings['shiprocket_shipping_method']) && $shipping_settings['shiprocket_shipping_method'] == 1) ? 'disabled' : '' ?>
                                                                 <?= isset($data->product_deliverability_type) && $data->product_deliverability_type != 'null' && $data->product_deliverability_type == 'city_wise_deliverability' ? 'checked' : '' ?>>
                                                         </div>
                                                     </div>
