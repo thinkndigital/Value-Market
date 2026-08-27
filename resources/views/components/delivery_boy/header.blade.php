@@ -94,25 +94,40 @@
 
     @php
 
+        // Brand palette sampled from the Value Market logo mark (charcoal ink + gold) - same fallback
+        // as x-admin.header, used whenever a store hasn't picked its own colors in Store settings.
         $primary_colour =
             isset($stores[0]->primary_color) && !empty($stores[0]->primary_color)
                 ? $stores[0]->primary_color
-                : '#B52046';
+                : '#333F49';
         $background_opacity_color = $primary_colour . '10';
         $secondary_color =
             isset($stores[0]->secondary_color) && !empty($stores[0]->secondary_color)
                 ? $stores[0]->secondary_color
-                : '#201A1A';
+                : '#1B2128';
         $hover_color =
-            isset($stores[0]->hover_color) && !empty($stores[0]->hover_color) ? $stores[0]->hover_color : '#911A38';
+            isset($stores[0]->hover_color) && !empty($stores[0]->hover_color) ? $stores[0]->hover_color : '#4B5A67';
         $active_color =
-            isset($stores[0]->active_color) && !empty($stores[0]->active_color) ? $stores[0]->active_color : '#6D132A';
+            isset($stores[0]->active_color) && !empty($stores[0]->active_color) ? $stores[0]->active_color : '#20262C';
 
+        // See x-admin.header for why this triplet is needed alongside --primary-theme-color.
+        $hexToRgbTriplet = function ($hex) {
+            $hex = ltrim((string) $hex, '#');
+            if (strlen($hex) === 3) {
+                $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+            }
+            if (strlen($hex) !== 6 || !ctype_xdigit($hex)) {
+                return '51, 63, 73';
+            }
+            return hexdec(substr($hex, 0, 2)) . ', ' . hexdec(substr($hex, 2, 2)) . ', ' . hexdec(substr($hex, 4, 2));
+        };
+        $primary_theme_rgb = $hexToRgbTriplet($primary_colour);
     @endphp
 
     <style>
         * {
             --primary-theme-color: <?=$primary_colour ?>;
+            --primary-theme-color-rgb: <?=$primary_theme_rgb ?>;
             --background_opacity_color: <?=$background_opacity_color ?>;
             --secondary-theme-color: <?=$secondary_color ?>;
             --hover-color: <?=$hover_color ?>;
