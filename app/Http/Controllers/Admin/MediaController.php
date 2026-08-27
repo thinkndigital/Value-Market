@@ -94,6 +94,15 @@ class MediaController extends Controller
                 $media = StorageType::find($mediaStorageType);
                 $mediaFiles = $request->file('documents');
 
+                foreach ($mediaFiles as $mediaFile) {
+                    if (isDangerousUploadFilename($mediaFile->getClientOriginalName())) {
+                        return response()->json([
+                            'error' => true,
+                            'error_message' =>
+                                labels('admin_labels.file_type_not_allowed', 'This file type is not allowed.'),
+                        ]);
+                    }
+                }
 
                 foreach ($mediaFiles as $mediaFile) {
 

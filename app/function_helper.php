@@ -1595,3 +1595,36 @@ function getReturnRequest($limit = 10, $offset = 0, $sort = 'id', $order = 'desc
         'data' => $dataArray
     ];
 }
+
+/**
+ * Phase 2 (docs/PHASE_2_IDOR_AUDIT.md, Task 12 - file upload security audit): Admin\MediaController::upload()
+ * and Seller\MediaController::upload() accepted any file type at all with no extension/mime validation of
+ * any kind - a `.php` file uploaded through either (Seller's is reachable by any seller account, a much
+ * larger and lower-trust population than admin staff) lands under the `public` disk's default
+ * storage/app/public (symlinked to public/storage, Apache's DocumentRoot per docker/apache-cloud-run.conf,
+ * which has no PHP-execution restriction on any subdirectory) - directly executable by hitting its public
+ * URL. Remote code execution, confirmed reachable by default (no StorageType row is seeded, so `$disk`
+ * always falls back to 'public').
+ *
+ * A denylist (not an allowlist) deliberately: this media collection is used for images/video/audio/
+ * documents across the whole app (products, categories, blogs, store "necessary documents", etc.) and
+ * auditing every legitimate type actually in use across ~200+ controller methods to build a safe allowlist
+ * is out of this task's bounded scope - blocking known-dangerous extensions closes the actual RCE vector
+ * without risking breaking a legitimate upload path this pass didn't have time to verify.
+ *
+ * Checks every dot-separated part of the ORIGINAL filename, not just the final extension - a file named
+ * `shell.php.jpg` must not slip past a check that only inspects the last extension.
+ */
+function isDangerousUploadFilename(string $originalFilename): bool
+{
+    $dangerous = [
+        'php', 'php3', 'php4', 'php5', 'php7', 'phtml', 'phar', 'pht', 'phps',
+        'cgi', 'pl', 'py', 'sh', 'bash', 'exe', 'bat', 'cmd', 'com', 'msi',
+        'jsp', 'jspx', 'asp', 'aspx', 'cer', 'asa', 'asax',
+        'htaccess', 'htpasswd', 'ini', 'config',
+    ];
+
+    $parts = array_map('strtolower', explode('.', $originalFilename));
+
+    return count(array_intersect($parts, $dangerous)) > 0;
+}
