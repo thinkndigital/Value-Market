@@ -115,7 +115,7 @@
                                                 for="basic-default-fullname">{{ labels('admin_labels.support_email', 'Support Email') }}<span
                                                     class='text-asterisks text-sm'>*</span></label>
                                             <input type="email" class="form-control" id="basic-default-fullname"
-                                                placeholder="eshop@gmail.com" name="support_email"
+                                                placeholder="valuemarket@gmail.com" name="support_email"
                                                 value="<?= isKeySetAndNotEmpty($settings, 'support_email') ? $settings['support_email'] : '' ?>">
 
                                         </div>

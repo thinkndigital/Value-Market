@@ -25,7 +25,7 @@
                             <span class='text-asterisks text-xs'>*</span></label>
                         <input type="text" class="form-control" name="name"
                             value="<?= isset($pwa_settings['name']) ? $pwa_settings['name'] : '' ?>"
-                            placeholder="Eshop Plus" />
+                            placeholder="Value Market" />
                     </div>
                     <div class="form-group col-md-6">
                         <label class="form-label mb-3 mt-3"
@@ -33,7 +33,7 @@
                             <span class='text-asterisks text-xs'>*</span></label>
                         <input type="text" class="form-control" name="short_name"
                             value="<?= isset($pwa_settings['short_name']) ? $pwa_settings['short_name'] : '' ?>"
-                            placeholder="Eshop Plus" />
+                            placeholder="Value Market" />
                     </div>
                 </div>
                 <div class="row">

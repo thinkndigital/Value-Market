@@ -54,7 +54,7 @@
                                                     for="basic-default-fullname">{{ labels('admin_labels.smtp_host', 'SMTP Host') }}<span
                                                         class='text-asterisks text-sm'>*</span></label>
                                                 <input type="text" class="form-control" id="basic-default-fullname"
-                                                    placeholder="eshop@gmail.com" name="smtp_host"
+                                                    placeholder="valuemarket@gmail.com" name="smtp_host"
                                                     value="<?= isKeySetAndNotEmpty($settings, 'smtp_host') ? $settings['smtp_host'] : '' ?>">
 
                                             </div>

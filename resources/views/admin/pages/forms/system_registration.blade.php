@@ -30,7 +30,7 @@
                         <div class="card-body pt-0">
                             <div class="mb-3">
                                 <label
-                                    class="form-label">{{ labels('admin_labels.purchase_code', 'eShop Plus Purchase Code for app') }}<span
+                                    class="form-label">{{ labels('admin_labels.purchase_code', 'Value Market Purchase Code for app') }}<span
                                         class="text-asterisks text-sm">*</span></label>
                                 <input type="text" class="form-control" id="purchase_code"
                                     placeholder="Enter your purchase code here" name="app_purchase_code" value="">
@@ -49,7 +49,7 @@
                         <div class="card-body pt-0">
                             <div class="mb-3">
                                 <label
-                                    class="form-label">{{ labels('admin_labels.purchase_code', 'eShop Plus Purchase Code for web') }}<span
+                                    class="form-label">{{ labels('admin_labels.purchase_code', 'Value Market Purchase Code for web') }}<span
                                         class="text-asterisks text-sm">*</span></label>
                                 <input type="text" class="form-control" id="purchase_code"
                                     placeholder="Enter your purchase code here" name="web_purchase_code" value="">
