@@ -71,8 +71,9 @@ gcloud sql users create value_market_app \
 
 Note the instance connection name (`gcloud sql instances describe value-market-db --format='value(connectionName)'`,
 shaped like `value-market:me-central1:value-market-db`) — Cloud Run connects to it via the Cloud SQL Auth
-Proxy sidecar Cloud Run manages automatically when you pass `--add-cloudsql-instances` on deploy (§7); the
-application only ever sees `DB_HOST=127.0.0.1` (the local proxy socket), never Cloud SQL's public IP.
+Proxy sidecar Cloud Run manages automatically when you pass `--add-cloudsql-instances` on deploy (§7), exposed
+to the container as a Unix domain socket at `/cloudsql/<connection-name>` (not a TCP proxy on 127.0.0.1); the
+application only ever sees that local socket path via `DB_SOCKET` (§7), never Cloud SQL's public IP.
 
 ## 5. Secret Manager
 
@@ -125,15 +126,19 @@ gcloud run deploy value-market \
   --port=8080 \
   --min-instances=0 \
   --add-cloudsql-instances=value-market:me-central1:value-market-db \
-  --set-env-vars="APP_NAME=Value Market,APP_ENV=production,APP_DEBUG=false,APP_URL=https://<your-cloud-run-url-or-custom-domain>,LOG_CHANNEL=stderr,DB_CONNECTION=mysql,DB_HOST=/cloudsql/value-market:me-central1:value-market-db,DB_DATABASE=value_market,DB_USERNAME=value_market_app,CACHE_DRIVER=database,SESSION_DRIVER=database,QUEUE_CONNECTION=database,FILESYSTEM_DISK=s3" \
+  --set-env-vars="APP_NAME=Value Market,APP_ENV=production,APP_DEBUG=false,APP_URL=https://<your-cloud-run-url-or-custom-domain>,LOG_CHANNEL=stderr,DB_CONNECTION=mysql,DB_SOCKET=/cloudsql/value-market:me-central1:value-market-db,DB_DATABASE=value_market,DB_USERNAME=value_market_app,CACHE_DRIVER=database,SESSION_DRIVER=database,QUEUE_CONNECTION=database,FILESYSTEM_DISK=s3" \
   --set-secrets="APP_KEY=value-market-app-key:latest,DB_PASSWORD=value-market-db-password:latest,AWS_SECRET_ACCESS_KEY=value-market-aws-secret:latest" \
   --project=value-market
 ```
 
 Notes on the env vars above (why these specific values, not the .env.example defaults):
 
-- `DB_HOST=/cloudsql/<connection-name>` — the Unix socket path Cloud Run's Cloud SQL integration exposes
-  when `--add-cloudsql-instances` is set; Laravel's `mysql` connection accepts a socket path as `DB_HOST`.
+- `DB_SOCKET=/cloudsql/<connection-name>` — the Unix socket path Cloud Run's Cloud SQL integration exposes
+  when `--add-cloudsql-instances` is set. **Not** `DB_HOST`: `config/database.php`'s `mysql` connection maps
+  the socket path to Laravel's dedicated `unix_socket` option via `DB_SOCKET`, separately from `host`
+  (`DB_HOST`, still TCP-only). Setting `DB_HOST` to the socket path instead makes PHP's MySQL driver try to
+  resolve it as a DNS hostname and fail with `getaddrinfo ... Name or service not known` — confirmed against
+  a real deploy, not a hypothetical. Leave `DB_HOST` at its default (`127.0.0.1`) or unset.
 - `LOG_CHANNEL=stderr` — Cloud Run captures stdout/stderr into Cloud Logging automatically; a `single`/`daily`
   file channel would write to the container's ephemeral filesystem and be lost on every restart/scale event.
 - `CACHE_DRIVER=database` / `SESSION_DRIVER=database` / `QUEUE_CONNECTION=database` — **not** this app's
@@ -170,7 +175,7 @@ gcloud run jobs create value-market-migrate \
   --image=me-central1-docker.pkg.dev/value-market/value-market/value-market:latest \
   --region=me-central1 \
   --set-env-vars="..." --set-secrets="..." \
-  --add-cloudsql-instances=value-market:me-central1:value-market-db \
+  --set-cloudsql-instances=value-market:me-central1:value-market-db \
   --command="php" --args="artisan,migrate,--force" \
   --project=value-market
 
@@ -213,7 +218,7 @@ gcloud run jobs create value-market-schedule \
   --image=me-central1-docker.pkg.dev/value-market/value-market/value-market:latest \
   --region=me-central1 \
   --set-env-vars="..." --set-secrets="..." \
-  --add-cloudsql-instances=value-market:me-central1:value-market-db \
+  --set-cloudsql-instances=value-market:me-central1:value-market-db \
   --command="php" --args="artisan,schedule:run" \
   --project=value-market
 
@@ -273,8 +278,11 @@ here alongside Apache's access/error logs (the Dockerfile points both at `/proc/
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | Container fails to start / Cloud Run reports "container failed to start and listen on the port" | `PORT` substitution didn't apply, or Apache failed to start for an unrelated reason | Check `gcloud run services logs read` for the actual Apache/PHP error; confirm `docker/entrypoint.sh` ran (it's the image's `ENTRYPOINT`) |
-| 500 error on every request, logs show a DB connection error | `DB_HOST`/Cloud SQL socket misconfigured, or `--add-cloudsql-instances` missing from the deploy | Re-check §7's exact `DB_HOST=/cloudsql/<connection-name>` value and that `--add-cloudsql-instances` matches it |
+| 500 error on every request, logs show `SQLSTATE[HY000] [2002] ... getaddrinfo for /cloudsql/... failed: Name or service not known` | The Cloud SQL socket path was put in `DB_HOST` instead of `DB_SOCKET` — PHP's MySQL driver then tries to DNS-resolve the socket path as a hostname | Re-check §7's exact `DB_SOCKET=/cloudsql/<connection-name>` env var (not `DB_HOST`); confirm `--add-cloudsql-instances` (services) / `--set-cloudsql-instances` (jobs) matches it |
+| `php artisan migrate` fails with `SQLSTATE[HY000]: General error: 3161 Storage engine MyISAM is disabled (Table creation is disallowed)` | Cloud SQL for MySQL refuses to create MyISAM tables outright — confirmed against a real deploy, not configurable via any instance flag | Already fixed in the baseline migrations (`database/migrations/2025_01_01_*.php` create these tables as `ENGINE=InnoDB` directly instead of reproducing the original MyISAM AS-IS); if this recurs, check for a stray `ENGINE=MyISAM` in a migration's raw SQL |
 | "No application encryption key has been specified" | `APP_KEY` secret not set or not bound | Confirm the secret exists (§5) and `--set-secrets` includes `APP_KEY=...` |
+| `gcloud run deploy`/`jobs create` fails with `Permission denied on secret ... for Revision service account <sa>` | The Cloud Run service's actual runtime service account (check the error message — it is **not** always the default `<project-number>-compute@developer.gserviceaccount.com`; e.g. a project with Firebase enabled may default to `firebase-adminsdk-fbsvc@<project>.iam.gserviceaccount.com`) lacks `roles/secretmanager.secretAccessor` on the referenced secrets | Grant the role to the exact service account named in the error: `gcloud secrets add-iam-policy-binding <secret> --member="serviceAccount:<sa-from-error>" --role=roles/secretmanager.secretAccessor` |
+| `gcloud run deploy` fails with `Image '...' not found` even though Cloud Build succeeded | The active Cloud Build trigger is Cloud Run's own auto-generated "Continuous Deployment" trigger (created via the Console UI, not `cloudbuild.yaml`'s documented `gcloud builds triggers create` in §6) — it pushes to Google's default `cloud-run-source-deploy` Artifact Registry repo under a different image path than this doc's `${_REPOSITORY}` substitution assumes | `gcloud artifacts repositories list --location=<region>` to find the actual repo, then `gcloud artifacts docker tags list <repo-path>` to find the image tagged with the commit SHA you want to deploy |
 | Users get logged out randomly / cache seems inconsistent | `SESSION_DRIVER`/`CACHE_DRIVER` left as `file` with more than one active instance | Switch to `database` or Redis per §7 |
 | Uploaded images/documents disappear after a while | `FILESYSTEM_DISK=local` on Cloud Run's ephemeral filesystem | Switch to `s3` per §10 |
 | Scheduled emails/sitemap generation never run | No Cloud Scheduler wired up | Follow §11 |

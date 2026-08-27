@@ -18,10 +18,16 @@ use Illuminate\Support\Facades\DB;
  * letting Laravel's migrations table finally track reality instead of the empty/fabricated entries found
  * in the original app - see docs/PHASE_1_DATABASE_MIGRATION_PLAN.md "Migration bookkeeping" section).
  *
- * Engine (MyISAM/InnoDB) and column types (double vs DECIMAL) are reproduced AS-IS here. Phase 1's
- * InnoDB conversion and DECIMAL migration are separate, later migrations - see
- * 2025_01_02_000000_convert_myisam_tables_to_innodb.php and
- * 2025_01_03_000000_convert_money_columns_to_decimal.php.
+ * Column types (double vs DECIMAL) are reproduced AS-IS here; Phase 1's DECIMAL migration is a
+ * separate, later migration - see 2025_01_03_000000_convert_money_columns_to_decimal.php.
+ *
+ * Storage engine: tables that shipped as MyISAM in the original dump are created here directly as
+ * InnoDB instead of reproduced AS-IS - Cloud SQL for MySQL refuses to create MyISAM tables outright
+ * ("Storage engine MyISAM is disabled (Table creation is disallowed)"), so AS-IS reproduction is not
+ * an option on that platform. 2025_01_02_000000_convert_myisam_tables_to_innodb.php (originally written
+ * to convert these tables after an AS-IS MyISAM create) is kept as a harmless no-op for that reason - it
+ * only ALTERs a table's engine when it isn't already InnoDB, which is never true anymore now that these
+ * tables are created as InnoDB from the start.
  */
 return new class extends Migration
 {
@@ -38,7 +44,7 @@ return new class extends Migration
               `is_seller` int(11) NOT NULL DEFAULT 0,
               `updated_at` timestamp NOT NULL DEFAULT current_timestamp(),
               `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-            ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 SQL);
             DB::unprepared(<<<'SQL'
             ALTER TABLE `favorites`
@@ -88,7 +94,7 @@ SQL);
               `link` varchar(512) DEFAULT 'NULL',
               `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
               `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-            ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 SQL);
             DB::unprepared(<<<'SQL'
             ALTER TABLE `notifications`
