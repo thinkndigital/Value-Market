@@ -41,6 +41,11 @@ class CommissionRuleController extends Controller
             'status' => CommissionRule::STATUS_ACTIVE,
         ]);
 
+        // Phase 15 (docs/SECURITY_AUDIT.md): commission_rules has no built-in history/versioning, and a
+        // rate change silently affects every future affiliate payout platform-wide - worth a record, same
+        // class of event Phase 2 already logs for privilege-boundary changes.
+        auditLog('commission_rule.created', ['rule_id' => $rule->id, 'scope' => $rule->scope, 'scope_id' => $rule->scope_id, 'rate_type' => $rule->rate_type, 'rate_value' => (float) $rule->rate_value]);
+
         return response()->json(['error' => false, 'message' => labels('admin_labels.commission_rule_created', 'Commission Rule Created Successfully'), 'data' => $rule]);
     }
 
@@ -60,8 +65,11 @@ class CommissionRuleController extends Controller
             return response()->json(['error' => true, 'message' => $validator->errors()->first()]);
         }
 
+        $before = ['rate_type' => $rule->rate_type, 'rate_value' => (float) $rule->rate_value, 'status' => $rule->status];
         $rule->fill($request->only(['rate_type', 'rate_value', 'status']));
         $rule->save();
+
+        auditLog('commission_rule.updated', ['rule_id' => $rule->id, 'before' => $before, 'after' => ['rate_type' => $rule->rate_type, 'rate_value' => (float) $rule->rate_value, 'status' => $rule->status]]);
 
         return response()->json(['error' => false, 'message' => labels('admin_labels.commission_rule_updated', 'Commission Rule Updated Successfully'), 'data' => $rule]);
     }

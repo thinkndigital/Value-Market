@@ -31,7 +31,7 @@ class EmployeeService
                 'status' => 1,
             ]);
 
-            return Employee::forceCreate([
+            $employee = Employee::forceCreate([
                 'seller_id' => $sellerId,
                 'branch_id' => $data['branch_id'] ?? null,
                 'user_id' => $user->id,
@@ -40,6 +40,13 @@ class EmployeeService
                 'status' => Employee::STATUS_ACTIVE,
                 'disk' => 'public',
             ]);
+
+            // Phase 15 (docs/SECURITY_AUDIT.md): a new login-capable account is a privilege-adjacent event
+            // (same class Phase 2 already logs for super-admin grants) - worth a record even though the
+            // request itself just returns a normal success response.
+            auditLog('employee.created', ['seller_id' => $sellerId, 'new_user_id' => $user->id, 'employee_id' => $employee->id]);
+
+            return $employee;
         });
     }
 }
