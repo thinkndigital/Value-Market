@@ -3,6 +3,8 @@
 use App\Http\Controllers\Seller\AiController;
 use App\Http\Controllers\Seller\BranchController;
 use App\Http\Controllers\Seller\EmployeeController;
+use App\Http\Controllers\Seller\PurchaseOrderController;
+use App\Http\Controllers\Seller\SupplierController;
 use App\Http\Controllers\Seller\ReturnRequestController;
 use App\Models\Role;
 use App\Models\User;
@@ -431,6 +433,16 @@ Route::group(
         Route::post('seller/employees', [EmployeeController::class, 'store'])->middleware(['demo_restriction'])->name('seller.employees.store');
         Route::post('seller/employees/{id}', [EmployeeController::class, 'update'])->middleware(['demo_restriction'])->name('seller.employees.update');
         Route::delete('seller/employees/{id}', [EmployeeController::class, 'destroy'])->middleware(['demo_restriction'])->name('seller.employees.destroy');
+
+        // Phase 5 (docs/PHASE_5_INVENTORY_PROCUREMENT.md): suppliers + purchase orders.
+        Route::get('seller/suppliers', [SupplierController::class, 'list'])->name('seller.suppliers.list');
+        Route::post('seller/suppliers', [SupplierController::class, 'store'])->middleware(['demo_restriction'])->name('seller.suppliers.store');
+        Route::post('seller/suppliers/{id}', [SupplierController::class, 'update'])->middleware(['demo_restriction'])->name('seller.suppliers.update');
+        Route::delete('seller/suppliers/{id}', [SupplierController::class, 'destroy'])->middleware(['demo_restriction'])->name('seller.suppliers.destroy');
+
+        Route::get('seller/purchase_orders', [PurchaseOrderController::class, 'list'])->name('seller.purchase_orders.list');
+        Route::post('seller/purchase_orders', [PurchaseOrderController::class, 'store'])->middleware(['demo_restriction'])->name('seller.purchase_orders.store');
+        Route::post('seller/purchase_orders/{id}/receive', [PurchaseOrderController::class, 'receive'])->middleware(['demo_restriction'])->name('seller.purchase_orders.receive');
     }
 
 

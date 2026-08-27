@@ -1057,7 +1057,17 @@ class ProductService
         return [$result];
     }
 
-    public function updateStock($product_variant_ids, $qtns, $type = '')
+    /**
+     * Phase 5 (docs/PHASE_5_INVENTORY_PROCUREMENT.md) added the 5 trailing optional params: this is the ONE
+     * method all 15 existing stock-changing call sites across the app already funnel through, so it's the
+     * single safe place to dual-write into the new stock_movements ledger/stock_items running total without
+     * touching any of those 15 sites. When a caller doesn't pass a branch/reference (every pre-existing call
+     * site), the movement is recorded with $referenceType = 'legacy_adjustment' and branch_id = null (the
+     * "unlocated" bucket) - a real, generic ledger entry, not a full business-reason classification. New
+     * Phase 5 code (InventoryService::adjustStock(), PurchaseOrderService::receiveGoods()) passes the extra
+     * args for accurate classification. See PHASE_5_INVENTORY_PROCUREMENT.md §2 for the full reasoning.
+     */
+    public function updateStock($product_variant_ids, $qtns, $type = '', $branchId = null, $referenceType = 'legacy_adjustment', $referenceId = null, $unitCost = null, $notes = null)
     {
 
         $ids = implode(',', (array) $product_variant_ids);
@@ -1070,6 +1080,24 @@ class ProductService
 
         foreach ($productVariants as $i => $res) {
 
+            $qty = intval(is_array($qtns) ? $qtns[$i] : $qtns);
+            $direction = $type == 'plus' ? \App\Models\StockMovement::TYPE_IN : \App\Models\StockMovement::TYPE_OUT;
+            $recordMovement = function () use ($res, $qty, $direction, $branchId, $referenceType, $referenceId, $unitCost, $notes) {
+                if ($qty > 0) {
+                    app(\App\Services\InventoryService::class)->recordMovement(
+                        (int) $res->seller_id,
+                        $branchId,
+                        (int) $res->pv_id,
+                        $direction,
+                        $qty,
+                        $referenceType,
+                        $referenceId,
+                        $unitCost,
+                        $notes
+                    );
+                }
+            };
+
             if ($res->stock_type !== null || $res->stock_type !== "") {
 
                 if ($res->stock_type == 0) {
@@ -1078,22 +1106,24 @@ class ProductService
 
                         if ($res->p_stock !== null) {
 
-                            $stock = ($res->p_stock) + intval(is_array($qtns) ? $qtns[$i] : $qtns);
+                            $stock = ($res->p_stock) + $qty;
 
                             Product::where('id', $res->product_id)->update(['stock' => $stock]);
 
                             if ($stock > 0) {
                                 Product::where('id', $res->product_id)->update(['availability' => '1']);
                             }
+                            $recordMovement();
                         }
                     } else {
 
                         if ($res->p_stock !== null && $res->p_stock > 0) {
-                            $stock = intval($res->p_stock) - intval(is_array($qtns) ? $qtns[$i] : $qtns);
+                            $stock = intval($res->p_stock) - $qty;
                             Product::where('id', $res->product_id)->update(['stock' => $stock]);
                             if ($stock == 0) {
                                 Product::where('id', $res->product_id)->update(['availability' => '0']);
                             }
+                            $recordMovement();
                         }
                     }
                 }
@@ -1104,22 +1134,24 @@ class ProductService
 
                         if ($res->pv_stock !== null) {
 
-                            $stock = intval($res->pv_stock) + intval(is_array($qtns) ? $qtns[$i] : $qtns);
+                            $stock = intval($res->pv_stock) + $qty;
 
                             Product::where('id', $res->p_id)->update(['stock' => $stock]);
                             Product_variants::where('product_id', $res->product_id)->update(['stock' => $stock]);
                             if ($stock > 0) {
                                 Product_variants::where('product_id', $res->product_id)->update(['availability' => '1']);
                             }
+                            $recordMovement();
                         }
                     } else {
                         if ($res->pv_stock !== null && $res->pv_stock > 0) {
-                            $stock = intval($res->pv_stock) - intval(is_array($qtns) ? $qtns[$i] : $qtns);
+                            $stock = intval($res->pv_stock) - $qty;
                             Product::where('id', $res->p_id)->update(['stock' => $stock]);
                             Product_variants::where('product_id', $res->product_id)->update(['stock' => $stock]);
                             if ($stock == 0) {
                                 Product_variants::where('product_id', $res->product_id)->update(['availability' => '0']);
                             }
+                            $recordMovement();
                         }
                     }
                 }
@@ -1128,19 +1160,21 @@ class ProductService
                 if ($res->stock_type == 2) {
                     if ($type == 'plus') {
                         if ($res->pv_stock !== null) {
-                            $stock = intval($res->pv_stock) + intval(is_array($qtns) ? $qtns[$i] : $qtns);
+                            $stock = intval($res->pv_stock) + $qty;
                             Product_variants::where('id', $res->id)->update(['stock' => $stock]);
                             if ($stock > 0) {
                                 Product_variants::where('id', $res->id)->update(['availability' => '1']);
                             }
+                            $recordMovement();
                         }
                     } else {
                         if ($res->pv_stock !== null && $res->pv_stock > 0) {
-                            $stock = intval($res->pv_stock) - intval(is_array($qtns) ? $qtns[$i] : $qtns);
+                            $stock = intval($res->pv_stock) - $qty;
                             Product_variants::where('id', $res->id)->update(['stock' => $stock]);
                             if ($stock == 0) {
                                 Product_variants::where('id', $res->id)->update(['availability' => '0']);
                             }
+                            $recordMovement();
                         }
                     }
                 }

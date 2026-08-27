@@ -26,8 +26,11 @@ class MigrationBaselineTest extends TestCase
         // needed because Cloud Run runs multiple stateless instances and this deployment sets
         // SESSION_DRIVER/CACHE_DRIVER/QUEUE_CONNECTION=database instead of the original file-based drivers.
         // Plus 2 more from Phase 4 (docs/PHASE_4_VENDOR_SYSTEM.md): `branches`/`employees`, confirmed absent
-        // from the original dump (docs/DATABASE_GAP_ANALYSIS.md §5).
-        $this->assertSame(95, (int) $tables);
+        // from the original dump (docs/DATABASE_GAP_ANALYSIS.md §5). Plus 7 more from Phase 5
+        // (docs/PHASE_5_INVENTORY_PROCUREMENT.md): `suppliers`, `purchase_orders`, `purchase_order_items`,
+        // `goods_received_notes`, `goods_received_note_items`, `stock_movements`, `stock_items` - all
+        // confirmed absent from the original dump (docs/DATABASE_GAP_ANALYSIS.md §5).
+        $this->assertSame(102, (int) $tables);
     }
 
     /** @dataProvider myisamTables */
