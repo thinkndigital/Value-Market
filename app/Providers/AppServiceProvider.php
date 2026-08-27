@@ -65,7 +65,15 @@ class AppServiceProvider extends ServiceProvider
         $installViewPath = resource_path('views/install.blade.php');
 
         $data = ['installViewPath' => $installViewPath, 'sqlDumpPath' => $sqlDumpPath];
-        if (!file_exists($sqlDumpPath) && !file_exists($installViewPath)) {
+        // !runningInConsole(): this block queries the `settings` table (via SettingService), and console
+        // commands - notably `artisan package:discover`, fired by composer's post-autoload-dump hook during
+        // the Docker build (Dockerfile Stage 3) - run with no database reachable at all (see Dockerfile's
+        // own "No DB, APP_KEY, or other runtime secrets are available or required at this step" comment).
+        // Confirmed against a real build: removing resources/views/install.blade.php (the other half of
+        // this condition) made this block start executing during that build step and fail it with
+        // "SQLSTATE[HY000] [2002] Connection refused". view()->share() data is HTTP-response-only anyway -
+        // no artisan command (migrate, tinker, queue:work, package:discover, ...) needs it.
+        if (!$this->app->runningInConsole() && !file_exists($sqlDumpPath) && !file_exists($installViewPath)) {
             $system_settings = app(SettingService::class)->getSettings('system_settings', true);
             $system_settings = json_decode($system_settings ?? '[]', true);
             $web_settings = app(SettingService::class)->getSettings('web_settings', true);
