@@ -123,11 +123,13 @@ if (!empty($store_image)) {
             </div>
             @php
                 $language_code = session()->get('locale') ?? 'en';
-                $selected_language = fetchDetails(Language::class, ['code' => $language_code], 'language');
-                $selected_language =
-                    isset($selected_language) && !empty($selected_language)
-                        ? $selected_language[0]->language
-                        : 'English';
+                $selected_language_rows = fetchDetails(Language::class, ['code' => $language_code], 'language');
+                // fetchDetails() always returns an Eloquent Collection - empty()/isset() are always true for
+                // an object regardless of contents, so this guard never caught a missing row. Same bug/fix as
+                // components/admin/header.blade.php.
+                $selected_language = $selected_language_rows->isNotEmpty()
+                    ? $selected_language_rows[0]->language
+                    : 'English';
             @endphp
             @if (!empty($selected_language))
                 <label for=""class="badge bg-primary mx-3">{{ $selected_language }}</label>
