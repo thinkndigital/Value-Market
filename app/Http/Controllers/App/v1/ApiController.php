@@ -199,7 +199,7 @@ Defined Methods:-
                 $fcm_ids_array = array_map(function ($item) {
                     return $item->fcm_id;
                 }, $fcm_ids->all());
-                $user_data = [
+                $user_data = redactSensitiveUserFields([
                     'id' => $user->id ?? '',
                     'ip_address' => $user->ip_address ?? '',
                     'username' => $user->username ?? '',
@@ -236,7 +236,7 @@ Defined Methods:-
                     'created_at' => $user->created_at ?? '',
                     'type' => $user->type ?? '',
                     'is_notification_on' => $user->is_notification_on ?? '',
-                ];
+                ]);
                 return response()->json([
                     'error' => false,
                     'message' => 'User Logged in successfully',
@@ -1249,7 +1249,7 @@ Defined Methods:-
         $fcm_ids_array = array_map(function ($item) {
             return $item->fcm_id;
         }, $fcm_ids->all());
-        return [
+        return redactSensitiveUserFields([
             'id' => $user->id ?? '',
             'ip_address' => $user->ip_address ?? '',
             'username' => $user->username ?? '',
@@ -1286,7 +1286,7 @@ Defined Methods:-
             'created_at' => $user->created_at ?? '',
             'type' => $user->type ?? '',
             'is_notification_on' => $user->is_notification_on ?? '',
-        ];
+        ]);
     }
     public function register_user(Request $request)
     {
@@ -1655,7 +1655,7 @@ Defined Methods:-
                         $imageUrl = app(MediaService::class)->getImageUrl($row->image, 'thumb', 'sm', 'image', 'USER_IMG_PATH');
                     }
                     $image = $imageUrl ? $imageUrl : $defaultImage;
-                    $tempRow = [
+                    $tempRow = redactSensitiveUserFields([
                         'id' => intval($row->id ?? ''),
                         'ip_address' => $row->ip_address ?? '',
                         'username' => $row->username ?? '',
@@ -1694,7 +1694,7 @@ Defined Methods:-
                         'longitude' => $row->longitude ?? '',
                         'created_at' => $row->created_at ?? '',
                         'type' => $row->type ?? '',
-                    ];
+                    ]);
                     $rows[] = $tempRow;
                 }
                 $response = [
@@ -1722,7 +1722,7 @@ Defined Methods:-
 
                     $image = $imageUrl ? $imageUrl : $defaultImage;
 
-                    $tempRow = [
+                    $tempRow = redactSensitiveUserFields([
                         'id' => intval($row->id ?? ''),
                         'ip_address' => $row->ip_address ?? '',
                         'username' => $row->username ?? '',
@@ -1760,7 +1760,7 @@ Defined Methods:-
                         'latitude' => $row->latitude ?? '',
                         'longitude' => $row->longitude ?? '',
                         'created_at' => $row->created_at ?? '',
-                    ];
+                    ]);
                     $rows[] = $tempRow;
                 }
                 $response = [

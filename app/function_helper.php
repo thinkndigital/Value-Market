@@ -1628,3 +1628,26 @@ function isDangerousUploadFilename(string $originalFilename): bool
 
     return count(array_intersect($parts, $dangerous)) > 0;
 }
+
+/**
+ * Phase 2 (Task 20, response security): several hand-built user-response arrays across the customer and
+ * delivery-boy app APIs (login, profile update) included the account's password hash and its forgotten-
+ * password/activation/remember-me tokens directly in the JSON response - confirmed via a direct read of
+ * App\v1\ApiController's login()/update_user() and Delivery_boy\v1\ApiController's login()/get_profile()-
+ * equivalent. Even when it's only the account's own owner receiving it (none of these are IDOR - the row is
+ * always the authenticated caller's own), this is still a real exposure: anything that can read the
+ * response later (access/proxy logs, a browser extension, a shared or compromised device, a MITM on a
+ * misconfigured non-HTTPS deployment) gets a live password-reset token or an offline-crackable hash.
+ *
+ * Blanks the values rather than dropping the keys, so the response shape doesn't change for whatever the
+ * mobile app client expects to find there.
+ */
+function redactSensitiveUserFields(array $data): array
+{
+    foreach (['password', 'activation_selector', 'activation_code', 'forgotten_password_selector', 'forgotten_password_code', 'forgotten_password_time', 'remember_selector', 'remember_code'] as $key) {
+        if (array_key_exists($key, $data)) {
+            $data[$key] = '';
+        }
+    }
+    return $data;
+}

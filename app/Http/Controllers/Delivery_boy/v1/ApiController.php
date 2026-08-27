@@ -96,7 +96,7 @@ Defined Methods:-
 
                 $zones = implode(',', $translated_zones) ?? '';
 
-                $userData = [
+                $userData = redactSensitiveUserFields([
                     'user_id' => $user->id ?? '',
                     'ip_address' => $user->ip_address ?? '',
                     'username' => $user->username ?? '',
@@ -137,7 +137,7 @@ Defined Methods:-
                     'zones' => $zones ?? '',
                     'front_licence_image' => !empty($user->front_licence_image) ? app(MediaService::class)->getMediaImageUrl($user->front_licence_image, 'DELIVERY_BOY_IMG_PATH') : '',
                     'back_licence_image' => !empty($user->back_licence_image) ? app(MediaService::class)->getMediaImageUrl($user->back_licence_image, 'DELIVERY_BOY_IMG_PATH') : '',
-                ];
+                ]);
 
                 if ($user->isDeliveryBoy()) {
                     if (isset($request->fcm_id) && $request->fcm_id != '') {
@@ -306,7 +306,7 @@ Defined Methods:-
             })->toArray();
 
             $zones = implode(',', $translated_zones) ?? '';
-            $userData = [
+            $userData = redactSensitiveUserFields([
                 'user_id' => $user->id ?? '',
                 'ip_address' => $user->ip_address ?? '',
                 'username' => $user->username ?? '',
@@ -348,7 +348,7 @@ Defined Methods:-
                 'type' => $user->type ?? '',
                 'front_licence_image' => !empty($user->front_licence_image) ? app(MediaService::class)->getMediaImageUrl($user->front_licence_image, 'DELIVERY_BOY_IMG_PATH') : '',
                 'back_licence_image' => !empty($user->back_licence_image) ? app(MediaService::class)->getMediaImageUrl($user->back_licence_image, 'DELIVERY_BOY_IMG_PATH') : '',
-            ];
+            ]);
 
             if ($user->isDeliveryBoy()) {
 
