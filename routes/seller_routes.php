@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Seller\AiController;
+use App\Http\Controllers\Seller\BranchController;
+use App\Http\Controllers\Seller\EmployeeController;
 use App\Http\Controllers\Seller\ReturnRequestController;
 use App\Models\Role;
 use App\Models\User;
@@ -418,6 +420,17 @@ Route::group(
         Route::get('seller/brands', [BrandController::class, 'index'])->name('seller_brands.index');
         Route::post('brands', [BrandController::class, 'store'])->middleware(['demo_restriction'])->name('seller.brands.store');
         Route::get('/brands/list', [BrandController::class, 'list'])->name('seller.brands.list');
+
+        // Phase 4 (docs/PHASE_4_VENDOR_SYSTEM.md): branch and employee management.
+        Route::get('seller/branches', [BranchController::class, 'list'])->name('seller.branches.list');
+        Route::post('seller/branches', [BranchController::class, 'store'])->middleware(['demo_restriction'])->name('seller.branches.store');
+        Route::post('seller/branches/{id}', [BranchController::class, 'update'])->middleware(['demo_restriction'])->name('seller.branches.update');
+        Route::delete('seller/branches/{id}', [BranchController::class, 'destroy'])->middleware(['demo_restriction'])->name('seller.branches.destroy');
+
+        Route::get('seller/employees', [EmployeeController::class, 'list'])->name('seller.employees.list');
+        Route::post('seller/employees', [EmployeeController::class, 'store'])->middleware(['demo_restriction'])->name('seller.employees.store');
+        Route::post('seller/employees/{id}', [EmployeeController::class, 'update'])->middleware(['demo_restriction'])->name('seller.employees.update');
+        Route::delete('seller/employees/{id}', [EmployeeController::class, 'destroy'])->middleware(['demo_restriction'])->name('seller.employees.destroy');
     }
 
 

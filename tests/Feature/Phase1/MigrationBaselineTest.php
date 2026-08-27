@@ -25,7 +25,9 @@ class MigrationBaselineTest extends TestCase
         // eShop Plus dump - see the migrations' own docblocks): `sessions`/`cache`/`cache_locks`/`jobs`,
         // needed because Cloud Run runs multiple stateless instances and this deployment sets
         // SESSION_DRIVER/CACHE_DRIVER/QUEUE_CONNECTION=database instead of the original file-based drivers.
-        $this->assertSame(93, (int) $tables);
+        // Plus 2 more from Phase 4 (docs/PHASE_4_VENDOR_SYSTEM.md): `branches`/`employees`, confirmed absent
+        // from the original dump (docs/DATABASE_GAP_ANALYSIS.md §5).
+        $this->assertSame(95, (int) $tables);
     }
 
     /** @dataProvider myisamTables */

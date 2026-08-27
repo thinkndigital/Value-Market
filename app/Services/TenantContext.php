@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Employee;
 use App\Models\Seller;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -28,13 +29,31 @@ class TenantContext
     private array $sellerIdCache = [];
 
     /**
-     * The seller_data id owned by the given user, or null if they don't own one (not a seller, or a seller
-     * account whose seller_data row is missing/removed).
+     * The seller_data id this user acts as - either the seller_data they own directly, or (Phase 4,
+     * docs/PHASE_4_VENDOR_SYSTEM.md) the seller_data of the seller who employs them, for an active
+     * `employees` row. Null if neither applies.
+     *
+     * Phase 4 scope boundary: this resolver is the one place employee tenant-scoping is centralized, and
+     * every caller that already goes through TenantContext (all Phase 2/3 fixes, and Phase 4's own
+     * Branch/EmployeeController) picks up employee support automatically. It does NOT retroactively fix the
+     * ~90 pre-existing call sites across the Seller panel that inline the equivalent
+     * `Seller::where('user_id', ...)->value('id')` query directly (documented in Phase 2's own
+     * TenantContext introduction as a deliberately deferred large-surface rewrite) - an employee logging
+     * into the Seller panel today will not yet see products/orders/POS through those unmigrated
+     * controllers. See docs/PHASE_4_VENDOR_SYSTEM.md for the full explanation and the follow-up this leaves.
      */
     public function sellerIdFor(User $user): ?int
     {
         if (!array_key_exists($user->id, $this->sellerIdCache)) {
-            $this->sellerIdCache[$user->id] = Seller::where('user_id', $user->id)->value('id');
+            $ownSellerId = Seller::where('user_id', $user->id)->value('id');
+
+            if ($ownSellerId === null) {
+                $ownSellerId = Employee::where('user_id', $user->id)
+                    ->where('status', Employee::STATUS_ACTIVE)
+                    ->value('seller_id');
+            }
+
+            $this->sellerIdCache[$user->id] = $ownSellerId;
         }
 
         return $this->sellerIdCache[$user->id];
