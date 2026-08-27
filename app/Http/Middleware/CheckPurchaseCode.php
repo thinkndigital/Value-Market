@@ -16,6 +16,13 @@ class CheckPurchaseCode
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Disabled pending a Value Market-owned licensing provider - see the
+        // PURCHASE_CODE_CHECK_ENABLED comment in config/constants.php for why and how to turn it
+        // back on.
+        if (!config('constants.PURCHASE_CODE_CHECK_ENABLED')) {
+            return $next($request);
+        }
+
         $doctor_brown = Setting::where('variable', 'doctor_brown')->first();
         $web_doctor_brown = Setting::where('variable', 'web_doctor_brown')->first();
 
