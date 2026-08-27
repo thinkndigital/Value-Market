@@ -81,7 +81,11 @@ Route::middleware(['CheckInstallation'])->group(function () {
 
     Route::get('admin/login', [UserController::class, 'login'])->name('admin.login');
 
-    Route::get('admin/home', [HomeController::class, 'index'])->name('admin.home');
+    // ->middleware('auth'): registered here (inside CheckInstallation but outside the `auth`-gated
+    // admin_routes.php include below) with no auth check at all - confirmed via a real deploy, an
+    // unauthenticated visit to this URL reaches HomeController::index(), whose view assumes a logged-in
+    // admin session and fatal-errors without one instead of redirecting to login.
+    Route::get('admin/home', [HomeController::class, 'index'])->name('admin.home')->middleware('auth');
 
     // Routs for forgot password and reset password
 
@@ -194,6 +198,10 @@ Route::middleware(['CheckInstallation'])->group(function () {
 // here; the correctly-gated declaration in admin_routes.php:541 is now the only registration.
 Route::get('/admin/stores', [StoreController::class, 'index'])->name('admin.stores.index');
 Route::post('admin/store', [StoreController::class, 'store'])->middleware(['demo_restriction'])->middleware('permissions:create store')->name('admin.stores.store');
-Route::get("settings/registration", [SettingController::class, 'registration'])->name('admin.system_registration');
-Route::post("settings/system_registration", [SettingController::class, 'systemRegister'])->name('admin.system_register')->middleware(['demo_restriction']);
+// admin.system_registration / admin.system_register: previously duplicated here unguarded (same
+// RouteCollection-keyed-by-method+URI shadowing as the invoice-PDF bug noted above) over the properly
+// `auth`+`role:super_admin,admin,editor`-gated declarations in admin_routes.php, which were commented out
+// - confirmed via a real deploy: any visitor (including an unauthenticated one) hitting `/settings/
+// registration` reached this route, whose view assumes an authenticated admin session and fatal-errors
+// without one. Removed here; admin_routes.php's declarations (now uncommented) are the only registration.
 Route::post("settings/web_system_registration", [SettingController::class, 'WebsystemRegister'])->name('admin.web_system_register')->middleware(['demo_restriction']);

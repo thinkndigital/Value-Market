@@ -5,7 +5,7 @@
 @section('content')
     @php
         $user = auth()->user();
-        $role = auth()->user()->role->name;
+        $role = auth()->user()->role->name ?? null;
     @endphp
     <x-admin.breadcrumb :title="labels('admin_labels.settings', 'Settings')" :subtitle="labels(
         'admin_labels.customize_and_manage_platform_settings_with_ease',

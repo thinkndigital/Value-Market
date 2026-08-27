@@ -5,7 +5,7 @@
 @section('content')
     @php
         $user = auth()->user();
-        $role = auth()->user()->role->name;
+        $role = auth()->user()->role->name ?? null;
     @endphp
     <x-admin.breadcrumb :title="labels('admin_labels.email_smtp_settings', 'Email SMTP Setting')" :subtitle="labels(
         'admin_labels.ensure_seamless_email_integration_with_advanced_smtp_settings',

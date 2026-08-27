@@ -5,7 +5,7 @@
 @section('content')
     @php
         $user = auth()->user();
-        $role = auth()->user()->role->name;
+        $role = auth()->user()->role->name ?? null;
     @endphp
     <x-admin.breadcrumb :title="labels('admin_labels.system_policies', 'System Policies')" :subtitle="labels(
         'admin_labels.effortlessly_manage_and_enforce_system_policies',

@@ -198,7 +198,7 @@
                     <li class="nav-item dropdown pe-2 d-flex align-items-center">
                         <a href="javascript:;" class="nav-link text-white p-0 nav-link-text ms-1"
                             id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-                            <img class="avatar rounded-circle avatar-sm" src="{{ app(MediaService::class)->getMediaImageUrl($user_image) }}">
+                            <img class="avatar rounded-circle avatar-sm" src="{{ app(MediaService::class)->getMediaImageUrl($user_image ?? '') }}">
                             {{ $user->username }}
                             <i class="fas fa-angle-down"></i>
                         </a>

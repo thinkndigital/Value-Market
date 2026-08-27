@@ -5,7 +5,7 @@
 @section('content')
     @php
         $user = auth()->user();
-        $role = auth()->user()->role->name;
+        $role = auth()->user()->role->name ?? null;
     @endphp
     <x-admin.breadcrumb :title="labels('admin_labels.create_blog', 'Create Blog')" :subtitle="labels(
         'admin_labels.craft_compelling_blogs_with_user_friendly_creation_tool',

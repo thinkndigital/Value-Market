@@ -178,8 +178,8 @@ Route::group(
             Route::get("settings/updater", [SettingController::class, 'updater'])->name('updater');
             Route::post("settings/system-update", [SettingController::class, 'systemUpdate'])->name('system-update');
 
-            // Route::get("settings/registration", [SettingController::class, 'registration'])->name('admin.system_registration');
-            // Route::post("settings/system_registration", [SettingController::class, 'systemRegister'])->name('admin.system_register');
+            Route::get("settings/registration", [SettingController::class, 'registration'])->name('admin.system_registration');
+            Route::post("settings/system_registration", [SettingController::class, 'systemRegister'])->name('admin.system_register')->middleware(['demo_restriction']);
     
             Route::post("settings/system_settings", [SettingController::class, 'storeSystemSetting'])->name('system_settings.store')->middleware(['demo_restriction'])->middleware('permissions:edit system_setting');
 

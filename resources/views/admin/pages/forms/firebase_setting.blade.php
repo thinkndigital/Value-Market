@@ -5,7 +5,7 @@
 @section('content')
     @php
         $user = auth()->user();
-        $role = auth()->user()->role->name;
+        $role = auth()->user()->role->name ?? null;
     @endphp
     <x-admin.breadcrumb :title="labels('admin_labels.firebase', 'Firebase')" :subtitle="labels(
         'admin_labels.seamlessly_integrate_and_leverage_firebase_capabilities',

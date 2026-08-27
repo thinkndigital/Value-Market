@@ -5,7 +5,7 @@
 @section('content')
     @php
         $user = auth()->user();
-        $role = auth()->user()->role->name;
+        $role = auth()->user()->role->name ?? null;
     @endphp
     <x-admin.breadcrumb :title="labels('admin_labels.shipping_methods', 'Shipping Methods')" :subtitle="labels(
         'admin_labels.optimize_and_manage_your_shipping_channels_with_ease',

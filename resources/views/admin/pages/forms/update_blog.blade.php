@@ -5,7 +5,7 @@
 @section('content')
     @php
         $user = auth()->user();
-        $role = auth()->user()->role->name;
+        $role = auth()->user()->role->name ?? null;
         use App\Models\BlogCategory;
         use App\Services\TranslationService;
         use App\Services\MediaService;

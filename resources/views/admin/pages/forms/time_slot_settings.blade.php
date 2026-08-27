@@ -5,7 +5,7 @@
 @section('content')
     @php
         $user = auth()->user();
-        $role = auth()->user()->role->name;
+        $role = auth()->user()->role->name ?? null;
     @endphp
     <x-admin.breadcrumb :title="labels('admin_labels.time_slots', 'Time Slots')" :subtitle="labels(
         'admin_labels.efficiently_organize_and_control_delivery_time_slots',
