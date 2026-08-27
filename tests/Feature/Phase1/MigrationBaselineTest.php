@@ -20,8 +20,12 @@ class MigrationBaselineTest extends TestCase
     {
         $tables = DB::select("SELECT COUNT(*) as c FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name != 'migrations'")[0]->c;
 
-        // 89 tables from the audited eShop Plus schema (docs/DATABASE_GAP_ANALYSIS.md §1).
-        $this->assertSame(89, (int) $tables);
+        // 89 tables from the audited eShop Plus schema (docs/DATABASE_GAP_ANALYSIS.md §1), plus 4 tables
+        // added after this test was written, for the Cloud Run production deploy (not part of the original
+        // eShop Plus dump - see the migrations' own docblocks): `sessions`/`cache`/`cache_locks`/`jobs`,
+        // needed because Cloud Run runs multiple stateless instances and this deployment sets
+        // SESSION_DRIVER/CACHE_DRIVER/QUEUE_CONNECTION=database instead of the original file-based drivers.
+        $this->assertSame(93, (int) $tables);
     }
 
     /** @dataProvider myisamTables */
