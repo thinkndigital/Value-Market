@@ -5679,6 +5679,18 @@ Defined Methods:-
             return $response;
         }
 
+        // Phase 2 (Task 18, customer isolation): delete_rating() is shared with the admin panel (where
+        // deleting any rating is legitimate moderation), so the ownership check belongs here at the
+        // customer-facing call site, not inside that shared method - any customer could otherwise delete
+        // any other customer's product review by guessing rating_id.
+        $rating_id = $request->input('rating_id');
+        if (!\App\Models\ProductRating::where('id', $rating_id)->where('user_id', Auth::id())->exists()) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Something Went Wrong',
+                'language_message_key' => 'something_went_wrong',
+            ]);
+        }
 
         $rating = $ProductRatingController->delete_rating(($request->input('rating_id') != null) ? $request->input('rating_id') : '');
 
@@ -6431,6 +6443,17 @@ Defined Methods:-
         ];
         if ($response = $this->HandlesValidation($request, $rules, [], null, true)) {
             return $response;
+        }
+
+        // Phase 2 (Task 18, customer isolation): same fix as delete_product_rating() above - delete_rating()
+        // is shared with the admin panel, so the ownership check belongs at this customer-facing call site.
+        $rating_id = $request->input('rating_id');
+        if (!\App\Models\ComboProductRating::where('id', $rating_id)->where('user_id', Auth::id())->exists()) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Something Went Wrong',
+                'language_message_key' => 'something_went_wrong',
+            ]);
         }
 
         $rating = $ProductRatingController->delete_rating(($request->input('rating_id') != null) ? $request->input('rating_id') : '');
