@@ -5,7 +5,7 @@
      $pwa_settings = getSettings('pwa_settings', true);
      $pwa_settings = $pwa_settings ? json_decode($pwa_settings, true) : null;
      $background_color =
-         $pwa_settings && isset($pwa_settings['background_color']) ? $pwa_settings['background_color'] : '#b52046';
+         $pwa_settings && isset($pwa_settings['background_color']) ? $pwa_settings['background_color'] : '#333F49';
  @endphp
 
  <head>
