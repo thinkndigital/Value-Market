@@ -18,8 +18,12 @@ class CheckStoreNotEmpty
     {
         $store_count = Store::count();
 
-        // Exclude store setup routes
-        $exclude_routes = ['admin.stores.index'];
+        // Exclude store setup routes (index to view the form, store to actually submit it - without
+        // "store" excluded too, submitting the very first store bounces the POST back to the empty form
+        // and the data is lost, since store_count is still 0 at that point), and the system-registration
+        // routes CheckPurchaseCode redirects to - see the comment there for why both middlewares need to
+        // know about each other's setup routes.
+        $exclude_routes = ['admin.stores.index', 'admin.stores.store', 'admin.system_registration', 'admin.system_register', 'admin.web_system_register'];
         $current_route = $request->route() ? $request->route()->getName() : null;
 
         if ($store_count === 0 && !in_array($current_route, $exclude_routes)) {
