@@ -35,7 +35,6 @@ class ProductService
             'sellerStoreData',
             'productVariants',
             'productAttributes',
-            'orderItems',
         ])
             ->select('products.*')->distinct()
             ->addSelect([
