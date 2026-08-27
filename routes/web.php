@@ -177,7 +177,11 @@ Route::middleware(['CheckInstallation'])->group(function () {
     });
 
     // Public - the link a visitor actually clicks, no account required to be tracked and redirected.
-    Route::get('r/{code}', [AffiliateController::class, 'trackAndRedirect'])->name('affiliate.track');
+    // Security audit finding (docs/SECURITY_AUDIT.md §6, Finding 12): unthrottled, this endpoint let anyone
+    // script arbitrary clicks_count inflation for any affiliate link (gaming performance metrics) or grow
+    // link_clicks without bound. 60/minute per IP is generous for a real visitor clicking a link, not for a
+    // script.
+    Route::get('r/{code}', [AffiliateController::class, 'trackAndRedirect'])->name('affiliate.track')->middleware('throttle:60,1');
 
     Route::get('admin/media/image', [MediaController::class, 'dynamic_image'])->name('admin.dynamic_image');
     Route::get('/media/image', [MediaController::class, 'dynamic_image'])->name('front_end.dynamic_image');

@@ -7,6 +7,7 @@ use App\Services\TenantContext;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class SupplierController extends Controller
 {
@@ -57,6 +58,21 @@ class SupplierController extends Controller
         $supplier = Supplier::where('id', $id)->where('seller_id', $sellerId)->first();
         if (!$supplier) {
             return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
+        }
+
+        // Security audit finding (docs/SECURITY_AUDIT.md §6, Finding 13): update() had no validation at all
+        // (store() validates the same fields) - an email field wasn't required to look like an email, and
+        // status could be filled with any value outside the STATUS_ACTIVE/STATUS_INACTIVE enum.
+        $validator = Validator::make($request->all(), [
+            'name' => 'sometimes|string|max:256',
+            'contact_person' => 'nullable|string|max:256',
+            'phone' => 'nullable|string|max:32',
+            'email' => 'nullable|email|max:256',
+            'address' => 'nullable|string|max:512',
+            'status' => ['sometimes', Rule::in([Supplier::STATUS_ACTIVE, Supplier::STATUS_INACTIVE])],
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => true, 'message' => $validator->errors()->first()]);
         }
 
         $supplier->fill($request->only(['name', 'contact_person', 'phone', 'email', 'address', 'status']));

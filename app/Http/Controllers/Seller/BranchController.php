@@ -31,11 +31,15 @@ class BranchController extends Controller
             return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
         }
 
+        // Security audit finding (docs/SECURITY_AUDIT.md §6, Finding 14): latitude/longitude were accepted
+        // and stored without any validation at all - not range-checked, not even type-checked.
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:256',
             'address' => 'nullable|string|max:512',
             'city' => 'nullable|integer',
             'zipcode' => 'nullable|integer',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
             'phone' => 'nullable|string|max:32',
             'is_default' => 'nullable|boolean',
         ]);
@@ -68,11 +72,14 @@ class BranchController extends Controller
             return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
         }
 
+        // Security audit finding (docs/SECURITY_AUDIT.md §6, Finding 14): see store() above.
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|required|string|max:256',
             'address' => 'nullable|string|max:512',
             'city' => 'nullable|integer',
             'zipcode' => 'nullable|integer',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
             'phone' => 'nullable|string|max:32',
             'status' => 'nullable|in:0,1',
         ]);

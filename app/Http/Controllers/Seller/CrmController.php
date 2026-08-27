@@ -50,6 +50,13 @@ class CrmController extends Controller
     public function listNotes(Request $request, $customerUserId)
     {
         $sellerId = app(TenantContext::class)->currentSellerId();
+        // Security audit finding (docs/SECURITY_AUDIT.md §6, Finding 11): customerBelongsToSeller() takes a
+        // non-nullable `int $sellerId` - without this guard, a request with no resolvable seller_id (e.g. an
+        // authenticated user who owns/works for no seller) threw an uncaught TypeError (500) instead of the
+        // same clean "Data Not Found" every sibling method here already returns.
+        if ($sellerId === null) {
+            return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
+        }
 
         if (!$this->customerBelongsToSeller((int) $customerUserId, $sellerId)) {
             return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
@@ -65,9 +72,12 @@ class CrmController extends Controller
             return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
         }
 
+        // Security audit finding (docs/SECURITY_AUDIT.md §6, Finding 15): color was accepted and stored
+        // without any format validation.
         $validator = Validator::make($request->all(), [
             'customer_user_id' => 'required|integer',
             'tag_name' => 'required|string|max:100',
+            'color' => 'nullable|string|regex:/^#[0-9a-fA-F]{6}$/',
         ]);
         if ($validator->fails()) {
             return response()->json(['error' => true, 'message' => $validator->errors()->first()]);
@@ -88,6 +98,10 @@ class CrmController extends Controller
     public function customerLifetimeValue(Request $request, $customerUserId)
     {
         $sellerId = app(TenantContext::class)->currentSellerId();
+        // Security audit finding (docs/SECURITY_AUDIT.md §6, Finding 11): see listNotes() above.
+        if ($sellerId === null) {
+            return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
+        }
 
         if (!$this->customerBelongsToSeller((int) $customerUserId, $sellerId)) {
             return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
