@@ -355,6 +355,26 @@ class ComboProductController extends Controller
         $user_id = Auth::user()->id;
         $seller_id = Seller::where('user_id', $user_id)->value('id');
         $product_data = fetchDetails(ComboProduct::class, ['id' => $data], '*');
+
+        // Phase 2 (Task 16, seller isolation): the actual update query below (`ComboProduct::where('id',
+        // $data)->update($product_data)`) was scoped only by id - any seller could edit (and, since
+        // $product_data['seller_id'] is set to the caller's own seller_id further down, effectively steal
+        // ownership of) any other seller's combo product via this web-panel edit form. $seller_id was
+        // already being computed above but never checked against the target record.
+        if ($product_data->isEmpty() || (int) $product_data[0]->seller_id !== (int) $seller_id) {
+            if ($from_app == true) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Something went wrong',
+                    'data' => [],
+                ], 404);
+            }
+
+            return $request->ajax()
+                ? response()->json(['errors' => ['Product not found.']], 404)
+                : redirect()->back()->withErrors(['product' => 'Product not found.']);
+        }
+
         $product_type = $product_data[0]->product_type;
         $store_id = !empty(request('store_id')) ? request('store_id') : app(StoreService::class)->getStoreId();
         $validator = Validator::make($request->all(), [
@@ -816,7 +836,8 @@ class ComboProductController extends Controller
     }
     public function destroy($id)
     {
-        $product = ComboProduct::find($id);
+        $seller_id = Seller::where('user_id', Auth::id())->value('id');
+        $product = ComboProduct::where('id', $id)->where('seller_id', $seller_id)->first();
         if ($product) {
             $product->delete();
             return response()->json(['error' => false, 'message' => labels('admin_labels.product_deleted_successfully', 'Product deleted successfully!')]);
@@ -827,7 +848,8 @@ class ComboProductController extends Controller
 
     public function update_status($id)
     {
-        $combo_product = ComboProduct::findOrFail($id);
+        $seller_id = Seller::where('user_id', Auth::id())->value('id');
+        $combo_product = ComboProduct::where('id', $id)->where('seller_id', $seller_id)->firstOrFail();
         $combo_product->status = $combo_product->status == '1' ? '0' : '1';
         $combo_product->save();
         return response()->json(['success' => labels('admin_labels.status_updated_successfully', 'Status updated successfully.')]);
@@ -840,7 +862,11 @@ class ComboProductController extends Controller
         $language_code = app(TranslationService::class)->getLanguageCode();
         $user_id = Auth::user()->id;
         $seller_id = Seller::where('user_id', $user_id)->value('id');
+        // Phase 2 (Task 16, seller isolation): store_id alone doesn't identify the owning seller - a store
+        // can host multiple sellers (seller_store), so scoping only by store_id let one seller load another
+        // seller's combo product into this edit view. seller_id added.
         $data = ComboProduct::where('store_id', $store_id)
+            ->where('seller_id', $seller_id)
             ->find($data);
         if (
             $data === null || empty($data)

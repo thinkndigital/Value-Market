@@ -245,7 +245,13 @@ class MediaController extends Controller
     }
     public function destroy($id)
     {
-        $media = Media::find($id);
+        $seller_id = Seller::where('user_id', Auth::id())->value('id');
+        $media = Media::where('id', $id)->where('seller_id', $seller_id)->first();
+
+        if (!$media) {
+            return response()->json(['error' => true, 'message' => labels('admin_labels.something_went_wrong', 'Something went wrong')]);
+        }
+
         $disk = $media->disk;
 
         if ($media->delete()) {

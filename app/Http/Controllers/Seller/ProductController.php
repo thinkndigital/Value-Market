@@ -1366,13 +1366,15 @@ class ProductController extends Controller
     }
     public function destroy($id)
     {
+        // Phase 2 (Task 16, seller isolation): unscoped by seller - any seller could delete any other
+        // seller's product via this web-panel route. Same ProductPolicy already wired into update() above.
         $product = Product::find($id);
-        if ($product) {
-            $product->delete();
-            return response()->json(['error' => false, 'message' => labels('admin_labels.product_deleted_successfully', 'Product deleted successfully!')]);
-        } else {
+        if ($product === null || \Illuminate\Support\Facades\Gate::forUser(Auth::user())->denies('delete', $product)) {
             return response()->json(['error' => 'Product not found!']);
         }
+
+        $product->delete();
+        return response()->json(['error' => false, 'message' => labels('admin_labels.product_deleted_successfully', 'Product deleted successfully!')]);
     }
 
 
@@ -2113,6 +2115,10 @@ class ProductController extends Controller
     public function update_status($id)
     {
         $product = Product::findOrFail($id);
+        if (\Illuminate\Support\Facades\Gate::forUser(Auth::user())->denies('update', $product)) {
+            return response()->json(['error' => true, 'message' => labels('admin_labels.something_went_wrong', 'Something went wrong')]);
+        }
+
         $product->status = $product->status == '1' ? '0' : '1';
         $product->save();
         return response()->json(['success' => labels('admin_labels.status_updated_successfully', 'Status updated successfully.')]);
@@ -2123,8 +2129,14 @@ class ProductController extends Controller
 
         $store_id = app(StoreService::class)->getStoreId();
 
+        // Phase 2 (Task 16, seller isolation): store_id alone doesn't identify the owning seller - a store
+        // can host multiple sellers, so this let one seller view another seller's product detail. Reuses
+        // the same ProductPolicy already wired into update()/destroy() above.
         $data = Product::where('store_id', $store_id)
             ->find($id);
+        if ($data !== null && \Illuminate\Support\Facades\Gate::forUser(Auth::user())->denies('view', $data)) {
+            $data = null;
+        }
         if ($data === null || empty($data)) {
             return view('admin.pages.views.no_data_found');
         } else {
