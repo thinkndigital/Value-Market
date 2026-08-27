@@ -116,4 +116,76 @@ class EmployeeControllerTest extends TestCase
         $this->assertSame(Employee::STATUS_INACTIVE, $employee->fresh()->status);
         $this->assertNotNull(User::find($employeeUser->id));
     }
+
+    /**
+     * Security audit finding (docs/SECURITY_AUDIT.md §6, Finding 9): TenantContext::currentSellerId()
+     * resolves the same seller_id for an employee as for the owner, so employee-roster management must be
+     * gated on TenantContext::isSellerOwner(), not just "resolves to this tenant" - otherwise any employee
+     * has full owner authority to create more employees or deactivate coworkers.
+     */
+    public function test_an_employee_cannot_create_another_employee(): void
+    {
+        $owner = $this->makeSeller();
+        $employeeUser = User::forceCreate([
+            'username' => 'staff_' . uniqid(), 'password' => 'x', 'disk' => 'public',
+            'serviceable_cities' => '', 'type' => 'phone', 'role_id' => Role::SELLER,
+        ]);
+        Employee::forceCreate([
+            'seller_id' => $owner->id, 'user_id' => $employeeUser->id,
+            'status' => Employee::STATUS_ACTIVE, 'disk' => 'public',
+        ]);
+
+        Auth::login($employeeUser);
+
+        $response = app(EmployeeController::class)->store(new Request([
+            'name' => 'Coworker', 'mobile' => (string) random_int(6000000000, 6999999999), 'password' => 'password123',
+        ]));
+        $data = json_decode($response->getContent(), true);
+
+        $this->assertTrue($data['error']);
+        $this->assertSame(1, Employee::where('seller_id', $owner->id)->count());
+    }
+
+    public function test_an_employee_cannot_deactivate_a_coworker(): void
+    {
+        $owner = $this->makeSeller();
+        $actingEmployeeUser = User::forceCreate([
+            'username' => 'staff_' . uniqid(), 'password' => 'x', 'disk' => 'public',
+            'serviceable_cities' => '', 'type' => 'phone', 'role_id' => Role::SELLER,
+        ]);
+        Employee::forceCreate([
+            'seller_id' => $owner->id, 'user_id' => $actingEmployeeUser->id,
+            'status' => Employee::STATUS_ACTIVE, 'disk' => 'public',
+        ]);
+        $coworkerUser = User::forceCreate([
+            'username' => 'staff_' . uniqid(), 'password' => 'x', 'disk' => 'public',
+            'serviceable_cities' => '', 'type' => 'phone', 'role_id' => Role::SELLER,
+        ]);
+        $coworker = Employee::forceCreate([
+            'seller_id' => $owner->id, 'user_id' => $coworkerUser->id,
+            'status' => Employee::STATUS_ACTIVE, 'disk' => 'public',
+        ]);
+
+        Auth::login($actingEmployeeUser);
+
+        $response = app(EmployeeController::class)->destroy($coworker->id);
+        $data = json_decode($response->getContent(), true);
+
+        $this->assertTrue($data['error']);
+        $this->assertSame(Employee::STATUS_ACTIVE, $coworker->fresh()->status);
+    }
+
+    public function test_the_owner_can_still_manage_employees(): void
+    {
+        $owner = $this->makeSeller();
+        Auth::login(User::find($owner->user_id));
+
+        $response = app(EmployeeController::class)->store(new Request([
+            'name' => 'Staff One', 'mobile' => (string) random_int(6000000000, 6999999999), 'password' => 'password123',
+        ]));
+        $data = json_decode($response->getContent(), true);
+
+        $this->assertFalse($data['error']);
+        $this->assertSame(1, Employee::where('seller_id', $owner->id)->count());
+    }
 }

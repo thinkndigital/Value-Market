@@ -81,4 +81,18 @@ class TenantContext
 
         return $ownedId !== null && $ownedId === $sellerId;
     }
+
+    /**
+     * Security audit finding (docs/SECURITY_AUDIT.md §6, Finding 9): sellerIdFor()/currentSellerId()
+     * deliberately resolve the same seller_id for the seller owner AND any of their active employees, so
+     * every controller that only checks "does this resolve to my seller_id" (correct for products, orders,
+     * POS, ...) was also, unintentionally, giving every employee full owner authority over the roster
+     * itself - creating more employees, deactivating others, reassigning branches. This is the one predicate
+     * that distinguishes "the actual owner account" from "an employee acting for that owner's tenant" - use
+     * it to gate employee-management actions specifically, not general tenant-scoped data access.
+     */
+    public function isSellerOwner(User $user): bool
+    {
+        return Seller::where('user_id', $user->id)->exists();
+    }
 }

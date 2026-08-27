@@ -8,6 +8,7 @@ use App\Services\EmployeeService;
 use App\Services\TenantContext;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 /**
@@ -35,6 +36,13 @@ class EmployeeController extends Controller
     {
         $sellerId = app(TenantContext::class)->currentSellerId();
         if ($sellerId === null) {
+            return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
+        }
+
+        // Security audit finding (docs/SECURITY_AUDIT.md §6, Finding 9): currentSellerId() resolves the same
+        // seller_id for an employee as for the owner - employee-roster management is restricted to the
+        // actual owner account, not any employee who happens to resolve to this tenant.
+        if (!app(TenantContext::class)->isSellerOwner(Auth::user())) {
             return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
         }
 
@@ -66,6 +74,13 @@ class EmployeeController extends Controller
     {
         $sellerId = app(TenantContext::class)->currentSellerId();
 
+        // Security audit finding (docs/SECURITY_AUDIT.md §6, Finding 9): see store() - employee-roster
+        // management (including reactivating/deactivating a coworker or reassigning their branch) is
+        // owner-only.
+        if (!app(TenantContext::class)->isSellerOwner(Auth::user())) {
+            return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
+        }
+
         $employee = Employee::where('id', $id)->where('seller_id', $sellerId)->first();
         if (!$employee) {
             return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
@@ -96,6 +111,12 @@ class EmployeeController extends Controller
     public function destroy($id)
     {
         $sellerId = app(TenantContext::class)->currentSellerId();
+
+        // Security audit finding (docs/SECURITY_AUDIT.md §6, Finding 9): see store() - deactivating a
+        // coworker is owner-only.
+        if (!app(TenantContext::class)->isSellerOwner(Auth::user())) {
+            return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
+        }
 
         $employee = Employee::where('id', $id)->where('seller_id', $sellerId)->first();
         if (!$employee) {

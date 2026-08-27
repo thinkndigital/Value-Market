@@ -663,7 +663,7 @@ class PosController extends Controller
                 }
             }
 
-            app(\App\Services\PosShiftService::class)->recordSaleForOpenShift($order, $request->input('pos_shift_id'), $request->input('payments'));
+            app(\App\Services\PosShiftService::class)->recordSaleForOpenShift($order, $request->input('pos_shift_id'), $request->input('payments'), $product_variant[0]->product['seller_id'] ?? null);
 
             DB::commit();
 
