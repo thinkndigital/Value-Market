@@ -233,28 +233,46 @@
             ['id' => $store_id],
             ['primary_color', 'secondary_color', 'hover_color', 'active_color'],
         );
+        // Brand palette sampled from the Value Market logo mark (charcoal ink + gold), used as the
+        // fallback theme whenever a store hasn't picked its own colors in Store settings.
         $primary_colour =
             isset($store_details[0]->primary_color) && !empty($store_details[0]->primary_color)
                 ? $store_details[0]->primary_color
-                : '#B52046';
+                : '#333F49';
         $secondary_color =
             isset($store_details[0]->secondary_color) && !empty($store_details[0]->secondary_color)
                 ? $store_details[0]->secondary_color
-                : '#201A1A';
+                : '#1B2128';
         $hover_color =
             isset($store_details[0]->hover_color) && !empty($store_details[0]->hover_color)
                 ? $store_details[0]->hover_color
-                : '#911A38';
+                : '#4B5A67';
         $active_color =
             isset($store_details[0]->active_color) && !empty($store_details[0]->active_color)
                 ? $store_details[0]->active_color
-                : '#6D132A';
+                : '#20262C';
         $background_opacity_color = $primary_colour . '10';
+
+        // `--primary-theme-color-rgb` backs the `rgba(var(--primary-theme-color-rgb), alpha)` opacity
+        // tints used across custom.css (e.g. the table hover/focus-ring tint) - those need an "r, g, b"
+        // triplet, not the hex string --primary-theme-color itself holds.
+        $hexToRgbTriplet = function ($hex) {
+            $hex = ltrim((string) $hex, '#');
+            if (strlen($hex) === 3) {
+                $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+            }
+            if (strlen($hex) !== 6 || !ctype_xdigit($hex)) {
+                return '51, 63, 73';
+            }
+            return hexdec(substr($hex, 0, 2)) . ', ' . hexdec(substr($hex, 2, 2)) . ', ' . hexdec(substr($hex, 4, 2));
+        };
+        $primary_theme_rgb = $hexToRgbTriplet($primary_colour);
     @endphp
 
     <style>
         * {
             --primary-theme-color: <?=$primary_colour ?>;
+            --primary-theme-color-rgb: <?=$primary_theme_rgb ?>;
             --background_opacity_color: <?=$background_opacity_color ?>;
             --secondary-theme-color: <?=$secondary_color ?>;
             --hover-color: <?=$hover_color ?>;

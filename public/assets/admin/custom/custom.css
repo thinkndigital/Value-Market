@@ -10,7 +10,7 @@
     --Gray-300: #c7c6c6;
     --Gray-200: #e3e2e2;
     --Gray-100: #ffffff;
-    --body-background: #f5f8f9;
+    --body-background: #f4f6f8;
     --Brand-Color-Border: #28252566 40%;
     --success-color: #34a853;
     --primary-color: #4285f4;
@@ -20,7 +20,29 @@
     --secondary-color: #475569;
     --warning-color: #f48900;
     --primary-opacity: 0.1;
-    --primary-color-opacity: rgba(var(--primary-theme-color), 0.1);
+
+    /* Brand (Value Market) tokens - sampled directly from the logo mark (charcoal ink + gold).
+       These are the fallback theme; x-admin.header overrides them per-store when a store has
+       picked its own colors in Store settings. */
+    --brand-ink: #333f49;
+    --brand-ink-dark: #20262c;
+    --brand-gold: #fcd804;
+    --brand-gold-dark: #c9a600;
+
+    --primary-theme-color: var(--brand-ink);
+    --primary-theme-color-rgb: 51, 63, 73;
+    --secondary-theme-color: #1b2128;
+    --hover-color: #4b5a67;
+    --active-color: var(--brand-ink-dark);
+    --background_opacity_color: #333f4912;
+    --primary-color-opacity: rgba(var(--primary-theme-color-rgb), 0.1);
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --shadow-sm: 0 1px 2px rgba(16, 24, 32, 0.06);
+    --shadow-md: 0 4px 16px rgba(16, 24, 32, 0.08);
+    --shadow-lg: 0 16px 40px rgba(16, 24, 32, 0.12);
 }
 
 /* -------------------------------------------------------------------------------------------
@@ -339,7 +361,7 @@ h6 {
 }
 
 #delivery_boy_profile {
-    background-color: #b52046 !important;
+    background-color: var(--primary-theme-color) !important;
     border-radius: 4px;
     height: 46px !important;
     padding: 8px;
@@ -2489,19 +2511,19 @@ select {
 }
 
 .store_total {
-    background: #4285f4;
+    background: var(--brand-ink);
 }
 
 .order_total {
-    background: #34a853;
+    background: var(--brand-gold-dark);
 }
 
 .products_total {
-    background: #f6ab38;
+    background: #5b6b7a;
 }
 
 .total_earnings {
-    background: #b52046;
+    background: var(--brand-ink-dark);
 }
 
 .view_all {
@@ -2567,8 +2589,8 @@ select {
 }
 
 .login_button {
-    background-color: #b52046 !important;
-    border-color: #b52046 !important;
+    background-color: var(--primary-theme-color) !important;
+    border-color: var(--primary-theme-color) !important;
     border-radius: 4px !important;
     box-shadow: none !important;
 }
@@ -2586,7 +2608,7 @@ select {
     align-items: center;
     gap: 4px;
     color: white;
-    background-color: #b52046;
+    background-color: var(--primary-theme-color);
 }
 
 /* -------------------------------------------------------------------------------------------
@@ -2771,8 +2793,8 @@ select {
 }
 
 .seller_register_button {
-    background-color: #b52046 !important;
-    border-color: #b52046 !important;
+    background-color: var(--primary-theme-color) !important;
+    border-color: var(--primary-theme-color) !important;
     border-radius: 4px !important;
     box-shadow: none !important;
 }
@@ -3431,4 +3453,126 @@ hr {
     display: block;
     clear: both;
     content: "";
+}
+
+/* -------------------------------------------------------------------------------------------
+                                    Modern Redesign (Value Market brand pass)
+   Layered on top of everything above instead of rewriting it: same component classes, same
+   theme-color variables the store customizer already drives, just a cleaner, more comfortable
+   surface (softer radii/shadows, brand-accented focus/hover states) tied to the logo's charcoal
+   ink + gold palette.
+------------------------------------------------------------------------------------------- */
+
+body {
+    background-color: var(--body-background) !important;
+}
+
+/* The base theme leaves h1-h6 on an unbranded default (a blue/indigo picked up from the
+   underlying Argon/Material template) wherever nothing more specific sets one - e.g. the login
+   page's "Admin Login" heading. Anchor them to the ink scale instead so headings read as part of
+   the same brand-colored UI. Low specificity, no !important, so any page that already colors its
+   own headings is unaffected. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: var(--Gray-900);
+}
+
+/* Cards: soften the boxy 4px corners, add a hairline border instead of nothing, and give any
+   card wrapped in a link (the dashboard stat tiles) a gentle hover-lift for feedback. */
+.card {
+    border: 1px solid #edf0f2 !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: var(--shadow-sm) !important;
+    transition: box-shadow .15s ease, transform .15s ease;
+}
+
+a>.card:hover {
+    box-shadow: var(--shadow-md) !important;
+    transform: translateY(-2px);
+}
+
+.total_box {
+    border-radius: var(--radius-md);
+}
+
+/* Sidebar: keep the existing structure/JS untouched, just give the active item and section
+   headings a gold accent so the brand's second color shows up as a deliberate highlight rather
+   than only living on buttons. */
+.sidebar-title i {
+    color: var(--brand-gold-dark);
+}
+
+.navbar-vertical .navbar-nav .nav-item .nav-link.active {
+    border-right: 3px solid var(--brand-gold) !important;
+    font-weight: 600;
+}
+
+.sidenav-header {
+    padding-bottom: 8px;
+}
+
+/* Header */
+#profileDropDown {
+    border-radius: var(--radius-md) !important;
+}
+
+/* Buttons: slightly rounder, a soft brand-tinted shadow instead of the flat none, and a subtle
+   hover feedback so primary actions feel responsive. */
+.btn {
+    transition: filter .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+
+.btn-primary,
+.btn-primary:hover,
+.btn-primary:active,
+.btn-primary:focus {
+    border-radius: var(--radius-sm) !important;
+    box-shadow: 0 2px 8px rgba(var(--primary-theme-color-rgb), 0.22) !important;
+}
+
+.btn-primary:hover {
+    filter: brightness(1.12);
+}
+
+.login_button:hover,
+.seller_register_button:hover {
+    filter: brightness(1.12);
+}
+
+/* Forms: rounder inputs and a real focus ring (was `box-shadow: none`) in the brand color, so
+   keyboard/mouse focus is visible and feels intentional rather than accidental. */
+.form-control,
+.form-select {
+    border-radius: var(--radius-sm) !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary-theme-color) !important;
+    box-shadow: 0 0 0 3px var(--primary-color-opacity) !important;
+}
+
+.select2-container .select2-selection--single {
+    border-radius: var(--radius-sm) !important;
+}
+
+/* Tables: a light header band and a real hover state (feeds Bootstrap 5's own
+   --bs-table-accent-bg, which the existing inset box-shadow rule above already renders). */
+.table thead th {
+    background-color: #f7f8fa;
+    border-bottom: 1px solid #edf0f2 !important;
+}
+
+.table-hover>tbody>tr:hover {
+    --bs-table-accent-bg: var(--background_opacity_color);
+}
+
+/* Login screen */
+.card:has(.login-img-box) {
+    border-radius: var(--radius-lg) !important;
+    box-shadow: var(--shadow-lg) !important;
 }
