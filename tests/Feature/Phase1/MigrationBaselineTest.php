@@ -36,8 +36,9 @@ class MigrationBaselineTest extends TestCase
         // Plus 3 more from Phase 9 (docs/PHASE_9_ACCOUNTING_LEDGER.md): `chart_of_accounts`,
         // `journal_entries`, `journal_lines`. Plus 5 more from Phase 10
         // (docs/PHASE_10_PARTNERS_ASSETS_LIABILITIES.md): `partners`, `partner_transactions`, `assets`,
-        // `depreciation_schedules`, `liabilities`.
-        $this->assertSame(117, (int) $tables);
+        // `depreciation_schedules`, `liabilities`. Plus 4 more from Phase 11 (docs/PHASE_11_CRM.md):
+        // `customer_notes`, `customer_tags`, `customer_tag_assignments`, `customer_segments`.
+        $this->assertSame(121, (int) $tables);
     }
 
     /** @dataProvider myisamTables */

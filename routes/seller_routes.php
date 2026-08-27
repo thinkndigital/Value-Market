@@ -3,6 +3,7 @@
 use App\Http\Controllers\Seller\AiController;
 use App\Http\Controllers\Seller\BranchController;
 use App\Http\Controllers\Seller\EmployeeController;
+use App\Http\Controllers\Seller\CrmController;
 use App\Http\Controllers\Seller\PosShiftController;
 use App\Http\Controllers\Seller\PurchaseOrderController;
 use App\Http\Controllers\Seller\SupplierController;
@@ -449,6 +450,12 @@ Route::group(
         Route::get('seller/pos_shifts', [PosShiftController::class, 'list'])->name('seller.pos_shifts.list');
         Route::post('seller/pos_shifts/open', [PosShiftController::class, 'open'])->middleware(['demo_restriction'])->name('seller.pos_shifts.open');
         Route::post('seller/pos_shifts/{id}/close', [PosShiftController::class, 'close'])->middleware(['demo_restriction'])->name('seller.pos_shifts.close');
+
+        // Phase 11 (docs/PHASE_11_CRM.md): a seller's private CRM view of their own customers.
+        Route::post('seller/crm/notes', [CrmController::class, 'addNote'])->middleware(['demo_restriction'])->name('seller.crm.notes.store');
+        Route::get('seller/crm/customers/{customerUserId}/notes', [CrmController::class, 'listNotes'])->name('seller.crm.notes.list');
+        Route::post('seller/crm/tags', [CrmController::class, 'tagCustomer'])->middleware(['demo_restriction'])->name('seller.crm.tags.store');
+        Route::get('seller/crm/customers/{customerUserId}/lifetime_value', [CrmController::class, 'customerLifetimeValue'])->name('seller.crm.customers.lifetime_value');
     }
 
 
