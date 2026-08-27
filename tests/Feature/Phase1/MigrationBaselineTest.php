@@ -34,8 +34,10 @@ class MigrationBaselineTest extends TestCase
         // (docs/PHASE_7_AFFILIATE_ENGINE.md): `affiliate_links`, `link_clicks`, `commission_rules`,
         // `referral_conversions`. Plus 1 more from Phase 8 (docs/PHASE_8_DELIVERY.md): `delivery_earnings`.
         // Plus 3 more from Phase 9 (docs/PHASE_9_ACCOUNTING_LEDGER.md): `chart_of_accounts`,
-        // `journal_entries`, `journal_lines`.
-        $this->assertSame(112, (int) $tables);
+        // `journal_entries`, `journal_lines`. Plus 5 more from Phase 10
+        // (docs/PHASE_10_PARTNERS_ASSETS_LIABILITIES.md): `partners`, `partner_transactions`, `assets`,
+        // `depreciation_schedules`, `liabilities`.
+        $this->assertSame(117, (int) $tables);
     }
 
     /** @dataProvider myisamTables */
