@@ -1336,6 +1336,17 @@ Defined Methods:-
                 'data' => [],
             ]);
         }
+
+        $delivery_boy_id = Auth::id();
+        if (!OrderItems::where('id', $order_item_id)->where('delivery_boy_id', $delivery_boy_id)->exists()) {
+            return response()->json([
+                'error' => true,
+                'message' =>
+                labels('admin_labels.something_went_wrong', 'Something went wrong'),
+                'data' => [],
+            ]);
+        }
+
         $current_status = fetchDetails(OrderItems::class, ['id' => $order_item_id], 'status');
         $current_status = isset($current_status) && !empty($current_status) ? $current_status[0]->status : "";
         $current_status = json_decode($current_status, true);

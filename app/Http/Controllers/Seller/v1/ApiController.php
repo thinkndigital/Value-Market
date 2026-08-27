@@ -34,6 +34,7 @@ use App\Models\OrderBankTransfers;
 use App\Models\OrderItems;
 use App\Models\OrderTracking;
 use App\Models\Parcel;
+use App\Models\Parcelitem as ParcelItem;
 use App\Models\Product;
 use App\Models\Product_attributes;
 use App\Models\Product_variants;
@@ -1687,6 +1688,16 @@ class ApiController extends Controller
             return $response;
         } else {
             $product_id = $request->input('product_id', 25);
+
+            $seller_id = Seller::where('user_id', Auth::id())->value('id');
+            if (!Product::where('id', $product_id)->where('seller_id', $seller_id)->exists()) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Something Went Wrong',
+                    'language_message_key' => 'something_went_wrong',
+                ]);
+            }
+
             if (deleteDetails(['product_id' => $product_id], Product_variants::class)) {
 
                 deleteDetails(['id' => $product_id], Product::class);
@@ -2179,7 +2190,7 @@ class ApiController extends Controller
                 $response['language_message_key'] = 'seller_does_not_have_permission_to_update_status';
                 return response()->json($response);
             } else {
-                if (updateDetails(['status' => $status], ['id' => $product_id], Product::class)) {
+                if (updateDetails(['status' => $status], ['id' => $product_id, 'seller_id' => $seller_id], Product::class)) {
                     $response['error'] = false;
                     $response['message'] = "Status Updated Successfully";
                     $response['language_message_key'] = 'status_updated_successfully';
@@ -3099,6 +3110,17 @@ class ApiController extends Controller
             return $response;
         } else {
             $order_id = $request['order_id'];
+
+            $seller_id = Seller::where('user_id', Auth::id())->value('id');
+            if (!OrderItems::where('order_id', $order_id)->where('seller_id', $seller_id)->exists()) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Something went wrong',
+                    'language_message_key' => 'something_went_wrong',
+                    'data' => array(),
+                ]);
+            }
+
             deleteDetails(['id' => $order_id], Order::class);
             deleteDetails(['order_id' => $order_id], OrderItems::class);
 
@@ -3680,6 +3702,16 @@ class ApiController extends Controller
         if ($response = $this->HandlesValidation($request, $rules, [], null, true)) {
             return $response;
         } else {
+            $seller_id = Seller::where('user_id', Auth::id())->value('id');
+            if (!ComboProduct::where('id', $request->input('product_id'))->where('seller_id', $seller_id)->exists()) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Something went wrong',
+                    'language_message_key' => 'something_went_wrong',
+                    'data' => null,
+                ]);
+            }
+
             $product_data = deleteDetails(['id' => $request->input('product_id')], ComboProduct::class);
 
             if (!empty($product_data)) {
@@ -4627,7 +4659,19 @@ class ApiController extends Controller
         $seller_id = Seller::where('user_id', $user_id)->value('id');
 
         $parcel_id = $request->id ?? "";
-        // dd($parcel_id);
+
+        $parcel_items = fetchDetails(ParcelItem::class, ['parcel_id' => $parcel_id]);
+        $ownsAnItemInParcel = $seller_id !== null && OrderItems::whereIn('id', $parcel_items->pluck('order_item_id'))
+            ->where('seller_id', $seller_id)
+            ->exists();
+
+        if (!$ownsAnItemInParcel) {
+            return response()->json([
+                'error' => true,
+                'message' => 'parcel Not Found',
+            ]);
+        }
+
         $res = app(ParcelService::class)->deleteParcel($parcel_id);
         return response()->json([
             'error' => $res['error'],
@@ -4757,7 +4801,8 @@ class ApiController extends Controller
 
         $product_ids = explode(',', $request->product_id);
 
-        $valid_products = Product::whereIn('id', $product_ids)->pluck('id')->toArray();
+        $seller_id = Seller::where('user_id', Auth::id())->value('id');
+        $valid_products = Product::whereIn('id', $product_ids)->where('seller_id', $seller_id)->pluck('id')->toArray();
         if (count($valid_products) !== count($product_ids)) {
             return response()->json([
                 'error' => true,
@@ -4769,7 +4814,7 @@ class ApiController extends Controller
         $deliverable_zones = ($request->deliverable_type == '1' || $request->deliverable_type == '0') ? '' : $zones;
 
         // Bulk update
-        Product::whereIn('id', $product_ids)->update([
+        Product::whereIn('id', $product_ids)->where('seller_id', $seller_id)->update([
             'deliverable_type' => $request->deliverable_type,
             'deliverable_zones' => $deliverable_zones,
         ]);
@@ -4790,7 +4835,8 @@ class ApiController extends Controller
         }
         $product_ids = explode(',', $request->product_id);
 
-        $valid_products = ComboProduct::whereIn('id', $product_ids)->pluck('id')->toArray();
+        $seller_id = Seller::where('user_id', Auth::id())->value('id');
+        $valid_products = ComboProduct::whereIn('id', $product_ids)->where('seller_id', $seller_id)->pluck('id')->toArray();
         if (count($valid_products) !== count($product_ids)) {
             return response()->json([
                 'error' => true,
@@ -4802,7 +4848,7 @@ class ApiController extends Controller
         $deliverable_zones = ($request->deliverable_type == '1' || $request->deliverable_type == '0') ? '' : $zones;
 
         // Bulk update
-        ComboProduct::whereIn('id', $product_ids)->update([
+        ComboProduct::whereIn('id', $product_ids)->where('seller_id', $seller_id)->update([
             'deliverable_type' => $request->deliverable_type,
             'deliverable_zones' => $deliverable_zones,
         ]);
