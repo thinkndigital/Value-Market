@@ -33,4 +33,12 @@ return [
     // pass it as ?cron_secret=... in whatever hits these URLs on a schedule (cPanel cron job, external
     // scheduler). Empty/unset fails closed (VerifyCronSecret middleware blocks with 403), not open.
     'CRON_SECRET' => env('CRON_SECRET'),
+
+    // Disables CheckPurchaseCode (app/Http/Middleware/CheckPurchaseCode.php), which otherwise gates every
+    // admin/seller/delivery-boy route behind a purchase code verified against the original eShop Plus
+    // vendor's (WrTeam) external license server. Value Market is its own product built on that codebase,
+    // not a WrTeam licensee, so that check doesn't apply here. Off by default; set
+    // PURCHASE_CODE_CHECK_ENABLED=true in .env if/when Value Market wires up its own licensing provider
+    // (for its own future customers) in SettingController::systemRegister()/WebsystemRegister().
+    'PURCHASE_CODE_CHECK_ENABLED' => env('PURCHASE_CODE_CHECK_ENABLED', false),
 ];

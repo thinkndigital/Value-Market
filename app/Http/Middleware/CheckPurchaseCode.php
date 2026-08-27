@@ -16,6 +16,13 @@ class CheckPurchaseCode
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Disabled: Value Market is its own product now, not a WrTeam licensee - see the
+        // PURCHASE_CODE_CHECK_ENABLED comment in config/constants.php for why and how to turn it
+        // back on once Value Market has its own licensing provider for its own customers.
+        if (!config('constants.PURCHASE_CODE_CHECK_ENABLED')) {
+            return $next($request);
+        }
+
         $doctor_brown = Setting::where('variable', 'doctor_brown')->first();
         $web_doctor_brown = Setting::where('variable', 'web_doctor_brown')->first();
 
