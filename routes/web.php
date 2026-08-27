@@ -196,8 +196,13 @@ Route::middleware(['CheckInstallation'])->group(function () {
 // with `web` as its only middleware. Confirmed: any unauthenticated visitor could fetch any order's
 // invoice PDF (customer name, address, mobile number, items, pricing) by guessing an order id. Removed
 // here; the correctly-gated declaration in admin_routes.php:541 is now the only registration.
-Route::get('/admin/stores', [StoreController::class, 'index'])->name('admin.stores.index');
-Route::post('admin/store', [StoreController::class, 'store'])->middleware(['demo_restriction'])->middleware('permissions:create store')->name('admin.stores.store');
+// admin.stores.index / admin.stores.store: previously duplicated here unguarded (same
+// RouteCollection-keyed-by-method+URI shadowing as the invoice-PDF bug noted above) over the properly
+// `auth`+`role:super_admin,admin,editor`-gated `Route::resource("admin/store", ...)` declaration in
+// admin_routes.php, which was commented out - confirmed via a real deploy: any visitor (including an
+// unauthenticated one) hitting `/admin/stores` reached this route, whose view (via x-admin.header /
+// x-admin.side-bar) assumes an authenticated admin session and fatal-errors without one. Removed here;
+// admin_routes.php's declarations (now uncommented) are the only registration.
 // admin.system_registration / admin.system_register: previously duplicated here unguarded (same
 // RouteCollection-keyed-by-method+URI shadowing as the invoice-PDF bug noted above) over the properly
 // `auth`+`role:super_admin,admin,editor`-gated declarations in admin_routes.php, which were commented out

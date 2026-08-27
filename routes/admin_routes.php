@@ -882,12 +882,12 @@ Route::group(
 
         Route::get('admin/customers/{id}', [UserController::class, 'destroy'])->name('customers.destroy')->middleware(['demo_restriction'])->middleware('permissions:delete customers');
 
-        // Route::resource("admin/store", StoreController::class)->names([
-        //     'index' => 'admin.stores.index',
-        // ])->except('show');
-    
-        // Route::post('admin/store', [StoreController::class, 'store'])->middleware(['demo_restriction'])->middleware('permissions:create store')->name('admin.stores.store');
-    
+        Route::resource("admin/store", StoreController::class)->names([
+            'index' => 'admin.stores.index',
+        ])->except('show');
+
+        Route::post('admin/store', [StoreController::class, 'store'])->middleware(['demo_restriction'])->middleware('permissions:create store')->name('admin.stores.store');
+
         Route::get('admin/stores/list', [StoreController::class, 'list'])->name('admin.stores.list');
 
         Route::get('admin/stores/manage_store', [StoreController::class, 'manage_store'])->name('admin.stores.manage_store');
