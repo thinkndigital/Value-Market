@@ -60,7 +60,11 @@ class OrderController extends Controller
         $order = 'DESC';
         $delivery_boy_id = auth::id();
 
-        $parcel_details = app(ParcelService::class)->viewAllParcels('', $parcel_id, '', $offset, $limit, $order, 1, '', '', $store_id);
+        // Phase 2 (Task 17, delivery-boy isolation): $delivery_boy_id was computed but never actually
+        // passed into viewAllParcels() (its 8th parameter) - any delivery boy could view any other
+        // delivery boy's assigned parcel (customer name/address/order items) by guessing a parcel_id.
+        // viewAllParcels() already conditionally scopes by delivery_boy_id internally when given one.
+        $parcel_details = app(ParcelService::class)->viewAllParcels('', $parcel_id, '', $offset, $limit, $order, 1, $delivery_boy_id, '', $store_id);
 
         // dd($parcel_details);
         if (isset($parcel_details->original) && empty($parcel_details->original['data'])) {
