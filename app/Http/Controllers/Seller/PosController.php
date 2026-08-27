@@ -538,6 +538,10 @@ class PosController extends Controller
                 'promo_code_id' => (isset($place_order_data['promo_code_id'])) ? $place_order_data['promo_code_id'] : ' ',
                 'email' => isset($place_order_data['email']) ? $place_order_data['email'] : ' ',
                 'is_pos_order' => isset($place_order_data['is_pos_order']) ? $place_order_data['is_pos_order'] : 0,
+                // Phase 3 (docs/PHASE_3_COMMERCE_CORE.md): this method builds and inserts its own
+                // $order_data independently of OrderService::placeOrder() (which also sets channel, for the
+                // storefront checkout path) - this whole method is the POS flow, so it's unconditionally POS.
+                'channel' => Order::CHANNEL_POS,
                 'is_shiprocket_order' => isset($place_order_data['delivery_type']) && !empty($place_order_data['delivery_type']) && $place_order_data['delivery_type'] == 'standard_shipping' ? 1 : 0,
                 'order_payment_currency_id' => $order_payment_currency_data[0]->id ?? '',
                 'order_payment_currency_code' => $place_order_data['order_payment_currency_code'] ?? "",
@@ -825,6 +829,7 @@ class PosController extends Controller
             'store_id' => $store_id,
             'payment_method' => $payment_method != '' ? $payment_method : $payment_method_name,
             'is_pos_order' => 1,
+            'channel' => Order::CHANNEL_POS,
             'order_payment_currency_code' => $currency,
             'order_payment_currency_id' => $order_payment_currency_data[0]->id ?? '',
             'order_payment_currency_conversion_rate' => $order_payment_currency_data[0]->exchange_rate,

@@ -355,6 +355,11 @@ class OrderService
                 'promo_code_id' => (isset($data['promo_code_id'])) ? $data['promo_code_id'] : ' ',
                 'email' => isset($data['email']) ? $data['email'] : ' ',
                 'is_pos_order' => isset($data['is_pos_order']) ? $data['is_pos_order'] : 0,
+                // Phase 3 (docs/PHASE_3_COMMERCE_CORE.md): the order-origin discriminator, derived from the
+                // same flag already passed in - single source of truth, no new parameter needed at either
+                // call site (Seller\PosController or the storefront checkout). is_pos_order itself is
+                // unchanged; channel is an additive, richer parallel concept.
+                'channel' => !empty($data['is_pos_order']) ? Order::CHANNEL_POS : Order::CHANNEL_MARKETPLACE,
                 'is_shiprocket_order' => isset($data['delivery_type']) && !empty($data['delivery_type']) && $data['delivery_type'] == 'standard_shipping' ? 1 : 0,
                 'order_payment_currency_id' => !$order_payment_currency_data->isEmpty() ? $order_payment_currency_data[0]->id : '',
                 'order_payment_currency_code' => $data['order_payment_currency_code'] ?? "",
@@ -1427,7 +1432,7 @@ class OrderService
         return $order_data;
     }
 
-    public function validateOrderStatus($order_ids, $status, $table = 'order_items', $user_id = null, $fromuser = false, $parcel_type = '')
+    public function validateOrderStatus($order_ids, $status, $table = 'order_items', $user_id = null, $fromuser = false, $parcel_type = '', $return_reason = null, $return_quantity = null)
     {
         $error = 0;
         $cancelable_till = '';
@@ -1492,7 +1497,7 @@ class OrderService
             }
 
             $query = DB::table('order_items as oi')
-                ->select('oi.id as order_item_id', 'oi.user_id', 'oi.product_variant_id', 'oi.order_id');
+                ->select('oi.id as order_item_id', 'oi.user_id', 'oi.product_variant_id', 'oi.order_id', 'oi.quantity');
 
             if ($parcel_type === 'combo_order') {
                 $query->leftJoin('combo_products as cp', 'cp.id', '=', 'oi.product_variant_id')
@@ -1691,6 +1696,15 @@ class OrderService
 
                     if ($fromuser == true || $fromuser == 1) {
 
+                        // Phase 3 (docs/PHASE_3_COMMERCE_CORE.md): a customer can now request a return for
+                        // part of an item's ordered quantity rather than always the whole line item - reject
+                        // a request for more than what was actually ordered.
+                        if ($return_quantity !== null && (!is_numeric($return_quantity) || $return_quantity <= 0 || $return_quantity > (int) $productData[$i]->quantity)) {
+                            $response['error'] = true;
+                            $response['message'] = 'Return quantity must be between 1 and the ordered quantity (' . (int) $productData[$i]->quantity . ').';
+                            $response['data'] = array();
+                            return $response;
+                        }
 
                         if ($table == 'order_items') {
 
@@ -1703,7 +1717,7 @@ class OrderService
                                 return $response;
                             }
                             $request_data_item_data = $productData[$i];
-                            $this->setUserReturnRequest($request_data_item_data, $table);
+                            $this->setUserReturnRequest($request_data_item_data, $table, $return_reason, $return_quantity);
                         } else {
                             for ($j = 0; $j < count($productData); $j++) {
                                 if (isExist(['user_id' => $productData[$i]->user_id, 'order_item_id' => $productData[$i]->order_item_id, 'order_id' => $productData[$i]->order_id], ReturnRequest::class)) {
@@ -1716,7 +1730,7 @@ class OrderService
                                 }
                             }
                             $request_data_overall_item_data = $productData[$i];
-                            $this->setUserReturnRequest($request_data_overall_item_data, $table);
+                            $this->setUserReturnRequest($request_data_overall_item_data, $table, $return_reason, $return_quantity);
                         }
                     }
 
@@ -1740,10 +1754,10 @@ class OrderService
         }
     }
 
-    public function update_order_item($id, $status, $return_request = 0, $fromapp = false)
+    public function update_order_item($id, $status, $return_request = 0, $fromapp = false, $return_reason = null, $return_quantity = null)
     {
         if ($return_request == 0) {
-            $res = $this->validateOrderStatus($id, $status, 'order_items', '', true);
+            $res = $this->validateOrderStatus($id, $status, 'order_items', '', true, '', $return_reason, $return_quantity);
 
             if ($res['error']) {
                 $response['error'] = (isset($res['return_request_flag'])) ? false : true;
@@ -2566,7 +2580,7 @@ class OrderService
         ReturnRequest::where('order_item_id', $order_item_id)->update($return_status);
         return $update_data;
     }
-    public function setUserReturnRequest($data, $table = 'orders')
+    public function setUserReturnRequest($data, $table = 'orders', $reason = null, $quantity = null)
     {
 
         if ($table == 'orders') {
@@ -2576,7 +2590,13 @@ class OrderService
                     'product_id' => $row['product_id'],
                     'product_variant_id' => $row['product_variant_id'],
                     'order_id' => $row['order_id'],
-                    'order_item_id' => $row['order_item_id']
+                    'order_item_id' => $row['order_item_id'],
+                    'reason' => $reason,
+                    // Phase 3 (docs/PHASE_3_COMMERCE_CORE.md): a customer can now request a return for less
+                    // than the full ordered quantity. Falls back to the order item's own quantity (still a
+                    // whole-item return) when the caller doesn't provide one, matching the pre-existing
+                    // behavior for older app clients that don't send this.
+                    'quantity' => $quantity ?? ($row['quantity'] ?? null),
                 ];
                 ReturnRequest::create($requestData);
             }
@@ -2586,7 +2606,9 @@ class OrderService
                 'product_id' => $data->product_id,
                 'product_variant_id' => $data->product_variant_id,
                 'order_id' => $data->order_id,
-                'order_item_id' => $data->order_item_id
+                'order_item_id' => $data->order_item_id,
+                'reason' => $reason,
+                'quantity' => $quantity ?? ($data->quantity ?? null),
             ];
             ReturnRequest::create($requestData);
         }

@@ -18,9 +18,8 @@ use App\Traits\HandlesValidation;
 use App\Services\TranslationService;
 use App\Services\SettingService;
 use App\Services\CurrencyService;
-use App\Services\ProductService;
 use App\Services\FirebaseNotificationService;
-use App\Services\OrderService;
+use App\Services\ReturnRequestService;
 class ReturnRequestController extends Controller
 {
     use HandlesValidation;
@@ -145,52 +144,29 @@ class ReturnRequestController extends Controller
         $returnRequestId = $request['return_request_id'];
         $item_id = $request['order_item_id'];
 
-        // Find the record by its ID
-        $returnRequest = ReturnRequest::find($returnRequestId);
+        // Phase 3 (docs/PHASE_3_COMMERCE_CORE.md): this used to be ReturnRequest::find($returnRequestId)
+        // with no check the request belongs to the logged-in seller - list() above is correctly scoped to
+        // the seller's own orderItem.seller_id, but this mutation endpoint wasn't, so any seller could
+        // transition another seller's return request by guessing its id. Scoped the same way list() is; a
+        // non-owned (or nonexistent) id now falls through the `if ($returnRequest)` below to an explicit
+        // "not found" response instead of the previous silent false-success.
+        $user = Auth::user();
+        $seller_id = Seller::where('user_id', $user->id)->value('id');
+        $returnRequest = ReturnRequest::whereHas('orderItem', function ($q) use ($seller_id) {
+            $q->where('seller_id', $seller_id);
+        })->find($returnRequestId);
 
         if ($returnRequest) {
 
-            if ($returnRequest->status == 3 && $request['status'] == 3) {
+            $guardError = app(ReturnRequestService::class)->guardTransition($returnRequest, (int) $status);
+            if ($guardError !== null) {
                 return response()->json([
                     'error' => true,
-                    'error_message' => 'This Item Is Already Returned!'
+                    'error_message' => $guardError,
                 ]);
             }
-            if ($returnRequest->status == 1 && $request['status'] == 1) {
-                return response()->json([
-                    'error' => true,
-                    'error_message' => 'This Item Is Already Approved!'
-                ]);
-            }
-            if ($returnRequest->status == 2 && $request['status'] == 2) {
-                return response()->json([
-                    'error' => true,
-                    'error_message' => 'This Item Is Already Rejected!'
-                ]);
-            }
-            if ($returnRequest->status == 2 && $request['status'] == 1) {
-                return response()->json([
-                    'error' => true,
-                    'error_message' => 'You can not approve rejected return request!'
-                ]);
-            }
-            if ($returnRequest->status == 2 && $request['status'] == 0) {
-                return response()->json([
-                    'error' => true,
-                    'error_message' => 'You cannot change the status of a rejected return request back to pending!'
-                ]);
-            }
-            if ($returnRequest->status == 1 && $request['status'] == 0) {
-                return response()->json([
-                    'error' => true,
-                    'error_message' => 'You cannot change the status of a approved return request back to pending!'
-                ]);
-            }
-            $returnRequest->status = $status;
-            $returnRequest->remarks = $remarks;
-            // dd($returnRequest);
-            $returnRequest->save();
-            // dd('here');
+
+            app(ReturnRequestService::class)->applyTransition($returnRequest, (int) $status, $remarks, $request['deliver_by'] ?? null);
             $data = fetchDetails(OrderItems::class, ['id' => $request['order_item_id']], ['product_variant_id', 'quantity', 'user_id']);
             $order_item_res = fetchDetails(OrderItems::class, ['id' => $item_id], ['order_id', 'store_id']);
             $customer_id = $data[0]->user_id;
@@ -201,10 +177,6 @@ class ReturnRequestController extends Controller
             $fcm_ids = array();
 
             if ($request['status'] == '3') {
-                app(OrderService::class)->process_refund($item_id, 'returned');
-                app(ProductService::class)->updateStock($data[0]->product_variant_id, $data[0]->quantity, 'plus');
-                app(OrderService::class)->update_order_item($item_id, 'returned', 1);
-
                 $custom_notification = fetchDetails(CustomMessage::class, ['type' => "customer_order_returned"], '*');
                 $customer_res[0]->username = isset($customer_res[0]->username) ? $customer_res[0]->username : '';
                 $hashtag_customer_name = '< customer_name >';
@@ -247,8 +219,6 @@ class ReturnRequestController extends Controller
             } elseif ($request['status'] == '1') {
                 $store_id = fetchDetails(OrderItems::class, ['id' => $item_id], 'store_id');
                 $store_id = isset($store_id) && !empty($store_id) ? $store_id[0]->store_id : "";
-                updateDetails(['delivery_boy_id' => $request['deliver_by']], ['id' => $item_id], OrderItems::class);
-                app(OrderService::class)->update_order_item($item_id, 'return_request_approved', 1);
 
                 //for delivery boy notification
                 $user_id = $request['deliver_by'];
@@ -328,7 +298,6 @@ class ReturnRequestController extends Controller
                 $store_id = fetchDetails(OrderItems::class, ['id' => $item_id], 'store_id');
 
                 $store_id = isset($store_id) && !empty($store_id) ? $store_id[0]->store_id : "";
-                app(OrderService::class)->update_order_item($item_id, 'return_request_decline', 1);
                 //custom message
                 $custom_notification = fetchDetails(CustomMessage::class, ['type' => "customer_order_returned_request_decline"], '*');
                 $customer_res[0]->username = isset($customer_res[0]->username) ? $customer_res[0]->username : '';
@@ -369,6 +338,11 @@ class ReturnRequestController extends Controller
                 $registrationIDs_chunks = array_chunk($fcm_ids, 1000);
                 app(FirebaseNotificationService::class)->sendNotification('', $registrationIDs_chunks, $fcmMsg);
             }
+        } else {
+            return response()->json([
+                'error' => true,
+                'error_message' => labels('seller.data_not_found', 'Data Not Found'),
+            ]);
         }
         $response['error'] = false;
         $response['message'] =

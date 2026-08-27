@@ -3727,12 +3727,20 @@ Defined Methods:-
         $rules = [
             'status' => 'required',
             'order_item_id' => 'required|numeric|exists:order_items,id',
+            // Phase 3 (docs/PHASE_3_COMMERCE_CORE.md): both optional and only meaningful when status is
+            // "returned" - a customer can now say why they're returning an item, and how many units (rather
+            // than always the whole ordered quantity). Older app clients that don't send these keep working
+            // unchanged; OrderService::setUserReturnRequest() defaults quantity to the full ordered amount.
+            'reason' => 'sometimes|nullable|string|max:512',
+            'quantity' => 'sometimes|nullable|numeric|min:1',
         ];
         if ($response = $this->HandlesValidation($request, $rules, [], null, true)) {
             return $response;
         } else {
             $status = request('status', 25);
             $order_item_id = request('order_item_id', 0);
+            $return_reason = $request->filled('reason') ? $request->input('reason') : null;
+            $return_quantity = $request->filled('quantity') ? (int) $request->input('quantity') : null;
 
             // Phase 2 (docs/PHASE_2_IDOR_AUDIT.md, Task 11): confirmed IDOR - order_item_id was never
             // checked against the authenticated customer before mutating its status (with downstream
@@ -3764,7 +3772,7 @@ Defined Methods:-
             }
 
             if ($status == 'returned') {
-                $response = app(OrderService::class)->update_order_item($order_item_id, $status, 0, true);
+                $response = app(OrderService::class)->update_order_item($order_item_id, $status, 0, true, $return_reason, $return_quantity);
                 $order_id = fetchDetails(OrderItems::class, ['id' => $order_item_id], 'order_id');
                 $order_id = isset($order_id) && !empty($order_id) ? $order_id[0]->order_id : "";
                 $order_details = app(OrderService::class)->fetchOrders($order_id);

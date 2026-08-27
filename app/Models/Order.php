@@ -10,6 +10,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Order extends Model
 {
     use HasApiTokens, HasFactory, Notifiable;
+
+    // Phase 3 (docs/PHASE_3_COMMERCE_CORE.md): the order-origin discriminator. CHANNEL_AFFILIATE is defined
+    // now so Phase 7 (Affiliate/Reseller Engine, net-new) doesn't need another migration just to widen this
+    // column - no code path sets it yet, since no affiliate order-placement flow exists in this codebase.
+    const CHANNEL_MARKETPLACE = 'marketplace';
+    const CHANNEL_POS = 'pos';
+    const CHANNEL_AFFILIATE = 'affiliate';
+
     public function orderItems()
     {
         return $this->hasMany(OrderItems::class);

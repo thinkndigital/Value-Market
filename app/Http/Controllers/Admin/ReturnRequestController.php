@@ -15,10 +15,9 @@ use App\Services\TranslationService;
 use Illuminate\Http\Request;
 use App\Traits\HandlesValidation;
 use App\Services\FirebaseNotificationService;
-use App\Services\ProductService;
 use App\Services\SettingService;
 use App\Services\CurrencyService;
-use App\Services\OrderService;
+use App\Services\ReturnRequestService;
 
 class ReturnRequestController extends Controller
 {
@@ -136,34 +135,15 @@ class ReturnRequestController extends Controller
 
             if ($returnRequest) {
 
+                $guardError = app(ReturnRequestService::class)->guardTransition($returnRequest, (int) $status);
+                if ($guardError !== null) {
+                    return response()->json([
+                        'error' => true,
+                        'error_message' => $guardError,
+                    ]);
+                }
 
-                if ($returnRequest->status == 3 && $request['status'] == 3) {
-                    return response()->json([
-                        'error' => true,
-                        'error_message' => 'This Item Is Already Returned!'
-                    ]);
-                }
-                if ($returnRequest->status == 1 && $request['status'] == 1) {
-                    return response()->json([
-                        'error' => true,
-                        'error_message' => 'This Item Is Already Approved!'
-                    ]);
-                }
-                if ($returnRequest->status == 2 && $request['status'] == 2) {
-                    return response()->json([
-                        'error' => true,
-                        'error_message' => 'This Item Is Already Rejected!'
-                    ]);
-                }
-                if ($returnRequest->status == 2 && $request['status'] == 1) {
-                    return response()->json([
-                        'error' => true,
-                        'error_message' => 'You can not approve rejected return request!'
-                    ]);
-                }
-                $returnRequest->status = $status;
-                $returnRequest->remarks = $remarks;
-                $returnRequest->save();
+                app(ReturnRequestService::class)->applyTransition($returnRequest, (int) $status, $remarks, $request['deliver_by'] ?? null);
                 $data = fetchDetails(OrderItems::class, ['id' => $request['order_item_id']], ['product_variant_id', 'quantity', 'user_id']);
                 $order_item_res = fetchDetails(OrderItems::class, ['id' => $item_id], ['order_id', 'store_id']);
                 $customer_id = $data[0]->user_id;
@@ -174,10 +154,6 @@ class ReturnRequestController extends Controller
                 $fcm_ids = array();
 
                 if ($request['status'] == '3') {
-                    app(OrderService::class)->process_refund($item_id, 'returned');
-                    app(ProductService::class)->updateStock($data[0]->product_variant_id, $data[0]->quantity, 'plus');
-                    app(OrderService::class)->update_order_item($item_id, 'returned', 1);
-
                     $custom_notification = fetchDetails(CustomMessage::class, ['type' => "customer_order_returned"], '*');
                     $customer_res[0]->username = isset($customer_res[0]->username) ? $customer_res[0]->username : '';
                     $hashtag_customer_name = '< customer_name >';
@@ -220,8 +196,6 @@ class ReturnRequestController extends Controller
                 } elseif ($request['status'] == '1') {
                     $store_id = fetchDetails(OrderItems::class, ['id' => $item_id], 'store_id');
                     $store_id = isset($store_id) && !empty($store_id) ? $store_id[0]->store_id : "";
-                    updateDetails(['delivery_boy_id' => $request['deliver_by']], ['id' => $item_id], OrderItems::class);
-                    app(OrderService::class)->update_order_item($item_id, 'return_request_approved', 1);
 
                     //for delivery boy notification
                     $user_id = $request['deliver_by'];
@@ -301,7 +275,6 @@ class ReturnRequestController extends Controller
                     $store_id = fetchDetails(OrderItems::class, ['id' => $item_id], 'store_id');
 
                     $store_id = isset($store_id) && !empty($store_id) ? $store_id[0]->store_id : "";
-                    app(OrderService::class)->update_order_item($item_id, 'return_request_decline', 1);
                     //custom message
                     $custom_notification = fetchDetails(CustomMessage::class, ['type' => "customer_order_returned_request_decline"], '*');
                     $customer_res[0]->username = isset($customer_res[0]->username) ? $customer_res[0]->username : '';
