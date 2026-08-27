@@ -115,11 +115,13 @@ class WalletService
 
                 $payment_data = Transaction::where('order_item_id', $order_item_id)->pluck('type')->first();
 
+                $balanceActuallyChanged = false;
                 if ($operation == 'debit') {
                     $data['message'] = $message ?: 'Balance Debited';
                     $data['type'] = 'debit';
                     $data['status'] = 'success';
                     $user->balance -= $amount;
+                    $balanceActuallyChanged = true;
                 } else if ($operation == 'credit') {
                     $data['message'] = $message ?? 'Balance Credited';
                     $data['type'] = 'credit';
@@ -127,6 +129,7 @@ class WalletService
                     $data['order_id'] = $order_item_id;
                     if ($payment_data != 'razorpay') {
                         $user->balance += $amount;
+                        $balanceActuallyChanged = true;
                     }
                 } else {
                     $data['message'] = $message ?: 'Balance refunded';
@@ -135,10 +138,36 @@ class WalletService
                     $data['order_id'] = $order_item_id;
                     if ($payment_data != 'razorpay') {
                         $user->balance += $amount;
+                        $balanceActuallyChanged = true;
                     }
                 }
 
                 $user->save();
+
+                // Phase 9 (docs/PHASE_9_ACCOUNTING_LEDGER.md): this is the one method all 15 existing
+                // wallet-changing call sites across the app already funnel through (the same chokepoint
+                // pattern Phase 5 found for ProductService::updateStock()), so it's the single safe place to
+                // post a balanced double-entry journal entry for every wallet movement without touching any
+                // of those 15 sites. Only posted when the balance actually changed above (the razorpay case
+                // creates a Transaction record but deliberately does NOT move balance - posting a ledger
+                // entry there would claim money moved when it didn't). The counter-account is the generic
+                // Suspense/Uncategorized account (9000) rather than a guess at the true business reason
+                // (commission expense, refund, sales revenue, ...) - this method doesn't reliably know that
+                // from $transaction_type alone. A real, balanced, auditable entry lands either way;
+                // reclassifying Suspense entries by transaction_type into the correct expense/revenue
+                // accounts is documented follow-up work, not silently implied as already correct - see
+                // PHASE_9_ACCOUNTING_LEDGER.md §3.
+                if ($balanceActuallyChanged) {
+                    $walletDelta = ($data['type'] === 'debit') ? -$amount : $amount;
+                    app(LedgerService::class)->postEntry(
+                        "Wallet {$data['type']}: {$data['message']}",
+                        $walletDelta < 0
+                            ? [['account_code' => '2100', 'debit' => abs($walletDelta)], ['account_code' => '9000', 'credit' => abs($walletDelta)]]
+                            : [['account_code' => '9000', 'debit' => abs($walletDelta)], ['account_code' => '2100', 'credit' => abs($walletDelta)]],
+                        'wallet_transaction',
+                        $user_id
+                    );
+                }
 
                 $request = new \Illuminate\Http\Request($data);
                 $transactionController = app(TransactionController::class);
