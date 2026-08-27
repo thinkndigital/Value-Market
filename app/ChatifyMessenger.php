@@ -28,12 +28,21 @@ class ChatifyMessenger
 
     public function __construct()
     {
-        $this->pusher = new Pusher(
-            config('chatify.pusher.key'),
-            config('chatify.pusher.secret'),
-            config('chatify.pusher.app_id'),
-            config('chatify.pusher.options'),
-        );
+        // ChatifyMessenger is instantiated on every admin page load (the sidebar's unread-message badge
+        // pulls it in), not just when the chat feature is actually used - confirmed against a real deploy,
+        // which fatal-errored the entire admin panel with "Pusher::__construct(): Argument #1 ($auth_key)
+        // must be of type string, null given" whenever PUSHER_APP_KEY/SECRET/ID aren't configured (no real
+        // Pusher account has been set up for this deployment). Only construct Pusher when all three are
+        // actually present; push()/socket_auth() below already only run when chat is used, not on every
+        // page load, so leaving $this->pusher null here is safe until real Pusher credentials exist.
+        if (config('chatify.pusher.key') && config('chatify.pusher.secret') && config('chatify.pusher.app_id')) {
+            $this->pusher = new Pusher(
+                config('chatify.pusher.key'),
+                config('chatify.pusher.secret'),
+                config('chatify.pusher.app_id'),
+                config('chatify.pusher.options'),
+            );
+        }
     }
     /**
      * This method returns the allowed image extensions
