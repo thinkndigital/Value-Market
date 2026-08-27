@@ -64,7 +64,7 @@
                             <p class="mb-4 order_page_title">Hey, Enter your details to get sign in to your account</p>
                         </div>
 
-                        <form class="form_authentication"action="{{ route('admin.authenticate') }}" method="POST">
+                        <form class="form_authentication" action="{{ route('admin.authenticate') }}" method="POST">
                             @csrf
                             <div class="form-group">
                                 <label class="form-label"
