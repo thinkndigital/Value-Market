@@ -3,7 +3,7 @@
     <link rel="stylesheet" href="{{ asset('assets/css/iziToast.css') }}">
     @php
         $store_id = session('store_id');
-        $store_details = getCurrentStoreData($store_id);
+        $store_details = app(\App\Services\StoreService::class)->getCurrentStoreData($store_id);
         $store_details = json_decode($store_details) ?? '';
     @endphp
     <input type="hidden" id="store-primary-color" name="store-primary-color"
