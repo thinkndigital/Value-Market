@@ -67,11 +67,11 @@ class AppServiceProvider extends ServiceProvider
         $data = ['installViewPath' => $installViewPath, 'sqlDumpPath' => $sqlDumpPath];
         if (!file_exists($sqlDumpPath) && !file_exists($installViewPath)) {
             $system_settings = app(SettingService::class)->getSettings('system_settings', true);
-            $system_settings = json_decode($system_settings, true);
+            $system_settings = json_decode($system_settings ?? '[]', true);
             $web_settings = app(SettingService::class)->getSettings('web_settings', true);
-            $web_settings = json_decode($web_settings, true);
+            $web_settings = json_decode($web_settings ?? '[]', true);
             $pwa_settings = app(SettingService::class)->getSettings('pwa_settings', true);
-            $pwa_settings = json_decode($pwa_settings, true);
+            $pwa_settings = json_decode($pwa_settings ?? '[]', true);
             // dd($pwa_settings);
             // dd(app(MediaService::class)->getMediaImageUrl($system_settings['logo']));
             $currency_details = app(CurrencyService::class)->getDefaultCurrency();
@@ -83,10 +83,10 @@ class AppServiceProvider extends ServiceProvider
             }
             try {
                 $email_settings = app(SettingService::class)->getSettings('email_settings', true);
-                $email_settings = json_decode($email_settings, true);
+                $email_settings = json_decode($email_settings ?? '[]', true);
 
                 $firebase_settings = app(SettingService::class)->getSettings('firebase_settings', true);
-                $firebase_settings = json_decode($firebase_settings, true);
+                $firebase_settings = json_decode($firebase_settings ?? '[]', true);
 
                 // google
                 $firebase_settings['google_client_id'] =  $firebase_settings['google_client_id'] ?? '';
