@@ -1086,7 +1086,11 @@ Route::group(
 
         Route::delete('/cities/delete', [AreaController::class, 'delete_selected_city_data'])->name('cities.delete')->middleware(['demo_restriction']);
 
-        Route::delete('/system_users/delete', [UserPermissionController::class, 'delete_selected_data'])->name('system_users.delete')->middleware(['demo_restriction']);
+        // Phase 2 (Task 18, super-admin isolation): unlike system_user.destroy just below (which correctly
+        // requires `permissions:delete system_user`), this bulk-delete route had no permission gate at all -
+        // any editor-role account could reach it regardless of what permissions they'd actually been
+        // granted.
+        Route::delete('/system_users/delete', [UserPermissionController::class, 'delete_selected_data'])->name('system_users.delete')->middleware(['demo_restriction'])->middleware('permissions:delete system_user');
 
         // zones
     

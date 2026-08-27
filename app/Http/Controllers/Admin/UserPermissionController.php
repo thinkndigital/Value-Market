@@ -157,14 +157,23 @@ class UserPermissionController extends Controller
 
     public function destroy($id)
     {
-        $user = User::find($id);
+        // Phase 2 (Task 18, super-admin isolation): this "system users" management endpoint had no
+        // restriction at all on which user could be targeted - it could delete ANY user in the database
+        // (customers, sellers, delivery boys), not just system users, and had no protection against
+        // deleting a Super Admin account. Scoped to the three actual system-user roles, and deleting a
+        // Super Admin now requires the caller to be one themselves - same rule as system-user creation.
+        $user = User::whereIn('role_id', [Role::SUPER_ADMIN, Role::ADMIN, Role::EDITOR])->find($id);
 
-        if ($user) {
-            $user->delete();
-            return response()->json(['error' => false, 'message' => labels('admin_labels.user_deleted_successfully', 'User deleted Successfully')]);
-        } else {
+        if (!$user) {
             return response()->json(['error' => labels('admin_labels.data_not_found', 'Data Not Found')]);
         }
+
+        if ($user->role_id === Role::SUPER_ADMIN && !Auth::user()->isSuperAdmin()) {
+            return response()->json(['error' => labels('admin_labels.not_authorized_to_delete_this_user', 'You are not authorized to delete this user.')]);
+        }
+
+        $user->delete();
+        return response()->json(['error' => false, 'message' => labels('admin_labels.user_deleted_successfully', 'User deleted Successfully')]);
     }
 
     public function edit($user_id)
@@ -204,11 +213,17 @@ class UserPermissionController extends Controller
             'ids.*' => 'exists:users,id'
         ]);
 
-        foreach ($request->ids as $id) {
-            $user = User::find($id);
+        // Phase 2 (Task 18, super-admin isolation): same fix as destroy() above - same gap, bulk version.
+        // Also: this route (routes/admin_routes.php, admin.system_users.delete) had no `permissions:`
+        // middleware at all, unlike destroy()'s `permissions:delete system_user` - any editor-role account
+        // could reach this regardless of their actual granted permissions.
+        $isCallerSuperAdmin = Auth::user()->isSuperAdmin();
 
-            if ($user) {
-                User::where('id', $id)->delete();
+        foreach ($request->ids as $id) {
+            $user = User::whereIn('role_id', [Role::SUPER_ADMIN, Role::ADMIN, Role::EDITOR])->find($id);
+
+            if ($user && ($user->role_id !== Role::SUPER_ADMIN || $isCallerSuperAdmin)) {
+                $user->delete();
             }
         }
 
