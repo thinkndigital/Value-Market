@@ -47,6 +47,10 @@ class UserPermissionController extends Controller
         }
 
         if ((int) $request->input('role') === Role::SUPER_ADMIN && !Auth::user()->isSuperAdmin()) {
+            auditLog('system_user.super_admin_grant_denied', [
+                'attempted_username' => $request->input('username'),
+                'attempted_mobile' => $request->input('mobile'),
+            ]);
             return response()->json([
                 'error' => true,
                 'message' => labels('admin_labels.not_authorized_to_assign_this_role', 'You are not authorized to assign this role.'),
@@ -61,6 +65,10 @@ class UserPermissionController extends Controller
         $user->role_id = $request->input('role');
         $user->active = 1;
         $user->save();
+
+        if ((int) $user->role_id === Role::SUPER_ADMIN) {
+            auditLog('system_user.super_admin_granted', ['target_user_id' => $user->id, 'target_username' => $user->username]);
+        }
 
         // Update permissions for the user
         $permissions = $request->input('permissions');
@@ -169,7 +177,12 @@ class UserPermissionController extends Controller
         }
 
         if ($user->role_id === Role::SUPER_ADMIN && !Auth::user()->isSuperAdmin()) {
+            auditLog('system_user.super_admin_delete_denied', ['target_user_id' => $user->id, 'target_username' => $user->username]);
             return response()->json(['error' => labels('admin_labels.not_authorized_to_delete_this_user', 'You are not authorized to delete this user.')]);
+        }
+
+        if ($user->role_id === Role::SUPER_ADMIN) {
+            auditLog('system_user.super_admin_deleted', ['target_user_id' => $user->id, 'target_username' => $user->username]);
         }
 
         $user->delete();
@@ -222,9 +235,19 @@ class UserPermissionController extends Controller
         foreach ($request->ids as $id) {
             $user = User::whereIn('role_id', [Role::SUPER_ADMIN, Role::ADMIN, Role::EDITOR])->find($id);
 
-            if ($user && ($user->role_id !== Role::SUPER_ADMIN || $isCallerSuperAdmin)) {
-                $user->delete();
+            if (!$user) {
+                continue;
             }
+
+            if ($user->role_id === Role::SUPER_ADMIN) {
+                if (!$isCallerSuperAdmin) {
+                    auditLog('system_user.super_admin_delete_denied', ['target_user_id' => $user->id, 'target_username' => $user->username, 'via' => 'bulk']);
+                    continue;
+                }
+                auditLog('system_user.super_admin_deleted', ['target_user_id' => $user->id, 'target_username' => $user->username, 'via' => 'bulk']);
+            }
+
+            $user->delete();
         }
 
         return response()->json([

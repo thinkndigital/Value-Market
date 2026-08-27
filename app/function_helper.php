@@ -1651,3 +1651,23 @@ function redactSensitiveUserFields(array $data): array
     }
     return $data;
 }
+
+/**
+ * Phase 2 (Task 21, minimal audit logging): writes to the dedicated `security` log channel
+ * (config/logging.php - daily-rotated, 90-day retention, separate from the routine application log).
+ * Deliberately minimal, not a general-purpose audit system: wired only into this phase's highest-value
+ * privilege-boundary events (granting/revoking the Super Admin role) found while fixing the IDORs this
+ * phase covers, not every write in the app - a blanket "log everything" pass is its own, much larger task.
+ *
+ * $event is a short machine-readable slug (e.g. 'system_user.super_admin_granted'); $context carries the
+ * event-specific detail (target id, requested role, etc.) - actor id/role and request IP are attached
+ * automatically so callers don't have to repeat them.
+ */
+function auditLog(string $event, array $context = []): void
+{
+    $context['actor_id'] = auth()->id();
+    $context['actor_role_id'] = auth()->check() ? auth()->user()->role_id : null;
+    $context['ip'] = request()?->ip();
+
+    \Illuminate\Support\Facades\Log::channel('security')->info($event, $context);
+}

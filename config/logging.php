@@ -73,6 +73,19 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // Phase 2 (Task 21, minimal audit logging): a dedicated, separately-rotated trail for security-
+        // relevant events (privilege grants/revocations, authorization denials on the most sensitive
+        // actions) - kept out of the general application log (which rotates over the same 14 days but is
+        // full of routine noise) and given a longer retention, since this is exactly the kind of record
+        // you want intact after an incident, not rotated away with everything else.
+        'security' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/security.log'),
+            'level' => 'info',
+            'days' => 90,
+            'replace_placeholders' => true,
+        ],
+
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),
