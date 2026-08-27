@@ -164,7 +164,7 @@
                                                     for="">{{ labels('admin_labels.primary_theme_color', 'Primary Theme Color') }}</label>
                                                 <div class="col-md-4 d-flex justify-content-end">
                                                     <input type="color"
-                                                        value="{{ isset($data->primary_color) && !empty($data->primary_color) ? $data->primary_color : '#e0ffee' }}"
+                                                        value="{{ isset($data->primary_color) && !empty($data->primary_color) ? $data->primary_color : '#333F49' }}"
                                                         id="light_theme_color"
                                                         oninput="updateColorCode('light_theme_color')"
                                                         class="color_picker mx-2">
@@ -176,7 +176,7 @@
                                             <input type="text" id="light_theme_color_code" name="primary_color"
                                                 class="form-control mx-2"
                                                 oninput="updateColorPicker('light_theme_color', this.value)"
-                                                value={{ !empty($data->primary_color) ? $data->primary_color : '' }}>
+                                                value={{ !empty($data->primary_color) ? $data->primary_color : '#333F49' }}>
                                         </div>
                                         <div class="col-md-6 col-lg-3">
                                             <div
@@ -185,7 +185,7 @@
                                                     for="">{{ labels('admin_labels.secondary_theme_color', 'Secondary Theme Color') }}</label>
                                                 <div class="col-md-4 d-flex justify-content-end">
                                                     <input type="color"
-                                                        value="{{ isset($data->secondary_color) && !empty($data->secondary_color) ? $data->secondary_color : '#e0ffee' }}"
+                                                        value="{{ isset($data->secondary_color) && !empty($data->secondary_color) ? $data->secondary_color : '#1B2128' }}"
                                                         id="dark_theme_color"
                                                         oninput="updateColorCode('dark_theme_color')"
                                                         class="color_picker mx-2">
@@ -197,7 +197,7 @@
                                             <input type="text" id="dark_theme_color_code"
                                                 oninput="updateColorPicker('dark_theme_color', this.value)"
                                                 name="secondary_color" class="form-control mx-2"
-                                                value={{ !empty($data->secondary_color) ? $data->secondary_color : '' }}>
+                                                value={{ !empty($data->secondary_color) ? $data->secondary_color : '#1B2128' }}>
                                         </div>
                                     </div>
                                     <div class="row mt-4">
@@ -208,7 +208,7 @@
                                                     class="me-8">{{ labels('admin_labels.link_hover_color', 'Link Hover Color') }}</label>
                                                 <div class="col-md-4 d-flex justify-content-end">
                                                     <input type="color"
-                                                        value="{{ isset($data->hover_color) && !empty($data->hover_color) ? $data->hover_color : '#e0ffee' }}"
+                                                        value="{{ isset($data->hover_color) && !empty($data->hover_color) ? $data->hover_color : '#4B5A67' }}"
                                                         id="hover_color" oninput="updateColorCode('hover_color')"
                                                         class="color_picker mx-2">
                                                 </div>
@@ -219,7 +219,7 @@
                                             <input type="text" id="hover_color_code"
                                                 oninput="updateColorPicker('hover_color', this.value)" name="hover_color"
                                                 class="form-control mx-2"
-                                                value={{ !empty($data->hover_color) ? $data->hover_color : '' }}>
+                                                value={{ !empty($data->hover_color) ? $data->hover_color : '#4B5A67' }}>
 
                                         </div>
                                         <div class="col-md-6 col-lg-3">
@@ -229,7 +229,7 @@
                                                     class="me-8">{{ labels('admin_labels.link_active_color', 'Link Active Color') }}</label>
                                                 <div class="col-md-4 d-flex justify-content-end">
                                                     <input type="color"
-                                                        value="{{ isset($data->active_color) && !empty($data->active_color) ? $data->active_color : '#e0ffee' }}"
+                                                        value="{{ isset($data->active_color) && !empty($data->active_color) ? $data->active_color : '#20262C' }}"
                                                         id="active_color" oninput="updateColorCode('active_color')"
                                                         class="color_picker mx-2">
                                                 </div>
@@ -240,7 +240,7 @@
                                             <input type="text" id="active_color_code"
                                                 oninput="updateColorPicker('active_color', this.value)"
                                                 name="active_color" class="form-control mx-2"
-                                                value={{ !empty($data->active_color) ? $data->active_color : '' }}>
+                                                value={{ !empty($data->active_color) ? $data->active_color : '#20262C' }}>
 
                                         </div>
                                     </div>
@@ -252,7 +252,7 @@
                                                     class="me-8">{{ labels('admin_labels.background_color', 'Background Color') }}</label>
                                                 <div class="col-md-4 d-flex justify-content-end">
                                                     <input type="color"
-                                                        value="{{ isset($data->background_color) && !empty($data->background_color) ? $data->background_color : '#e0ffee' }}"
+                                                        value="{{ isset($data->background_color) && !empty($data->background_color) ? $data->background_color : '#FFFFFF' }}"
                                                         id="background_color"
                                                         oninput="updateColorCode('background_color')"
                                                         class="color_picker mx-2">
@@ -263,7 +263,7 @@
                                             <input type="text" id="background_color_code"
                                                 oninput="updateColorPicker('background_color', this.value)"
                                                 name="background_color" class="form-control mx-2"
-                                                value={{ !empty($data->background_color) ? $data->background_color : '' }}>
+                                                value={{ !empty($data->background_color) ? $data->background_color : '#FFFFFF' }}>
 
                                         </div>
                                     </div>

@@ -155,7 +155,7 @@
                                                     for="">{{ labels('admin_labels.primary_theme_color', 'Primary Theme Color') }}<span
                                                         class="text-asterisks text-sm">*</span></label>
                                                 <div class="col-md-4 d-flex justify-content-end">
-                                                    <input type="color" value="#e0ffee" id="light_theme_color"
+                                                    <input type="color" value="#333F49" id="light_theme_color"
                                                         oninput="updateColorCode('light_theme_color')"
                                                         class="color_picker mx-2">
                                                 </div>
@@ -163,7 +163,7 @@
                                         </div>
                                         <div class="col-md-6 col-lg-3">
                                             <input type="text" id="light_theme_color_code" name="primary_color"
-                                                class="form-control mx-2"
+                                                value="#333F49" class="form-control mx-2"
                                                 oninput="updateColorPicker('light_theme_color', this.value)">
                                         </div>
                                         <div class="col-md-6 col-lg-3">
@@ -173,7 +173,7 @@
                                                     for="">{{ labels('admin_labels.secondary_theme_color', 'Secondary Theme Color') }}<span
                                                         class="text-asterisks text-sm">*</span></label>
                                                 <div class="col-md-4 d-flex justify-content-end">
-                                                    <input type="color" value="#e0ffee" id="dark_theme_color"
+                                                    <input type="color" value="#1B2128" id="dark_theme_color"
                                                         oninput="updateColorCode('dark_theme_color')"
                                                         class="color_picker mx-2">
                                                 </div>
@@ -182,7 +182,7 @@
                                         <div class="col-md-6 col-lg-3">
                                             <input type="text" id="dark_theme_color_code"
                                                 oninput="updateColorPicker('dark_theme_color', this.value)"
-                                                name="secondary_color" class="form-control mx-2">
+                                                name="secondary_color" value="#1B2128" class="form-control mx-2">
                                         </div>
                                     </div>
                                     <div class="row mt-4">
@@ -193,7 +193,7 @@
                                                     class="me-8">{{ labels('admin_labels.link_hover_color', 'Link Hover Color') }}<span
                                                         class="text-asterisks text-sm">*</span></label>
                                                 <div class="col-md-4 d-flex justify-content-end">
-                                                    <input type="color" value="#e0ffee" id="hover_color"
+                                                    <input type="color" value="#4B5A67" id="hover_color"
                                                         oninput="updateColorCode('hover_color')"
                                                         class="color_picker mx-2">
                                                 </div>
@@ -202,7 +202,7 @@
                                         <div class="col-md-6 col-lg-3">
                                             <input type="text" id="hover_color_code"
                                                 oninput="updateColorPicker('hover_color', this.value)" name="hover_color"
-                                                class="form-control mx-2">
+                                                value="#4B5A67" class="form-control mx-2">
 
                                         </div>
                                         <div class="col-md-6 col-lg-3">
@@ -212,7 +212,7 @@
                                                     class="me-8">{{ labels('admin_labels.link_active_color', 'Link Active Color') }}<span
                                                         class="text-asterisks text-sm">*</span></label>
                                                 <div class="col-md-4 d-flex justify-content-end">
-                                                    <input type="color" value="#e0ffee" id="active_color"
+                                                    <input type="color" value="#20262C" id="active_color"
                                                         oninput="updateColorCode('active_color')"
                                                         class="color_picker mx-2">
                                                 </div>
@@ -221,7 +221,7 @@
                                         <div class="col-md-6 col-lg-3">
                                             <input type="text" id="active_color_code"
                                                 oninput="updateColorPicker('active_color', this.value)"
-                                                name="active_color" class="form-control mx-2">
+                                                name="active_color" value="#20262C" class="form-control mx-2">
 
                                         </div>
                                     </div>
@@ -233,7 +233,7 @@
                                                     class="me-8">{{ labels('admin_labels.background_color', 'Background Color') }}<span
                                                         class="text-asterisks text-sm">*</span></label>
                                                 <div class="col-md-4 d-flex justify-content-end">
-                                                    <input type="color" value="#e0ffee" id="background_color"
+                                                    <input type="color" value="#FFFFFF" id="background_color"
                                                         oninput="updateColorCode('background_color')"
                                                         class="color_picker mx-2">
                                                 </div>
@@ -242,7 +242,7 @@
                                         <div class="col-md-6 col-lg-3">
                                             <input type="text" id="background_color_code"
                                                 oninput="updateColorPicker('background_color', this.value)"
-                                                name="background_color" class="form-control mx-2">
+                                                name="background_color" value="#FFFFFF" class="form-control mx-2">
                                         </div>
                                     </div>
                                 </div>
