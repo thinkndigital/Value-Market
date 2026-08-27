@@ -72,6 +72,7 @@ class Kernel extends HttpKernel
         'role' => \App\Http\Middleware\RoleMiddleware::class,
         'permissions' => \App\Http\Middleware\CheckPermissions::class,
         'demo_restriction' => \App\Http\Middleware\DemoRestriction::class,
+        'verify_cron_secret' => \App\Http\Middleware\VerifyCronSecret::class,
         'getDefaultData' => \App\Http\Middleware\GetDefaultData::class,
         'CheckInstallation' => \App\Http\Middleware\CheckInstallation::class,
         'CheckPurchaseCode' => \App\Http\Middleware\CheckPurchaseCode::class,

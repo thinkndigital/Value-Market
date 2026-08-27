@@ -27,4 +27,10 @@ return [
     'WEB_CODE' => '56605998',
     // demo mode
     'ALLOW_MODIFICATION' => 1,
+
+    // Phase 2 (docs/PHASE_2_IDOR_AUDIT.md §4): shared secret for the unauthenticated cron-trigger routes
+    // (admin/cronjob/settleCashbackDiscount, admin/cronjob/sendCartReminders) - set CRON_SECRET in .env and
+    // pass it as ?cron_secret=... in whatever hits these URLs on a schedule (cPanel cron job, external
+    // scheduler). Empty/unset fails closed (VerifyCronSecret middleware blocks with 403), not open.
+    'CRON_SECRET' => env('CRON_SECRET'),
 ];

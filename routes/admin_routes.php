@@ -57,8 +57,13 @@ use App\Http\Controllers\Admin\CustomFieldController;
 
 
 Route::get('admin/cronjob/settleSellerCommission', [CronJobController::class, 'settleSellerCommission'])->middleware(['demo_restriction'])->middleware('permissions:edit seller');
-Route::get('admin/cronjob/settleCashbackDiscount', [CronJobController::class, 'settleCashbackDiscount'])->middleware(['demo_restriction']);
-Route::get('admin/cronjob/sendCartReminders', [CronJobController::class, 'sendCartReminders'])->middleware(['demo_restriction']);
+// Phase 2 (docs/PHASE_2_IDOR_AUDIT.md §4): these two were reachable with no authentication or permission
+// check at all, unlike their settleSellerCommission sibling above - any visitor could trigger a wallet-
+// cashback settlement run or burn the site's paid Gemini/OpenRouter API quota by hitting the URL. Both are
+// meant for an external system cron (no user session), so `verify_cron_secret` (a shared secret, not a
+// login) is the fix, not the `permissions` gate settleSellerCommission uses.
+Route::get('admin/cronjob/settleCashbackDiscount', [CronJobController::class, 'settleCashbackDiscount'])->middleware(['demo_restriction', 'verify_cron_secret']);
+Route::get('admin/cronjob/sendCartReminders', [CronJobController::class, 'sendCartReminders'])->middleware(['demo_restriction', 'verify_cron_secret']);
 
 
 Route::group(
