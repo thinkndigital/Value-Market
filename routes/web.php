@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\Webhook;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\InstallerController;
+use App\Http\Controllers\AffiliateController;
 use App\Http\Controllers\Seller\MediaController as SellerMediaController;
 use App\Http\Controllers\Seller\AreaController;
 use App\Http\Controllers\Admin\OrderController;
@@ -168,7 +169,15 @@ Route::middleware(['CheckInstallation'])->group(function () {
         include("admin_routes.php");
         include("seller_routes.php");
         include("delivery_boy_routes.php");
+
+        // Phase 7 (docs/PHASE_7_AFFILIATE_ENGINE.md): self-service affiliate links - any authenticated
+        // user, not scoped to one panel the way the includes above are.
+        Route::get('affiliate/links', [AffiliateController::class, 'list'])->name('affiliate.links.list');
+        Route::post('affiliate/links', [AffiliateController::class, 'store'])->name('affiliate.links.store');
     });
+
+    // Public - the link a visitor actually clicks, no account required to be tracked and redirected.
+    Route::get('r/{code}', [AffiliateController::class, 'trackAndRedirect'])->name('affiliate.track');
 
     Route::get('admin/media/image', [MediaController::class, 'dynamic_image'])->name('admin.dynamic_image');
     Route::get('/media/image', [MediaController::class, 'dynamic_image'])->name('front_end.dynamic_image');

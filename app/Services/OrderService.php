@@ -358,8 +358,12 @@ class OrderService
                 // Phase 3 (docs/PHASE_3_COMMERCE_CORE.md): the order-origin discriminator, derived from the
                 // same flag already passed in - single source of truth, no new parameter needed at either
                 // call site (Seller\PosController or the storefront checkout). is_pos_order itself is
-                // unchanged; channel is an additive, richer parallel concept.
-                'channel' => !empty($data['is_pos_order']) ? Order::CHANNEL_POS : Order::CHANNEL_MARKETPLACE,
+                // unchanged; channel is an additive, richer parallel concept. Phase 7
+                // (docs/PHASE_7_AFFILIATE_ENGINE.md) added the affiliate_code branch - CHANNEL_AFFILIATE was
+                // reserved for this back in Phase 3, unused until now.
+                'channel' => !empty($data['is_pos_order'])
+                    ? Order::CHANNEL_POS
+                    : (!empty($data['affiliate_code']) ? Order::CHANNEL_AFFILIATE : Order::CHANNEL_MARKETPLACE),
                 'is_shiprocket_order' => isset($data['delivery_type']) && !empty($data['delivery_type']) && $data['delivery_type'] == 'standard_shipping' ? 1 : 0,
                 'order_payment_currency_id' => !$order_payment_currency_data->isEmpty() ? $order_payment_currency_data[0]->id : '',
                 'order_payment_currency_code' => $data['order_payment_currency_code'] ?? "",
@@ -405,6 +409,20 @@ class OrderService
             $order = Order::forceCreate($order_data);
 
             $order_id = $order->id;
+
+            // Phase 7 (docs/PHASE_7_AFFILIATE_ENGINE.md): attributes this order to an affiliate link when
+            // the storefront checkout was reached via one - recorded 'pending', not paid yet (see
+            // AffiliateService::approveConversionsForOrder(), called on delivery, same pattern the existing
+            // refer-a-friend bonus already uses). A missing/invalid code, or no commission rule configured
+            // anywhere, means no conversion is recorded - the sale itself is never blocked by this.
+            if (!empty($data['affiliate_code'])) {
+                app(\App\Services\AffiliateService::class)->recordConversion(
+                    $data['affiliate_code'],
+                    $order_id,
+                    $data['user_id'] ?? null,
+                    (float) $order_data['final_total']
+                );
+            }
 
             for ($i = 0; $i < count($product_variant); $i++) {
                 // dd($product_variant[$i]);

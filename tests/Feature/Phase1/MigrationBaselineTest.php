@@ -30,8 +30,10 @@ class MigrationBaselineTest extends TestCase
         // (docs/PHASE_5_INVENTORY_PROCUREMENT.md): `suppliers`, `purchase_orders`, `purchase_order_items`,
         // `goods_received_notes`, `goods_received_note_items`, `stock_movements`, `stock_items` - all
         // confirmed absent from the original dump (docs/DATABASE_GAP_ANALYSIS.md §5). Plus 2 more from
-        // Phase 6 (docs/PHASE_6_POS.md): `pos_shifts`, `pos_payments`.
-        $this->assertSame(104, (int) $tables);
+        // Phase 6 (docs/PHASE_6_POS.md): `pos_shifts`, `pos_payments`. Plus 4 more from Phase 7
+        // (docs/PHASE_7_AFFILIATE_ENGINE.md): `affiliate_links`, `link_clicks`, `commission_rules`,
+        // `referral_conversions`.
+        $this->assertSame(108, (int) $tables);
     }
 
     /** @dataProvider myisamTables */

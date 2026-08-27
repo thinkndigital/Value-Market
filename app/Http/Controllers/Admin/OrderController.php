@@ -1186,6 +1186,13 @@ class OrderController extends Controller
                         $user = fetchDetails(Order::class, ['id' => $order_item_res[0]->order_id], 'user_id');
                         $user_id = $user[0]->user_id;
                         $response = processReferralBonus($user_id, $order_item_res[0]->order_id, $request->input('status'));
+
+                        // Phase 7 (docs/PHASE_7_AFFILIATE_ENGINE.md): same trigger point/condition as the
+                        // refer-a-friend bonus above - approve and pay out any pending affiliate commission
+                        // for this order once it's actually delivered, not at order placement.
+                        if ($request->input('status') == 'delivered') {
+                            app(\App\Services\AffiliateService::class)->approveConversionsForOrder($order_item_res[0]->order_id);
+                        }
                     }
                 }
                 // Update login id in order_item table

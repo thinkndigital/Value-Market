@@ -1199,6 +1199,11 @@ Route::group(
         
         Route::get('/admin/cities/search', [AreaController::class, 'getCities']);
 
+        // Phase 7 (docs/PHASE_7_AFFILIATE_ENGINE.md): commission rule engine.
+        Route::get('admin/commission_rules', [\App\Http\Controllers\Admin\CommissionRuleController::class, 'list'])->name('admin.commission_rules.list');
+        Route::post('admin/commission_rules', [\App\Http\Controllers\Admin\CommissionRuleController::class, 'store'])->middleware(['demo_restriction'])->name('admin.commission_rules.store');
+        Route::post('admin/commission_rules/{id}', [\App\Http\Controllers\Admin\CommissionRuleController::class, 'update'])->middleware(['demo_restriction'])->name('admin.commission_rules.update');
+
     }
 
 );
