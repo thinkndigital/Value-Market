@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Models\Permission;
 use App\Traits\HandlesValidation;
 class UserPermissionController extends Controller
@@ -30,11 +32,25 @@ class UserPermissionController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required',
             'confirm_password' => 'required|same:password',
-            'role' => 'required',
+            // Phase 2 (Task 15, super-admin isolation): this controller's own "add system user" form
+            // (resources/views/admin/pages/forms/system_users.blade.php) offers Super Admin/Admin/Editor
+            // as options to ANY caller who reaches this route - gated only by the `create system_user`
+            // permission, which the outer route group's role check allows an 'editor' account to hold.
+            // Without this restriction, an editor granted that one permission could create a brand-new
+            // Super Admin account for themselves or an accomplice - full privilege escalation. Only an
+            // existing super admin may grant the super-admin role to someone else.
+            'role' => ['required', 'in:' . Role::SUPER_ADMIN . ',' . Role::ADMIN . ',' . Role::EDITOR],
         ];
 
         if ($response = $this->HandlesValidation($request, $rules)) {
             return $response;
+        }
+
+        if ((int) $request->input('role') === Role::SUPER_ADMIN && !Auth::user()->isSuperAdmin()) {
+            return response()->json([
+                'error' => true,
+                'message' => labels('admin_labels.not_authorized_to_assign_this_role', 'You are not authorized to assign this role.'),
+            ]);
         }
         // Store the data in your database
         $user = new User();
