@@ -164,6 +164,15 @@ class User extends Authenticatable implements HasMedia
     {
         return $this->belongsTo(City::class, 'city', 'id');
     }
+    /**
+     * Phase 8 (docs/PHASE_8_DELIVERY.md): order_items currently assigned to this user as a delivery boy -
+     * used by DispatchService for load-balancing (fewest active deliveries wins), not a general-purpose
+     * relation for every caller.
+     */
+    public function deliveryOrderItems()
+    {
+        return $this->hasMany(OrderItems::class, 'delivery_boy_id');
+    }
     public function address()
     {
         return $this->hasMany(Address::class);

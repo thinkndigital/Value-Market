@@ -1199,6 +1199,9 @@ Route::group(
         
         Route::get('/admin/cities/search', [AreaController::class, 'getCities']);
 
+        // Phase 8 (docs/PHASE_8_DELIVERY.md): auto-dispatch.
+        Route::post('admin/orders/auto_assign_delivery_boy', [\App\Http\Controllers\Admin\OrderController::class, 'auto_assign_delivery_boy'])->middleware(['demo_restriction'])->name('admin.orders.auto_assign_delivery_boy');
+
         // Phase 7 (docs/PHASE_7_AFFILIATE_ENGINE.md): commission rule engine.
         Route::get('admin/commission_rules', [\App\Http\Controllers\Admin\CommissionRuleController::class, 'list'])->name('admin.commission_rules.list');
         Route::post('admin/commission_rules', [\App\Http\Controllers\Admin\CommissionRuleController::class, 'store'])->middleware(['demo_restriction'])->name('admin.commission_rules.store');

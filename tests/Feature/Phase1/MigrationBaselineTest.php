@@ -32,8 +32,8 @@ class MigrationBaselineTest extends TestCase
         // confirmed absent from the original dump (docs/DATABASE_GAP_ANALYSIS.md §5). Plus 2 more from
         // Phase 6 (docs/PHASE_6_POS.md): `pos_shifts`, `pos_payments`. Plus 4 more from Phase 7
         // (docs/PHASE_7_AFFILIATE_ENGINE.md): `affiliate_links`, `link_clicks`, `commission_rules`,
-        // `referral_conversions`.
-        $this->assertSame(108, (int) $tables);
+        // `referral_conversions`. Plus 1 more from Phase 8 (docs/PHASE_8_DELIVERY.md): `delivery_earnings`.
+        $this->assertSame(109, (int) $tables);
     }
 
     /** @dataProvider myisamTables */

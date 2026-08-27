@@ -47,6 +47,33 @@ use App\Services\OrderService;
 class OrderController extends Controller
 {
     use HandlesValidation;
+
+    /**
+     * Phase 8 (docs/PHASE_8_DELIVERY.md): auto-dispatch - assigns the least-loaded, zone-matching delivery
+     * boy to an order item, an alternative to picking one manually elsewhere in this controller. Reuses the
+     * exact same OrderService::updateOrder() assignment call the manual path uses.
+     */
+    public function auto_assign_delivery_boy(Request $request)
+    {
+        if ($response = $this->HandlesValidation($request, [
+            'order_item_id' => 'required|integer',
+            'zone_id' => 'nullable|integer',
+        ])) {
+            return $response;
+        }
+
+        $deliveryBoy = app(\App\Services\DispatchService::class)->autoAssign(
+            (int) $request->input('order_item_id'),
+            $request->input('zone_id')
+        );
+
+        if (!$deliveryBoy) {
+            return response()->json(['error' => true, 'message' => labels('admin_labels.no_delivery_boy_available', 'No Available Delivery Boy Found')]);
+        }
+
+        return response()->json(['error' => false, 'message' => labels('admin_labels.delivery_boy_assigned', 'Delivery Boy Assigned Successfully'), 'data' => $deliveryBoy]);
+    }
+
     public function index(Request $request)
     {
         $store_id = app(StoreService::class)->getStoreId();
@@ -1192,6 +1219,16 @@ class OrderController extends Controller
                         // for this order once it's actually delivered, not at order placement.
                         if ($request->input('status') == 'delivered') {
                             app(\App\Services\AffiliateService::class)->approveConversionsForOrder($order_item_res[0]->order_id);
+
+                            // Phase 8 (docs/PHASE_8_DELIVERY.md): pay the assigned driver's structured
+                            // earning for this item, same trigger point, same idempotency discipline as the
+                            // two calls above (a no-op if no delivery_boy_id is assigned, or if earnings
+                            // aren't configured/enabled).
+                            app(\App\Services\DeliveryEarningService::class)->creditForDeliveredItem(
+                                $order_item_res[0]->id,
+                                $order_item_res[0]->order_id,
+                                $order_item_res[0]->delivery_boy_id ?? null
+                            );
                         }
                     }
                 }
