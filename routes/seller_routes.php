@@ -3,6 +3,7 @@
 use App\Http\Controllers\Seller\AiController;
 use App\Http\Controllers\Seller\BranchController;
 use App\Http\Controllers\Seller\EmployeeController;
+use App\Http\Controllers\Seller\PosShiftController;
 use App\Http\Controllers\Seller\PurchaseOrderController;
 use App\Http\Controllers\Seller\SupplierController;
 use App\Http\Controllers\Seller\ReturnRequestController;
@@ -443,6 +444,11 @@ Route::group(
         Route::get('seller/purchase_orders', [PurchaseOrderController::class, 'list'])->name('seller.purchase_orders.list');
         Route::post('seller/purchase_orders', [PurchaseOrderController::class, 'store'])->middleware(['demo_restriction'])->name('seller.purchase_orders.store');
         Route::post('seller/purchase_orders/{id}/receive', [PurchaseOrderController::class, 'receive'])->middleware(['demo_restriction'])->name('seller.purchase_orders.receive');
+
+        // Phase 6 (docs/PHASE_6_POS.md): till shifts.
+        Route::get('seller/pos_shifts', [PosShiftController::class, 'list'])->name('seller.pos_shifts.list');
+        Route::post('seller/pos_shifts/open', [PosShiftController::class, 'open'])->middleware(['demo_restriction'])->name('seller.pos_shifts.open');
+        Route::post('seller/pos_shifts/{id}/close', [PosShiftController::class, 'close'])->middleware(['demo_restriction'])->name('seller.pos_shifts.close');
     }
 
 

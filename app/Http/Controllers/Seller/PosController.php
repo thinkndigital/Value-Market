@@ -601,6 +601,18 @@ class PosController extends Controller
             $order = Order::forceCreate($order_data);
 
             $order_id = $order->id;
+
+            // Phase 6 (docs/PHASE_6_POS.md): this loop used to build one OrderItems row, DB::commit(), and
+            // return response()->json(...) all INSIDE the loop body - meaning a cart with more than one
+            // line item only ever recorded its FIRST item; the rest were silently dropped (no OrderItems
+            // row, no stock deduction), even though the order's own total/final_total already reflected the
+            // whole cart. Flagged as a known risk in PHASE_1_TRANSACTION_BOUNDARIES.md and explicitly
+            // deferred to this phase. Fixed by moving the commit/response outside the loop so every item is
+            // processed, and adding the same per-item stock deduction OrderService::placeOrder() already
+            // does for the e-commerce checkout path (ProductService::updateStock() for regular items,
+            // ComboProductService::updateComboStock() for combo items) - POS never decremented stock at all.
+            $posBranchId = $this->resolveOwnedPosBranchId($request->input('pos_branch_id'), $product_variant[0]->product['seller_id'] ?? null);
+
             for ($i = 0; $i < count($product_variant); $i++) {
                 // dd($product_variant[$i]);
                 if ($product_variant[$i]->cart['product_type'] == 'regular') {
@@ -644,21 +656,29 @@ class PosController extends Controller
 
                 $order_item_id = $order_items->id;
 
-                DB::commit();
-
-                app(CartService::class)->removeFromCart($place_order_data);
-                $user_balance = fetchDetails(User::class, ['id' => $place_order_data['user_id']], 'balance');
-                $response = [
-                    'error' => false,
-                    'message' => 'Order Delivered Successfully',
-                    'order_id' => $order_id,
-                    'final_total' => ($place_order_data['is_wallet_used'] == '1') ? $final_total -= $place_order_data['wallet_balance_used'] : $final_total,
-                    'total_payable' => $total_payable,
-                    'order_item_data' => $product_variant_data,
-                    'balance' => $user_balance,
-                ];
-                return response()->json($response);
+                if ($product_variant[$i]->cart['product_type'] == 'regular') {
+                    app(ProductService::class)->updateStock($product_variant[$i]['id'], $quantity[$i], '', $posBranchId, \App\Models\StockMovement::REFERENCE_LEGACY_ADJUSTMENT, $order_id);
+                } else {
+                    app(ComboProductService::class)->updateComboStock($product_variant[$i]['id'], $quantity[$i], 'subtract');
+                }
             }
+
+            app(\App\Services\PosShiftService::class)->recordSaleForOpenShift($order, $request->input('pos_shift_id'), $request->input('payments'));
+
+            DB::commit();
+
+            app(CartService::class)->removeFromCart($place_order_data);
+            $user_balance = fetchDetails(User::class, ['id' => $place_order_data['user_id']], 'balance');
+            $response = [
+                'error' => false,
+                'message' => 'Order Delivered Successfully',
+                'order_id' => $order_id,
+                'final_total' => ($place_order_data['is_wallet_used'] == '1') ? $final_total -= $place_order_data['wallet_balance_used'] : $final_total,
+                'total_payable' => $total_payable,
+                'order_item_data' => $product_variant_data,
+                'balance' => $user_balance,
+            ];
+            return response()->json($response);
             } catch (\Throwable $e) {
                 DB::rollBack();
                 Log::error('POS place_order failed, transaction rolled back: ' . $e->getMessage(), ['exception' => $e]);
@@ -698,6 +718,21 @@ class PosController extends Controller
         //     'data' => $res,
         // ];
         // return response()->json($response);
+    }
+
+    /**
+     * Phase 6 (docs/PHASE_6_POS.md): validates a client-supplied branch id belongs to the given seller
+     * before using it to attribute stock movements - returns null (the "unlocated" bucket) rather than
+     * erroring, since a missing/invalid branch shouldn't block a POS sale from completing.
+     */
+    private function resolveOwnedPosBranchId($branchId, $sellerId)
+    {
+        if (empty($branchId) || empty($sellerId)) {
+            return null;
+        }
+        $owns = \App\Models\Branch::where('id', $branchId)->where('seller_id', $sellerId)->exists();
+
+        return $owns ? (int) $branchId : null;
     }
 
     public function combo_place_order(Request $request)
@@ -861,6 +896,11 @@ class PosController extends Controller
             ];
 
             $order_item = OrderItems::forceCreate($combo_data);
+
+            // Phase 6 (docs/PHASE_6_POS.md): validateComboStock() above only checked availability before
+            // creating the order - stock was never actually decremented after the sale. Fixed by mirroring
+            // the same deduction the e-commerce checkout path (OrderService::placeOrder()) already does.
+            app(ComboProductService::class)->updateComboStock($data['id'], $data['quantity'], 'subtract');
         }
 
         if (isset($order_item) && !empty($order_item)) {

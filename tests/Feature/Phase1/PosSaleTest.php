@@ -155,11 +155,10 @@ class PosSaleTest extends TestCase
         $this->assertSame($product->seller_id, $orderItem->seller_id);
         $this->assertSame(2, $orderItem->quantity);
 
-        // Stock decrement: documented in PHASE_1_TRANSACTION_BOUNDARIES.md as a known gap - POS never
-        // calls ProductService::updateStock() for regular products. Asserting the CURRENT (buggy)
-        // behavior here, not the desired one, so this test starts failing (correctly) the moment that
-        // bug is fixed in a later phase, rather than silently masking the fix.
-        $this->assertSame(10, $product->fresh()->stock, 'Documents a known bug (PHASE_1_TRANSACTION_BOUNDARIES.md): POS does not decrement stock for regular products yet.');
+        // Stock decrement: this used to be a documented gap (PHASE_1_TRANSACTION_BOUNDARIES.md) - POS never
+        // called ProductService::updateStock() for regular products. Fixed in Phase 6
+        // (docs/PHASE_6_POS.md) - this now asserts the correct decremented value instead of the old bug.
+        $this->assertSame(8, $product->fresh()->stock);
     }
 
     public function test_a_failed_pos_sale_rolls_back_and_creates_no_partial_records(): void
