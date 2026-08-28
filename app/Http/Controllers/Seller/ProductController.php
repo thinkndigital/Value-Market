@@ -34,6 +34,7 @@ use App\Services\MediaService;
 use function PHPUnit\Framework\isEmpty;
 use App\Services\StoreService;
 use App\Services\SettingService;
+use App\Services\TenantContext;
 class ProductController extends Controller
 {
     public function index()
@@ -587,6 +588,12 @@ class ProductController extends Controller
         $limit = $request->input('limit', 100);
         $offset = $request->input('offset', 0);
         $store_id = !empty(request('store_id')) ? request('store_id') : app(StoreService::class)->getStoreId();
+        // Security fix (docs/SECURITY_AUDIT.md §6.4): Brand has no seller_id of its own - store_id IS the
+        // tenant boundary, and this was the only filter, taking store_id straight from the request or a
+        // SetDefaultStore-hijackable session. Reject rather than leak another store's brand list.
+        if (app(TenantContext::class)->verifiedSellerStoreId($store_id) === null) {
+            return $fromApp == true ? collect() : [];
+        }
         $search = trim($search);
         $language_code = app(TranslationService::class)->getLanguageCode();
         $brands = Brand::where('store_id', $store_id)->where('status', 1)
@@ -620,6 +627,10 @@ class ProductController extends Controller
     {
         $search = trim($request->search) ?? "";
         $store_id = app(StoreService::class)->getStoreId();
+        // Security fix (docs/SECURITY_AUDIT.md §6.4): same as get_brands() above.
+        if (app(TenantContext::class)->verifiedSellerStoreId($store_id) === null) {
+            return [];
+        }
         $language_code = app(TranslationService::class)->getLanguageCode();
         $brands = Brand::where('name', 'LIKE', '%' . $search . '%')
             ->where('store_id', $store_id)
@@ -875,6 +886,18 @@ class ProductController extends Controller
         $language_code = app(TranslationService::class)->getLanguageCode();
         $data = Product::where('store_id', $store_id)
             ->find($data);
+
+        // Security fix (docs/SECURITY_AUDIT.md §6.4): scoped only by store_id, with no ownership check at
+        // all - a store can host multiple sellers (seller_store), so any seller in the same store (or one
+        // who repoints their session to a different store via the unauthenticated SetDefaultStore
+        // ?store=slug hijack - the same root cause this section documents) could load the full edit-form
+        // data (pricing, shipping/pickup location, brand, stock) of a product they don't own. update()
+        // already gates on ProductPolicy's `update` ability (Gate::forUser()->denies('update', ...)); this
+        // GET-only form-loading method had no equivalent check. Reuses the same policy's `view` ability
+        // (identical rule to `update` - see ProductPolicy::manage()) rather than inventing a new check.
+        if ($data !== null && \Illuminate\Support\Facades\Gate::forUser(Auth::user())->denies('view', $data)) {
+            $data = null;
+        }
 
         if ($data === null || empty($data)) {
             return view('admin.pages.views.no_data_found');
@@ -1425,6 +1448,12 @@ class ProductController extends Controller
     public function getDigitalProductData(Request $request)
     {
         $store_id = app(StoreService::class)->getStoreId();
+        // Security fix (docs/SECURITY_AUDIT.md §6.4): scoped only by store_id (no seller_id filter at all),
+        // taken from a SetDefaultStore-hijackable session - a seller could list another store's digital
+        // products (name/price/stock) via this autocomplete endpoint.
+        if (app(TenantContext::class)->verifiedSellerStoreId($store_id) === null) {
+            return response()->json(['total' => 0, 'results' => []]);
+        }
         $language_code = app(TranslationService::class)->getLanguageCode();
         $offset = request('offset', 0);
         $limit = request('limit', 10);
