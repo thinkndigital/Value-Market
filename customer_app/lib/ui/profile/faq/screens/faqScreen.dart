@@ -1,14 +1,14 @@
 import 'dart:math' as math;
-import 'package:eshop_plus/commons/widgets/safeAreaWithBottomPadding.dart';
-import 'package:eshop_plus/ui/profile/faq/blocs/faqCubit.dart';
-import 'package:eshop_plus/commons/widgets/customAppbar.dart';
-import 'package:eshop_plus/commons/widgets/customCircularProgressIndicator.dart';
-import 'package:eshop_plus/commons/widgets/error_screen.dart';
+import 'package:value_market_customer/commons/widgets/safeAreaWithBottomPadding.dart';
+import 'package:value_market_customer/ui/profile/faq/blocs/faqCubit.dart';
+import 'package:value_market_customer/commons/widgets/customAppbar.dart';
+import 'package:value_market_customer/commons/widgets/customCircularProgressIndicator.dart';
+import 'package:value_market_customer/commons/widgets/error_screen.dart';
 
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
-import 'package:eshop_plus/core/constants/themeConstants.dart';
-import 'package:eshop_plus/utils/designConfig.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/core/constants/themeConstants.dart';
+import 'package:value_market_customer/utils/designConfig.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

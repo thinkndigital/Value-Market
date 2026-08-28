@@ -1,4 +1,4 @@
-import 'package:eshop_plus/ui/categoty/models/category.dart';
+import 'package:value_market_customer/ui/categoty/models/category.dart';
 
 class CategorySlider {
   int? id;

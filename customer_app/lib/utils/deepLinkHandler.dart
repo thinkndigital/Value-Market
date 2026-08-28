@@ -1,8 +1,8 @@
 import 'package:app_links/app_links.dart';
-import 'package:eshop_plus/commons/product/models/product.dart';
-import 'package:eshop_plus/core/routes/routes.dart';
+import 'package:value_market_customer/commons/product/models/product.dart';
+import 'package:value_market_customer/core/routes/routes.dart';
 
-import 'package:eshop_plus/utils/utils.dart';
+import 'package:value_market_customer/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 

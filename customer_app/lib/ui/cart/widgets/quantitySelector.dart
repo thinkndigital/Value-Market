@@ -1,11 +1,11 @@
-import 'package:eshop_plus/core/constants/appConstants.dart';
-import 'package:eshop_plus/ui/cart/cubits/getUserCart.dart';
-import 'package:eshop_plus/ui/cart/cubits/manageCartCubit.dart';
-import 'package:eshop_plus/ui/cart/models/cart.dart';
+import 'package:value_market_customer/core/constants/appConstants.dart';
+import 'package:value_market_customer/ui/cart/cubits/getUserCart.dart';
+import 'package:value_market_customer/ui/cart/cubits/manageCartCubit.dart';
+import 'package:value_market_customer/ui/cart/models/cart.dart';
 
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
-import 'package:eshop_plus/utils/utils.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
+import 'package:value_market_customer/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

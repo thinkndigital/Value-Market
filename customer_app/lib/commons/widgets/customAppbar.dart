@@ -1,7 +1,7 @@
-import 'package:eshop_plus/core/constants/themeConstants.dart';
-import 'package:eshop_plus/commons/widgets/customTextContainer.dart';
-import 'package:eshop_plus/utils/designConfig.dart';
-import 'package:eshop_plus/utils/utils.dart';
+import 'package:value_market_customer/core/constants/themeConstants.dart';
+import 'package:value_market_customer/commons/widgets/customTextContainer.dart';
+import 'package:value_market_customer/utils/designConfig.dart';
+import 'package:value_market_customer/utils/utils.dart';
 import 'package:flutter/material.dart';
 
 class CustomAppbar extends StatelessWidget implements PreferredSizeWidget {

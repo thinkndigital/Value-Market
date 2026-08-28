@@ -1,5 +1,5 @@
-import 'package:eshop_plus/commons/models/userDetails.dart';
-import 'package:eshop_plus/ui/profile/chat/repositories/chatRepository.dart';
+import 'package:value_market_customer/commons/models/userDetails.dart';
+import 'package:value_market_customer/ui/profile/chat/repositories/chatRepository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class GetContactsState {}

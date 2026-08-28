@@ -1,8 +1,8 @@
-import 'package:eshop_plus/commons/blocs/userDetailsCubit.dart';
-import 'package:eshop_plus/commons/product/models/attribute.dart';
-import 'package:eshop_plus/commons/product/models/productMinMaxPrice.dart';
-import 'package:eshop_plus/commons/product/models/productVariant.dart';
-import 'package:eshop_plus/ui/favorites/repositories/favoritesRepository.dart';
+import 'package:value_market_customer/commons/blocs/userDetailsCubit.dart';
+import 'package:value_market_customer/commons/product/models/attribute.dart';
+import 'package:value_market_customer/commons/product/models/productMinMaxPrice.dart';
+import 'package:value_market_customer/commons/product/models/productVariant.dart';
+import 'package:value_market_customer/ui/favorites/repositories/favoritesRepository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';

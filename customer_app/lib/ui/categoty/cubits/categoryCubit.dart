@@ -1,4 +1,4 @@
-import 'package:eshop_plus/ui/categoty/repositories/categoryRepository.dart';
+import 'package:value_market_customer/ui/categoty/repositories/categoryRepository.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 

@@ -1,7 +1,7 @@
-import 'package:eshop_plus/commons/seller/models/seller.dart';
-import 'package:eshop_plus/commons/widgets/safeAreaWithBottomPadding.dart';
-import 'package:eshop_plus/ui/explore/widgets/sellersContainer.dart';
-import 'package:eshop_plus/commons/widgets/customAppbar.dart';
+import 'package:value_market_customer/commons/seller/models/seller.dart';
+import 'package:value_market_customer/commons/widgets/safeAreaWithBottomPadding.dart';
+import 'package:value_market_customer/ui/explore/widgets/sellersContainer.dart';
+import 'package:value_market_customer/commons/widgets/customAppbar.dart';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';

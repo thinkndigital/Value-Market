@@ -1,5 +1,5 @@
-import 'package:eshop_plus/ui/profile/promoCode/models/promoCode.dart';
-import 'package:eshop_plus/ui/profile/promoCode/repositories/promoCodeRepository.dart';
+import 'package:value_market_customer/ui/profile/promoCode/models/promoCode.dart';
+import 'package:value_market_customer/ui/profile/promoCode/repositories/promoCodeRepository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class ValidatePromoCodeState {}

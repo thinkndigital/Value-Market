@@ -1,6 +1,6 @@
-import 'package:eshop_plus/ui/categoty/models/category.dart';
-import 'package:eshop_plus/ui/explore/productFilters/widgets/categoriesFilterView.dart';
-import 'package:eshop_plus/commons/widgets/customTextContainer.dart';
+import 'package:value_market_customer/ui/categoty/models/category.dart';
+import 'package:value_market_customer/ui/explore/productFilters/widgets/categoriesFilterView.dart';
+import 'package:value_market_customer/commons/widgets/customTextContainer.dart';
 import 'package:flutter/material.dart';
 
 class Subcategoriesfilterview extends StatelessWidget {

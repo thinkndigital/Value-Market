@@ -1,5 +1,5 @@
-import 'package:eshop_plus/ui/search/models/searchedProduct.dart';
-import 'package:eshop_plus/commons/product/repositories/productRepository.dart';
+import 'package:value_market_customer/ui/search/models/searchedProduct.dart';
+import 'package:value_market_customer/commons/product/repositories/productRepository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class SearchProductState {}

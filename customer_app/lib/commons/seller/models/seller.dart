@@ -1,5 +1,5 @@
-import 'package:eshop_plus/commons/blocs/userDetailsCubit.dart';
-import 'package:eshop_plus/ui/favorites/repositories/favoritesRepository.dart';
+import 'package:value_market_customer/commons/blocs/userDetailsCubit.dart';
+import 'package:value_market_customer/ui/favorites/repositories/favoritesRepository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

@@ -1,14 +1,14 @@
-import 'package:eshop_plus/core/constants/themeConstants.dart';
-import 'package:eshop_plus/commons/product/blocs/productsCubit.dart';
-import 'package:eshop_plus/commons/blocs/storesCubit.dart';
-import 'package:eshop_plus/commons/product/models/product.dart';
-import 'package:eshop_plus/commons/product/widgets/productCard.dart';
-import 'package:eshop_plus/commons/widgets/customCircularProgressIndicator.dart';
-import 'package:eshop_plus/commons/widgets/customTextContainer.dart';
+import 'package:value_market_customer/core/constants/themeConstants.dart';
+import 'package:value_market_customer/commons/product/blocs/productsCubit.dart';
+import 'package:value_market_customer/commons/blocs/storesCubit.dart';
+import 'package:value_market_customer/commons/product/models/product.dart';
+import 'package:value_market_customer/commons/product/widgets/productCard.dart';
+import 'package:value_market_customer/commons/widgets/customCircularProgressIndicator.dart';
+import 'package:value_market_customer/commons/widgets/customTextContainer.dart';
 
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
-import 'package:eshop_plus/utils/designConfig.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/utils/designConfig.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

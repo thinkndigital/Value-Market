@@ -1,6 +1,6 @@
-import 'package:eshop_plus/commons/repositories/userRepository.dart';
-import 'package:eshop_plus/core/api/apiService.dart';
-import 'package:eshop_plus/commons/models/userDetails.dart';
+import 'package:value_market_customer/commons/repositories/userRepository.dart';
+import 'package:value_market_customer/core/api/apiService.dart';
+import 'package:value_market_customer/commons/models/userDetails.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

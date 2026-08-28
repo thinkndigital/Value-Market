@@ -1,10 +1,10 @@
-import 'package:eshop_plus/ui/profile/orders/widgets/shipmentDetailsContainer.dart';
-import 'package:eshop_plus/core/theme/colors.dart';
-import 'package:eshop_plus/commons/widgets/customTextContainer.dart';
-import 'package:eshop_plus/commons/widgets/dashedLinePainter.dart';
-import 'package:eshop_plus/commons/widgets/solidLinePainter.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
-import 'package:eshop_plus/utils/utils.dart';
+import 'package:value_market_customer/ui/profile/orders/widgets/shipmentDetailsContainer.dart';
+import 'package:value_market_customer/core/theme/colors.dart';
+import 'package:value_market_customer/commons/widgets/customTextContainer.dart';
+import 'package:value_market_customer/commons/widgets/dashedLinePainter.dart';
+import 'package:value_market_customer/commons/widgets/solidLinePainter.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
+import 'package:value_market_customer/utils/utils.dart';
 import 'package:flutter/material.dart';
 
 import 'package:intl/intl.dart';

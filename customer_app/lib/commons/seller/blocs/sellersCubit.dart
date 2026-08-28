@@ -1,5 +1,5 @@
-import 'package:eshop_plus/commons/seller/models/seller.dart';
-import 'package:eshop_plus/commons/seller/repositories/sellerRepository.dart';
+import 'package:value_market_customer/commons/seller/models/seller.dart';
+import 'package:value_market_customer/commons/seller/repositories/sellerRepository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class SellersState {}

@@ -1,21 +1,20 @@
 import 'package:app_links/app_links.dart';
-import 'package:eshop_plus/core/routes/routes.dart';
-import 'package:eshop_plus/core/theme/colors.dart';
-import 'package:eshop_plus/ui/auth/cubits/authCubit.dart';
+import 'package:value_market_customer/core/routes/routes.dart';
+import 'package:value_market_customer/core/theme/colors.dart';
+import 'package:value_market_customer/ui/auth/cubits/authCubit.dart';
 
-import 'package:eshop_plus/commons/blocs/storesCubit.dart';
-import 'package:eshop_plus/commons/blocs/settingsAndLanguagesCubit.dart';
-import 'package:eshop_plus/commons/models/settings.dart';
-import 'package:eshop_plus/commons/repositories/settingsRepository.dart';
-import 'package:eshop_plus/commons/widgets/customCircularProgressIndicator.dart';
-import 'package:eshop_plus/commons/widgets/error_screen.dart';
-import 'package:eshop_plus/utils/deepLinkHandler.dart';
+import 'package:value_market_customer/commons/blocs/storesCubit.dart';
+import 'package:value_market_customer/commons/blocs/settingsAndLanguagesCubit.dart';
+import 'package:value_market_customer/commons/models/settings.dart';
+import 'package:value_market_customer/commons/repositories/settingsRepository.dart';
+import 'package:value_market_customer/commons/widgets/customCircularProgressIndicator.dart';
+import 'package:value_market_customer/commons/widgets/error_screen.dart';
+import 'package:value_market_customer/utils/deepLinkHandler.dart';
 
-import 'package:eshop_plus/utils/utils.dart';
+import 'package:value_market_customer/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_svg/svg.dart';
 import '../commons/blocs/userDetailsCubit.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -146,12 +145,12 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                 );
               },
-              child: SvgPicture.asset(
+              child: Image.asset(
                 Utils.getBrandingImagePath(
-                  'app_logo.svg',
+                  'app_logo.png',
                 ),
                 width: 200,
-                height: 200,
+                fit: BoxFit.contain,
               ),
             ),
           );

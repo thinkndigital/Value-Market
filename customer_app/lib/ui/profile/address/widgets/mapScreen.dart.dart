@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'package:eshop_plus/commons/widgets/customAppbar.dart';
-import 'package:eshop_plus/commons/widgets/customRoundedButton.dart';
-import 'package:eshop_plus/commons/widgets/customTextContainer.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
-import 'package:eshop_plus/utils/designConfig.dart';
+import 'package:value_market_customer/commons/widgets/customAppbar.dart';
+import 'package:value_market_customer/commons/widgets/customRoundedButton.dart';
+import 'package:value_market_customer/commons/widgets/customTextContainer.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
+import 'package:value_market_customer/utils/designConfig.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:get/get.dart';

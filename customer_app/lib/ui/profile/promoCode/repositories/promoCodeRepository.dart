@@ -1,8 +1,8 @@
-import 'package:eshop_plus/core/api/apiService.dart';
-import 'package:eshop_plus/ui/profile/promoCode/models/promoCode.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/core/api/apiService.dart';
+import 'package:value_market_customer/ui/profile/promoCode/models/promoCode.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
 
 class PromoCodeRepository {
   Future<List<PromoCode>> getPromoCodes({required int storeId}) async {

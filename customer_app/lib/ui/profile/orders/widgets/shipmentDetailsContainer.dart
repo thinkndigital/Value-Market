@@ -1,21 +1,21 @@
-import 'package:eshop_plus/core/constants/appConstants.dart';
-import 'package:eshop_plus/core/constants/themeConstants.dart';
-import 'package:eshop_plus/core/routes/routes.dart';
-import 'package:eshop_plus/ui/profile/orders/blocs/downloadFileCubit.dart';
-import 'package:eshop_plus/ui/profile/orders/blocs/productFileDownloadLinkCubit.dart';
-import 'package:eshop_plus/ui/profile/orders/blocs/updateOrderCubit.dart';
-import 'package:eshop_plus/commons/product/models/product.dart';
-import 'package:eshop_plus/ui/profile/orders/widgets/orderStatusItem.dart';
-import 'package:eshop_plus/ui/profile/orders/widgets/setProductRatingContainer.dart';
-import 'package:eshop_plus/commons/widgets/customCircularProgressIndicator.dart';
-import 'package:eshop_plus/commons/widgets/customImageWidget.dart';
+import 'package:value_market_customer/core/constants/appConstants.dart';
+import 'package:value_market_customer/core/constants/themeConstants.dart';
+import 'package:value_market_customer/core/routes/routes.dart';
+import 'package:value_market_customer/ui/profile/orders/blocs/downloadFileCubit.dart';
+import 'package:value_market_customer/ui/profile/orders/blocs/productFileDownloadLinkCubit.dart';
+import 'package:value_market_customer/ui/profile/orders/blocs/updateOrderCubit.dart';
+import 'package:value_market_customer/commons/product/models/product.dart';
+import 'package:value_market_customer/ui/profile/orders/widgets/orderStatusItem.dart';
+import 'package:value_market_customer/ui/profile/orders/widgets/setProductRatingContainer.dart';
+import 'package:value_market_customer/commons/widgets/customCircularProgressIndicator.dart';
+import 'package:value_market_customer/commons/widgets/customImageWidget.dart';
 
-import 'package:eshop_plus/commons/widgets/customRoundedButton.dart';
+import 'package:value_market_customer/commons/widgets/customRoundedButton.dart';
 
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
 
-import 'package:eshop_plus/core/localization/labelKeys.dart';
-import 'package:eshop_plus/utils/dateTimeUtils.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
+import 'package:value_market_customer/utils/dateTimeUtils.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';

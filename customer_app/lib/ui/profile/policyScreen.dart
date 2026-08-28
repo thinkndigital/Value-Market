@@ -1,8 +1,8 @@
-import 'package:eshop_plus/commons/widgets/customAppbar.dart';
-import 'package:eshop_plus/commons/widgets/customTextContainer.dart';
-import 'package:eshop_plus/commons/widgets/safeAreaWithBottomPadding.dart';
-import 'package:eshop_plus/core/constants/themeConstants.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/commons/widgets/customAppbar.dart';
+import 'package:value_market_customer/commons/widgets/customTextContainer.dart';
+import 'package:value_market_customer/commons/widgets/safeAreaWithBottomPadding.dart';
+import 'package:value_market_customer/core/constants/themeConstants.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:get/get.dart';

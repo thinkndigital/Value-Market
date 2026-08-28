@@ -1,5 +1,5 @@
-import 'package:eshop_plus/core/configs/appConfig.dart';
-import 'package:eshop_plus/core/constants/appConstants.dart';
+import 'package:value_market_customer/core/configs/appConfig.dart';
+import 'package:value_market_customer/core/constants/appConstants.dart';
 
 class SystemSettings {
   final String? appName;

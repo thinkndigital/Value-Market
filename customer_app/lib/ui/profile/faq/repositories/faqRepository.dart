@@ -1,8 +1,8 @@
-import 'package:eshop_plus/core/api/apiService.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/core/api/apiService.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
-import 'package:eshop_plus/core/configs/appConfig.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/core/configs/appConfig.dart';
 import '../models/faq.dart';
 
 class FaqRepository {

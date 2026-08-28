@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:eshop_plus/core/constants/themeConstants.dart';
+import 'package:value_market_customer/core/constants/themeConstants.dart';
 import 'package:flutter/material.dart';
 
 class CustomBottomButtonContainer extends StatelessWidget {

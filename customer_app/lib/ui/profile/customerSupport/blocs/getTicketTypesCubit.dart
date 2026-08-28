@@ -1,5 +1,5 @@
-import 'package:eshop_plus/ui/profile/customerSupport/models/ticketType.dart';
-import 'package:eshop_plus/ui/profile/customerSupport/repositories/ticketRepository.dart';
+import 'package:value_market_customer/ui/profile/customerSupport/models/ticketType.dart';
+import 'package:value_market_customer/ui/profile/customerSupport/repositories/ticketRepository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class TicketTypeState {}

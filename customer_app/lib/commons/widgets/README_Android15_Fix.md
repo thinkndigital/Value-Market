@@ -21,7 +21,7 @@ Apply padding globally through GetMaterialApp builder (use with caution).
 
 ```dart
 // Import
-import 'package:eshop_plus/commons/widgets/safeAreaWithBottomPadding.dart';
+import 'package:value_market_customer/commons/widgets/safeAreaWithBottomPadding.dart';
 
 // Wrap Scaffold body
 Scaffold(

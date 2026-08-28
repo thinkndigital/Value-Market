@@ -1,15 +1,15 @@
-import 'package:eshop_plus/core/constants/themeConstants.dart';
-import 'package:eshop_plus/ui/home/mostSellingProduct/mostSellingProductCubit.dart';
-import 'package:eshop_plus/commons/blocs/userDetailsCubit.dart';
-import 'package:eshop_plus/ui/mainScreen.dart';
-import 'package:eshop_plus/utils/validator.dart';
+import 'package:value_market_customer/core/constants/themeConstants.dart';
+import 'package:value_market_customer/ui/home/mostSellingProduct/mostSellingProductCubit.dart';
+import 'package:value_market_customer/commons/blocs/userDetailsCubit.dart';
+import 'package:value_market_customer/ui/mainScreen.dart';
+import 'package:value_market_customer/utils/validator.dart';
 import 'package:flutter/material.dart';
 
-import 'package:eshop_plus/commons/widgets/customTextContainer.dart';
-import 'package:eshop_plus/commons/widgets/customTextFieldContainer.dart';
-import 'package:eshop_plus/commons/widgets/filterContainerForBottomSheet.dart';
-import 'package:eshop_plus/utils/designConfig.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/commons/widgets/customTextContainer.dart';
+import 'package:value_market_customer/commons/widgets/customTextFieldContainer.dart';
+import 'package:value_market_customer/commons/widgets/filterContainerForBottomSheet.dart';
+import 'package:value_market_customer/utils/designConfig.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../featuredSection/featuredSectionCubit.dart';

@@ -1,16 +1,16 @@
-import 'package:eshop_plus/commons/blocs/userDetailsCubit.dart';
-import 'package:eshop_plus/commons/seller/models/seller.dart';
-import 'package:eshop_plus/commons/widgets/customDefaultContainer.dart';
-import 'package:eshop_plus/commons/widgets/customImageWidget.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
-import 'package:eshop_plus/core/routes/routes.dart';
-import 'package:eshop_plus/utils/designConfig.dart';
+import 'package:value_market_customer/commons/blocs/userDetailsCubit.dart';
+import 'package:value_market_customer/commons/seller/models/seller.dart';
+import 'package:value_market_customer/commons/widgets/customDefaultContainer.dart';
+import 'package:value_market_customer/commons/widgets/customImageWidget.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
+import 'package:value_market_customer/core/routes/routes.dart';
+import 'package:value_market_customer/utils/designConfig.dart';
 import 'package:flutter/material.dart';
 
-import 'package:eshop_plus/commons/widgets/customRoundedButton.dart';
-import 'package:eshop_plus/commons/widgets/customTextContainer.dart';
-import 'package:eshop_plus/commons/widgets/favoriteButton.dart';
-import 'package:eshop_plus/utils/utils.dart';
+import 'package:value_market_customer/commons/widgets/customRoundedButton.dart';
+import 'package:value_market_customer/commons/widgets/customTextContainer.dart';
+import 'package:value_market_customer/commons/widgets/favoriteButton.dart';
+import 'package:value_market_customer/utils/utils.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

@@ -1,5 +1,5 @@
-import 'package:eshop_plus/ui/home/brand/brand.dart';
-import 'package:eshop_plus/ui/home/brand/brandRepository.dart';
+import 'package:value_market_customer/ui/home/brand/brand.dart';
+import 'package:value_market_customer/ui/home/brand/brandRepository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class BrandsState {}

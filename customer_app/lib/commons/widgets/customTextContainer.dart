@@ -1,4 +1,4 @@
-import 'package:eshop_plus/commons/blocs/settingsAndLanguagesCubit.dart';
+import 'package:value_market_customer/commons/blocs/settingsAndLanguagesCubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

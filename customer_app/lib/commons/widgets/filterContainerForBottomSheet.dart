@@ -1,5 +1,5 @@
-import 'package:eshop_plus/core/constants/themeConstants.dart';
-import 'package:eshop_plus/commons/widgets/customRoundedButton.dart';
+import 'package:value_market_customer/core/constants/themeConstants.dart';
+import 'package:value_market_customer/commons/widgets/customRoundedButton.dart';
 import 'package:flutter/material.dart';
 
 import '../../utils/designConfig.dart';

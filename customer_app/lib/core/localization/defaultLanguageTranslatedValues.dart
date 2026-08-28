@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:eshop_plus/core/configs/appConfig.dart';
+import 'package:value_market_customer/core/configs/appConfig.dart';
 
 Map<String, String> defaultLanguageTranslatedValues = {
   "default_error_message": "Something went wrong. Please try again later!",

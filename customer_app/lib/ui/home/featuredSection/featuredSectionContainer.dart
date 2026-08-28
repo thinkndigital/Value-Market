@@ -1,20 +1,20 @@
-import 'package:eshop_plus/core/routes/routes.dart';
-import 'package:eshop_plus/ui/home/featuredSection/featuredSectionCubit.dart';
-import 'package:eshop_plus/commons/blocs/storesCubit.dart';
-import 'package:eshop_plus/ui/explore/screens/exploreScreen.dart';
-import 'package:eshop_plus/ui/explore/widgets/ratingAndReviewCountContainer.dart';
-import 'package:eshop_plus/ui/home/widgets/buildHeader.dart';
-import 'package:eshop_plus/commons/product/widgets/productCard.dart';
-import 'package:eshop_plus/commons/widgets/customCircularProgressIndicator.dart';
-import 'package:eshop_plus/commons/widgets/customImageWidget.dart';
-import 'package:eshop_plus/commons/widgets/customTextContainer.dart';
-import 'package:eshop_plus/utils/designConfig.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/core/routes/routes.dart';
+import 'package:value_market_customer/ui/home/featuredSection/featuredSectionCubit.dart';
+import 'package:value_market_customer/commons/blocs/storesCubit.dart';
+import 'package:value_market_customer/ui/explore/screens/exploreScreen.dart';
+import 'package:value_market_customer/ui/explore/widgets/ratingAndReviewCountContainer.dart';
+import 'package:value_market_customer/ui/home/widgets/buildHeader.dart';
+import 'package:value_market_customer/commons/product/widgets/productCard.dart';
+import 'package:value_market_customer/commons/widgets/customCircularProgressIndicator.dart';
+import 'package:value_market_customer/commons/widgets/customImageWidget.dart';
+import 'package:value_market_customer/commons/widgets/customTextContainer.dart';
+import 'package:value_market_customer/utils/designConfig.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'fesaturedSection.dart';
-import 'package:eshop_plus/core/constants/themeConstants.dart';
+import 'package:value_market_customer/core/constants/themeConstants.dart';
 import '../../../utils/utils.dart';
 import '../../../commons/widgets/customRoundedButton.dart';
 

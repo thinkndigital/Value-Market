@@ -1,5 +1,5 @@
-import 'package:eshop_plus/commons/product/models/product.dart';
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/commons/product/models/product.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
 
 class FeaturedSection {
   int? id;

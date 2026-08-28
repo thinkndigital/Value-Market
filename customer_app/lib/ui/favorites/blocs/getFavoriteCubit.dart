@@ -1,8 +1,8 @@
-import 'package:eshop_plus/commons/blocs/userDetailsCubit.dart';
-import 'package:eshop_plus/ui/favorites/models/offlineFavorite.dart';
-import 'package:eshop_plus/commons/seller/models/seller.dart';
-import 'package:eshop_plus/ui/favorites/repositories/favoritesRepository.dart';
-import 'package:eshop_plus/core/constants/hiveConstants.dart';
+import 'package:value_market_customer/commons/blocs/userDetailsCubit.dart';
+import 'package:value_market_customer/ui/favorites/models/offlineFavorite.dart';
+import 'package:value_market_customer/commons/seller/models/seller.dart';
+import 'package:value_market_customer/ui/favorites/repositories/favoritesRepository.dart';
+import 'package:value_market_customer/core/constants/hiveConstants.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive/hive.dart';

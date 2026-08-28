@@ -1,22 +1,22 @@
 import 'dart:async';
 
-import 'package:eshop_plus/core/constants/themeConstants.dart';
-import 'package:eshop_plus/core/routes/routes.dart';
-import 'package:eshop_plus/ui/home/offer/offerCubit.dart';
-import 'package:eshop_plus/commons/product/blocs/productsCubit.dart';
-import 'package:eshop_plus/commons/blocs/storesCubit.dart';
+import 'package:value_market_customer/core/constants/themeConstants.dart';
+import 'package:value_market_customer/core/routes/routes.dart';
+import 'package:value_market_customer/ui/home/offer/offerCubit.dart';
+import 'package:value_market_customer/commons/product/blocs/productsCubit.dart';
+import 'package:value_market_customer/commons/blocs/storesCubit.dart';
 
-import 'package:eshop_plus/ui/home/offer/offerSlider.dart';
-import 'package:eshop_plus/commons/product/models/product.dart';
-import 'package:eshop_plus/ui/explore/screens/exploreScreen.dart';
-import 'package:eshop_plus/ui/explore/productDetails/productDetailsScreen.dart';
-import 'package:eshop_plus/ui/home/widgets/buildHeader.dart';
-import 'package:eshop_plus/ui/home/slider/sliderSection.dart';
-import 'package:eshop_plus/commons/widgets/customDefaultContainer.dart';
-import 'package:eshop_plus/commons/widgets/customImageWidget.dart';
-import 'package:eshop_plus/commons/widgets/customTextContainer.dart';
-import 'package:eshop_plus/utils/designConfig.dart';
-import 'package:eshop_plus/utils/utils.dart';
+import 'package:value_market_customer/ui/home/offer/offerSlider.dart';
+import 'package:value_market_customer/commons/product/models/product.dart';
+import 'package:value_market_customer/ui/explore/screens/exploreScreen.dart';
+import 'package:value_market_customer/ui/explore/productDetails/productDetailsScreen.dart';
+import 'package:value_market_customer/ui/home/widgets/buildHeader.dart';
+import 'package:value_market_customer/ui/home/slider/sliderSection.dart';
+import 'package:value_market_customer/commons/widgets/customDefaultContainer.dart';
+import 'package:value_market_customer/commons/widgets/customImageWidget.dart';
+import 'package:value_market_customer/commons/widgets/customTextContainer.dart';
+import 'package:value_market_customer/utils/designConfig.dart';
+import 'package:value_market_customer/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

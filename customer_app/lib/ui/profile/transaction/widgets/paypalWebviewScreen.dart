@@ -1,19 +1,19 @@
 import 'dart:async';
 
-import 'package:eshop_plus/commons/widgets/safeAreaWithBottomPadding.dart';
-import 'package:eshop_plus/core/constants/themeConstants.dart';
-import 'package:eshop_plus/ui/profile/orders/blocs/deleteOrderCubit.dart';
-import 'package:eshop_plus/commons/blocs/settingsAndLanguagesCubit.dart';
-import 'package:eshop_plus/ui/profile/transaction/blocs/addTransactionCubit.dart';
-import 'package:eshop_plus/commons/blocs/userDetailsCubit.dart';
+import 'package:value_market_customer/commons/widgets/safeAreaWithBottomPadding.dart';
+import 'package:value_market_customer/core/constants/themeConstants.dart';
+import 'package:value_market_customer/ui/profile/orders/blocs/deleteOrderCubit.dart';
+import 'package:value_market_customer/commons/blocs/settingsAndLanguagesCubit.dart';
+import 'package:value_market_customer/ui/profile/transaction/blocs/addTransactionCubit.dart';
+import 'package:value_market_customer/commons/blocs/userDetailsCubit.dart';
 
-import 'package:eshop_plus/commons/widgets/checkInterconnectiviy.dart';
-import 'package:eshop_plus/commons/widgets/customTextContainer.dart';
+import 'package:value_market_customer/commons/widgets/checkInterconnectiviy.dart';
+import 'package:value_market_customer/commons/widgets/customTextContainer.dart';
 
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
-import 'package:eshop_plus/core/constants/appConstants.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
-import 'package:eshop_plus/utils/utils.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/core/constants/appConstants.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
+import 'package:value_market_customer/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';

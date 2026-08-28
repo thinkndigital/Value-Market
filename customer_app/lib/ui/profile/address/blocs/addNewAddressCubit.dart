@@ -1,5 +1,5 @@
-import 'package:eshop_plus/ui/profile/address/models/address.dart';
-import 'package:eshop_plus/ui/profile/address/repositories/addressRepository.dart';
+import 'package:value_market_customer/ui/profile/address/models/address.dart';
+import 'package:value_market_customer/ui/profile/address/repositories/addressRepository.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 

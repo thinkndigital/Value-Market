@@ -1,16 +1,16 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:eshop_plus/core/routes/routes.dart';
-import 'package:eshop_plus/ui/home/categorySlider/categorySliderCubit.dart';
-import 'package:eshop_plus/ui/categoty/models/category.dart';
-import 'package:eshop_plus/ui/home/categorySlider/categorySlider.dart';
-import 'package:eshop_plus/ui/explore/screens/exploreScreen.dart';
-import 'package:eshop_plus/commons/widgets/customImageWidget.dart';
-import 'package:eshop_plus/utils/utils.dart';
+import 'package:value_market_customer/core/routes/routes.dart';
+import 'package:value_market_customer/ui/home/categorySlider/categorySliderCubit.dart';
+import 'package:value_market_customer/ui/categoty/models/category.dart';
+import 'package:value_market_customer/ui/home/categorySlider/categorySlider.dart';
+import 'package:value_market_customer/ui/explore/screens/exploreScreen.dart';
+import 'package:value_market_customer/commons/widgets/customImageWidget.dart';
+import 'package:value_market_customer/utils/utils.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:eshop_plus/core/constants/themeConstants.dart';
+import 'package:value_market_customer/core/constants/themeConstants.dart';
 import '../../../utils/designConfig.dart';
 import '../widgets/buildHeader.dart';
 

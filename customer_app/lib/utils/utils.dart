@@ -2,30 +2,30 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:eshop_plus/core/api/apiService.dart';
-import 'package:eshop_plus/core/configs/appConfig.dart';
-import 'package:eshop_plus/core/constants/themeConstants.dart';
-import 'package:eshop_plus/utils/designConfig.dart';
+import 'package:value_market_customer/core/api/apiService.dart';
+import 'package:value_market_customer/core/configs/appConfig.dart';
+import 'package:value_market_customer/core/constants/themeConstants.dart';
+import 'package:value_market_customer/utils/designConfig.dart';
 import 'package:external_path/external_path.dart';
-import 'package:eshop_plus/main.dart';
-import 'package:eshop_plus/core/routes/routes.dart';
-import 'package:eshop_plus/ui/auth/cubits/authCubit.dart';
+import 'package:value_market_customer/main.dart';
+import 'package:value_market_customer/core/routes/routes.dart';
+import 'package:value_market_customer/ui/auth/cubits/authCubit.dart';
 
-import 'package:eshop_plus/commons/blocs/settingsAndLanguagesCubit.dart';
-import 'package:eshop_plus/ui/profile/address/models/address.dart';
+import 'package:value_market_customer/commons/blocs/settingsAndLanguagesCubit.dart';
+import 'package:value_market_customer/ui/profile/address/models/address.dart';
 
-import 'package:eshop_plus/ui/favorites/models/offlineFavorite.dart';
-import 'package:eshop_plus/commons/product/models/productMinMaxPrice.dart';
-import 'package:eshop_plus/commons/models/systemSettings.dart';
-import 'package:eshop_plus/ui/auth/repositories/authRepository.dart';
-import 'package:eshop_plus/core/theme/colors.dart';
+import 'package:value_market_customer/ui/favorites/models/offlineFavorite.dart';
+import 'package:value_market_customer/commons/product/models/productMinMaxPrice.dart';
+import 'package:value_market_customer/commons/models/systemSettings.dart';
+import 'package:value_market_customer/ui/auth/repositories/authRepository.dart';
+import 'package:value_market_customer/core/theme/colors.dart';
 
-import 'package:eshop_plus/commons/widgets/customTextButton.dart';
-import 'package:eshop_plus/commons/widgets/customTextContainer.dart';
+import 'package:value_market_customer/commons/widgets/customTextButton.dart';
+import 'package:value_market_customer/commons/widgets/customTextContainer.dart';
 
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
-import 'package:eshop_plus/core/constants/hiveConstants.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/core/constants/hiveConstants.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

@@ -2,11 +2,11 @@ const String baseUrl = "https://eshop-pro.eshopweb.store"; //live url
 
 const String databaseUrl = "$baseUrl/api/";
 
-const appName = 'eShop Plus';
+const appName = 'Value Market';
 
 //Your package name
-const String androidPackageName = 'com.wrteam.eshop.pro';
-const String iosPackageName = 'com.wrteam.eshop.pro';
+const String androidPackageName = 'com.valuemarket.customer';
+const String iosPackageName = 'com.valuemarket.customer';
 
 const bool isDemoApp = true;
 

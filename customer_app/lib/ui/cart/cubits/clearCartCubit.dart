@@ -1,5 +1,5 @@
-import 'package:eshop_plus/ui/cart/cubits/getUserCart.dart';
-import 'package:eshop_plus/ui/cart/repositories/cartRepository.dart';
+import 'package:value_market_customer/ui/cart/cubits/getUserCart.dart';
+import 'package:value_market_customer/ui/cart/repositories/cartRepository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

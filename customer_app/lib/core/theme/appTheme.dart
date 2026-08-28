@@ -1,7 +1,7 @@
-import 'package:eshop_plus/core/constants/themeConstants.dart';
-import 'package:eshop_plus/core/theme/colors.dart';
-import 'package:eshop_plus/commons/models/store.dart';
-import 'package:eshop_plus/utils/utils.dart';
+import 'package:value_market_customer/core/constants/themeConstants.dart';
+import 'package:value_market_customer/core/theme/colors.dart';
+import 'package:value_market_customer/commons/models/store.dart';
+import 'package:value_market_customer/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 

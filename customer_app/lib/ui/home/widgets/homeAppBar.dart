@@ -1,13 +1,13 @@
-import 'package:eshop_plus/core/routes/routes.dart';
-import 'package:eshop_plus/commons/blocs/userDetailsCubit.dart';
-import 'package:eshop_plus/commons/widgets/customImageWidget.dart';
-import 'package:eshop_plus/commons/widgets/customSearchContainer.dart';
+import 'package:value_market_customer/core/routes/routes.dart';
+import 'package:value_market_customer/commons/blocs/userDetailsCubit.dart';
+import 'package:value_market_customer/commons/widgets/customImageWidget.dart';
+import 'package:value_market_customer/commons/widgets/customSearchContainer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../commons/blocs/storesCubit.dart';
 import '../../../commons/models/store.dart';
-import 'package:eshop_plus/core/constants/themeConstants.dart';
+import 'package:value_market_customer/core/constants/themeConstants.dart';
 import '../../../utils/designConfig.dart';
 import '../../../core/localization/labelKeys.dart';
 import '../../../utils/utils.dart';

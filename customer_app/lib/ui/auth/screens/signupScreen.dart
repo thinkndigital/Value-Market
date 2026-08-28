@@ -1,19 +1,19 @@
 import 'package:country_code_picker/country_code_picker.dart';
-import 'package:eshop_plus/commons/widgets/safeAreaWithBottomPadding.dart';
-import 'package:eshop_plus/core/configs/appConfig.dart';
-import 'package:eshop_plus/core/constants/themeConstants.dart';
-import 'package:eshop_plus/ui/auth/cubits/signUpCubit.dart';
-import 'package:eshop_plus/commons/blocs/settingsAndLanguagesCubit.dart';
-import 'package:eshop_plus/commons/blocs/userDetailsCubit.dart';
+import 'package:value_market_customer/commons/widgets/safeAreaWithBottomPadding.dart';
+import 'package:value_market_customer/core/configs/appConfig.dart';
+import 'package:value_market_customer/core/constants/themeConstants.dart';
+import 'package:value_market_customer/ui/auth/cubits/signUpCubit.dart';
+import 'package:value_market_customer/commons/blocs/settingsAndLanguagesCubit.dart';
+import 'package:value_market_customer/commons/blocs/userDetailsCubit.dart';
 
-import 'package:eshop_plus/ui/auth/widgets/aggrementTextContainer.dart';
-import 'package:eshop_plus/ui/auth/widgets/socialLoginWidget.dart';
-import 'package:eshop_plus/commons/widgets/customCircularProgressIndicator.dart';
+import 'package:value_market_customer/ui/auth/widgets/aggrementTextContainer.dart';
+import 'package:value_market_customer/ui/auth/widgets/socialLoginWidget.dart';
+import 'package:value_market_customer/commons/widgets/customCircularProgressIndicator.dart';
 
-import 'package:eshop_plus/commons/widgets/customTextContainer.dart';
+import 'package:value_market_customer/commons/widgets/customTextContainer.dart';
 
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

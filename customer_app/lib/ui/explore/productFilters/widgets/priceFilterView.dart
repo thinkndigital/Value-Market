@@ -1,10 +1,10 @@
-import 'package:eshop_plus/commons/product/models/productMinMaxPrice.dart';
-import 'package:eshop_plus/ui/explore/productFilters/widgets/filterAttributesTile.dart';
-import 'package:eshop_plus/core/theme/colors.dart';
-import 'package:eshop_plus/commons/widgets/customTextContainer.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/commons/product/models/productMinMaxPrice.dart';
+import 'package:value_market_customer/ui/explore/productFilters/widgets/filterAttributesTile.dart';
+import 'package:value_market_customer/core/theme/colors.dart';
+import 'package:value_market_customer/commons/widgets/customTextContainer.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 
-import 'package:eshop_plus/utils/utils.dart';
+import 'package:value_market_customer/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 

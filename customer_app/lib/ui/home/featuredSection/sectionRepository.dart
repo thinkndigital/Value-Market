@@ -1,10 +1,10 @@
-import 'package:eshop_plus/core/api/apiService.dart';
-import 'package:eshop_plus/ui/home/featuredSection/fesaturedSection.dart';
+import 'package:value_market_customer/core/api/apiService.dart';
+import 'package:value_market_customer/ui/home/featuredSection/fesaturedSection.dart';
 
-import 'package:eshop_plus/ui/auth/repositories/authRepository.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/ui/auth/repositories/authRepository.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
 
 class SectionRepository {
   Future<List<FeaturedSection>> getSections(

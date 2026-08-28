@@ -1,6 +1,6 @@
-import 'package:eshop_plus/commons/models/store.dart';
-import 'package:eshop_plus/commons/repositories/storeRepository.dart';
-import 'package:eshop_plus/core/constants/hiveConstants.dart';
+import 'package:value_market_customer/commons/models/store.dart';
+import 'package:value_market_customer/commons/repositories/storeRepository.dart';
+import 'package:value_market_customer/core/constants/hiveConstants.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive/hive.dart';

@@ -1,5 +1,5 @@
-import 'package:eshop_plus/ui/home/offer/offerSlider.dart';
-import 'package:eshop_plus/ui/home/offer/offerRepository.dart';
+import 'package:value_market_customer/ui/home/offer/offerSlider.dart';
+import 'package:value_market_customer/ui/home/offer/offerRepository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class OfferState {}

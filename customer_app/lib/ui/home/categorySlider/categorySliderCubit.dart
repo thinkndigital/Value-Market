@@ -1,4 +1,4 @@
-import 'package:eshop_plus/ui/home/categorySlider/categorySlider.dart';
+import 'package:value_market_customer/ui/home/categorySlider/categorySlider.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../categoty/repositories/categoryRepository.dart';
 

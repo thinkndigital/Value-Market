@@ -1,10 +1,10 @@
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
-import 'package:eshop_plus/core/api/apiService.dart';
-import 'package:eshop_plus/core/constants/hiveConstants.dart';
-import 'package:eshop_plus/commons/models/language.dart';
-import 'package:eshop_plus/commons/models/settings.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/core/api/apiService.dart';
+import 'package:value_market_customer/core/constants/hiveConstants.dart';
+import 'package:value_market_customer/commons/models/language.dart';
+import 'package:value_market_customer/commons/models/settings.dart';
 
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
 

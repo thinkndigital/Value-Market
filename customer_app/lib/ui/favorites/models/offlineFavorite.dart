@@ -1,5 +1,5 @@
-import 'package:eshop_plus/commons/product/models/product.dart';
-import 'package:eshop_plus/commons/seller/models/seller.dart';
+import 'package:value_market_customer/commons/product/models/product.dart';
+import 'package:value_market_customer/commons/seller/models/seller.dart';
 
 class OfflineFavorite {
   final int id; // Product ID or Seller ID

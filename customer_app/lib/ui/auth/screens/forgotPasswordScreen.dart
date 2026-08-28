@@ -1,14 +1,14 @@
-import 'package:eshop_plus/commons/widgets/safeAreaWithBottomPadding.dart';
-import 'package:eshop_plus/ui/auth/cubits/resetPasswordCubit.dart';
-import 'package:eshop_plus/ui/auth/widgets/loginContainer.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/commons/widgets/safeAreaWithBottomPadding.dart';
+import 'package:value_market_customer/ui/auth/cubits/resetPasswordCubit.dart';
+import 'package:value_market_customer/ui/auth/widgets/loginContainer.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/routes/routes.dart';
 
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
 import '../../../utils/utils.dart';
 import '../../../utils/validator.dart';
 import '../../../commons/widgets/customCircularProgressIndicator.dart';

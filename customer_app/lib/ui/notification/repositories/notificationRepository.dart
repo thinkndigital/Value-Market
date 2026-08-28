@@ -1,12 +1,12 @@
 import 'dart:convert';
-import 'package:eshop_plus/core/api/apiService.dart';
-import 'package:eshop_plus/core/configs/appConfig.dart';
-import 'package:eshop_plus/ui/notification/models/notification.dart';
-import 'package:eshop_plus/ui/auth/repositories/authRepository.dart';
+import 'package:value_market_customer/core/api/apiService.dart';
+import 'package:value_market_customer/core/configs/appConfig.dart';
+import 'package:value_market_customer/ui/notification/models/notification.dart';
+import 'package:value_market_customer/ui/auth/repositories/authRepository.dart';
 
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
-import 'package:eshop_plus/core/constants/appConstants.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/core/constants/appConstants.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationRepository {

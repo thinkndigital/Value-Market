@@ -1,4 +1,4 @@
-import 'package:eshop_plus/commons/product/models/productCurrencyDetails.dart';
+import 'package:value_market_customer/commons/product/models/productCurrencyDetails.dart';
 
 class ProductVariant {
   final int? id;

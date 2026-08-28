@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:math';
-import 'package:eshop_plus/core/configs/appConfig.dart';
-import 'package:eshop_plus/core/constants/appConstants.dart';
-import 'package:eshop_plus/ui/cart/cubits/getUserCart.dart';
-import 'package:eshop_plus/commons/blocs/userDetailsCubit.dart';
+import 'package:value_market_customer/core/configs/appConfig.dart';
+import 'package:value_market_customer/core/constants/appConstants.dart';
+import 'package:value_market_customer/ui/cart/cubits/getUserCart.dart';
+import 'package:value_market_customer/commons/blocs/userDetailsCubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

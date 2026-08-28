@@ -1,7 +1,7 @@
-import 'package:eshop_plus/ui/search/blocs/searchProductCubit.dart';
-import 'package:eshop_plus/commons/widgets/customTextFieldContainer.dart';
-import 'package:eshop_plus/commons/widgets/speechToTextIcon.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/ui/search/blocs/searchProductCubit.dart';
+import 'package:value_market_customer/commons/widgets/customTextFieldContainer.dart';
+import 'package:value_market_customer/commons/widgets/speechToTextIcon.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:speech_to_text/speech_to_text.dart';

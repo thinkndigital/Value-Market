@@ -1,10 +1,10 @@
-import 'package:eshop_plus/core/api/apiService.dart';
-import 'package:eshop_plus/core/configs/appConfig.dart';
-import 'package:eshop_plus/commons/seller/models/seller.dart';
-import 'package:eshop_plus/ui/auth/repositories/authRepository.dart';
+import 'package:value_market_customer/core/api/apiService.dart';
+import 'package:value_market_customer/core/configs/appConfig.dart';
+import 'package:value_market_customer/commons/seller/models/seller.dart';
+import 'package:value_market_customer/ui/auth/repositories/authRepository.dart';
 
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 
 class SellerRepository {
   Future<({List<Seller> sellers, int total})> getSellers(

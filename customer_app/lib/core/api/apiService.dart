@@ -3,16 +3,16 @@ import 'dart:io';
 
 import 'package:curl_logger_dio_interceptor/curl_logger_dio_interceptor.dart';
 import 'package:dio/dio.dart';
-import 'package:eshop_plus/core/constants/appConstants.dart';
-import 'package:eshop_plus/main.dart';
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
-import 'package:eshop_plus/core/routes/routes.dart';
-import 'package:eshop_plus/ui/auth/repositories/authRepository.dart';
-import 'package:eshop_plus/commons/repositories/settingsRepository.dart';
+import 'package:value_market_customer/core/constants/appConstants.dart';
+import 'package:value_market_customer/main.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/core/routes/routes.dart';
+import 'package:value_market_customer/ui/auth/repositories/authRepository.dart';
+import 'package:value_market_customer/commons/repositories/settingsRepository.dart';
 
-import 'package:eshop_plus/core/localization/labelKeys.dart';
-import 'package:eshop_plus/commons/widgets/checkInterconnectiviy.dart';
-import 'package:eshop_plus/utils/utils.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
+import 'package:value_market_customer/commons/widgets/checkInterconnectiviy.dart';
+import 'package:value_market_customer/utils/utils.dart';
 
 class ApiException implements Exception {
   String errorMessage;

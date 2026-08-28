@@ -1,28 +1,28 @@
 import 'dart:io';
 
-import 'package:eshop_plus/commons/widgets/customCircularProgressIndicator.dart';
-import 'package:eshop_plus/ui/home/categorySlider/categorySliderCubit.dart';
+import 'package:value_market_customer/commons/widgets/customCircularProgressIndicator.dart';
+import 'package:value_market_customer/ui/home/categorySlider/categorySliderCubit.dart';
 
-import 'package:eshop_plus/ui/home/offer/offerCubit.dart';
-import 'package:eshop_plus/ui/home/mostSellingProduct/mostSellingProductCubit.dart';
-import 'package:eshop_plus/commons/product/blocs/productsCubit.dart';
-import 'package:eshop_plus/ui/home/featuredSection/featuredSectionCubit.dart';
-import 'package:eshop_plus/ui/home/seller/bestSellerCubit.dart';
-import 'package:eshop_plus/commons/blocs/settingsAndLanguagesCubit.dart';
-import 'package:eshop_plus/ui/home/slider/sliderCubit.dart';
-import 'package:eshop_plus/commons/blocs/userDetailsCubit.dart';
-import 'package:eshop_plus/ui/home/seller/bestSellerSection.dart';
-import 'package:eshop_plus/ui/home/brand/brandSection.dart';
-import 'package:eshop_plus/ui/home/category/categorySection.dart';
-import 'package:eshop_plus/ui/home/widgets/addDeliveryLocationWidget.dart';
-import 'package:eshop_plus/ui/home/categorySlider/categorySliderSection.dart';
-import 'package:eshop_plus/ui/home/featuredSection/featuredSectionContainer.dart';
-import 'package:eshop_plus/ui/home/seller/featuredSellerSection.dart';
-import 'package:eshop_plus/ui/home/mostSellingProduct/mostSellingProductSection.dart';
-import 'package:eshop_plus/ui/home/offer/offerSection.dart';
+import 'package:value_market_customer/ui/home/offer/offerCubit.dart';
+import 'package:value_market_customer/ui/home/mostSellingProduct/mostSellingProductCubit.dart';
+import 'package:value_market_customer/commons/product/blocs/productsCubit.dart';
+import 'package:value_market_customer/ui/home/featuredSection/featuredSectionCubit.dart';
+import 'package:value_market_customer/ui/home/seller/bestSellerCubit.dart';
+import 'package:value_market_customer/commons/blocs/settingsAndLanguagesCubit.dart';
+import 'package:value_market_customer/ui/home/slider/sliderCubit.dart';
+import 'package:value_market_customer/commons/blocs/userDetailsCubit.dart';
+import 'package:value_market_customer/ui/home/seller/bestSellerSection.dart';
+import 'package:value_market_customer/ui/home/brand/brandSection.dart';
+import 'package:value_market_customer/ui/home/category/categorySection.dart';
+import 'package:value_market_customer/ui/home/widgets/addDeliveryLocationWidget.dart';
+import 'package:value_market_customer/ui/home/categorySlider/categorySliderSection.dart';
+import 'package:value_market_customer/ui/home/featuredSection/featuredSectionContainer.dart';
+import 'package:value_market_customer/ui/home/seller/featuredSellerSection.dart';
+import 'package:value_market_customer/ui/home/mostSellingProduct/mostSellingProductSection.dart';
+import 'package:value_market_customer/ui/home/offer/offerSection.dart';
 
-import 'package:eshop_plus/core/localization/labelKeys.dart';
-import 'package:eshop_plus/utils/utils.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
+import 'package:value_market_customer/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -32,7 +32,7 @@ import 'seller/featuredSellerCubit.dart';
 import '../../commons/blocs/storesCubit.dart';
 import 'widgets/homeAppBar.dart';
 import 'slider/sliderSection.dart';
-import 'package:eshop_plus/commons/widgets/error_screen.dart';
+import 'package:value_market_customer/commons/widgets/error_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

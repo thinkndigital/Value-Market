@@ -1,4 +1,4 @@
-import 'package:eshop_plus/core/configs/appConfig.dart';
+import 'package:value_market_customer/core/configs/appConfig.dart';
 
 class ApiURL {
   static String getStores = "${databaseUrl}get_stores";

@@ -1,9 +1,9 @@
-import 'package:eshop_plus/core/api/apiService.dart';
-import 'package:eshop_plus/ui/home/offer/offerSlider.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/core/api/apiService.dart';
+import 'package:value_market_customer/ui/home/offer/offerSlider.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
-import 'package:eshop_plus/ui/home/slider/slider.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/ui/home/slider/slider.dart';
 
 class OfferRepository {
   Future<List<OfferSlider>> getOfferSliders({required int storeId}) async {

@@ -1,9 +1,9 @@
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
-import 'package:eshop_plus/core/api/apiService.dart';
-import 'package:eshop_plus/commons/models/store.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/core/api/apiService.dart';
+import 'package:value_market_customer/commons/models/store.dart';
 
-import 'package:eshop_plus/core/constants/hiveConstants.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/core/constants/hiveConstants.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 import 'package:hive/hive.dart';
 
 class StoreRepository {

@@ -1,10 +1,10 @@
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
-import 'package:eshop_plus/core/api/apiService.dart';
-import 'package:eshop_plus/core/configs/appConfig.dart';
-import 'package:eshop_plus/ui/profile/address/models/address.dart';
-import 'package:eshop_plus/ui/profile/address/models/city.dart';
-import 'package:eshop_plus/ui/profile/address/models/zipcode.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/core/api/apiService.dart';
+import 'package:value_market_customer/core/configs/appConfig.dart';
+import 'package:value_market_customer/ui/profile/address/models/address.dart';
+import 'package:value_market_customer/ui/profile/address/models/city.dart';
+import 'package:value_market_customer/ui/profile/address/models/zipcode.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 
 class AddressRepository {
   Future<List<Address>> getAddress() async {

@@ -1,4 +1,4 @@
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 
 const awaitingStatusType = 'awaiting';
 const receivedStatusType = 'received';

@@ -1,7 +1,7 @@
-import 'package:eshop_plus/ui/explore/productFilters/models/selectedFilterAttribute.dart';
-import 'package:eshop_plus/ui/explore/productFilters/widgets/filterAttributesTile.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
-import 'package:eshop_plus/utils/utils.dart';
+import 'package:value_market_customer/ui/explore/productFilters/models/selectedFilterAttribute.dart';
+import 'package:value_market_customer/ui/explore/productFilters/widgets/filterAttributesTile.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
+import 'package:value_market_customer/utils/utils.dart';
 import 'package:flutter/material.dart';
 
 class SelectedFilterView extends StatelessWidget {

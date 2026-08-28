@@ -1,12 +1,12 @@
-import 'package:eshop_plus/core/constants/themeConstants.dart';
-import 'package:eshop_plus/commons/product/models/attribute.dart';
-import 'package:eshop_plus/commons/product/models/product.dart';
-import 'package:eshop_plus/commons/product/models/productVariant.dart';
-import 'package:eshop_plus/commons/widgets/customDefaultContainer.dart';
-import 'package:eshop_plus/commons/widgets/customImageWidget.dart';
-import 'package:eshop_plus/commons/widgets/customTextContainer.dart';
-import 'package:eshop_plus/utils/designConfig.dart';
-import 'package:eshop_plus/utils/utils.dart';
+import 'package:value_market_customer/core/constants/themeConstants.dart';
+import 'package:value_market_customer/commons/product/models/attribute.dart';
+import 'package:value_market_customer/commons/product/models/product.dart';
+import 'package:value_market_customer/commons/product/models/productVariant.dart';
+import 'package:value_market_customer/commons/widgets/customDefaultContainer.dart';
+import 'package:value_market_customer/commons/widgets/customImageWidget.dart';
+import 'package:value_market_customer/commons/widgets/customTextContainer.dart';
+import 'package:value_market_customer/utils/designConfig.dart';
+import 'package:value_market_customer/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 

@@ -1,5 +1,5 @@
-import 'package:eshop_plus/core/constants/appConstants.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/core/constants/appConstants.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 
 class Transaction {
   late int id;

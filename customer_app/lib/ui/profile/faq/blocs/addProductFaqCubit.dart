@@ -1,5 +1,5 @@
-import 'package:eshop_plus/ui/profile/faq/models/faq.dart';
-import 'package:eshop_plus/ui/profile/faq/repositories/faqRepository.dart';
+import 'package:value_market_customer/ui/profile/faq/models/faq.dart';
+import 'package:value_market_customer/ui/profile/faq/repositories/faqRepository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class AddProductFaqState {}

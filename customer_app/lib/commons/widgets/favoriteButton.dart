@@ -1,13 +1,13 @@
-import 'package:eshop_plus/core/constants/appConstants.dart';
-import 'package:eshop_plus/ui/favorites/blocs/addFavoriteCubit.dart';
-import 'package:eshop_plus/ui/favorites/blocs/getFavoriteCubit.dart';
-import 'package:eshop_plus/ui/favorites/blocs/removeFavoriteCubit.dart';
-import 'package:eshop_plus/commons/blocs/userDetailsCubit.dart';
-import 'package:eshop_plus/ui/favorites/models/offlineFavorite.dart';
-import 'package:eshop_plus/commons/product/models/product.dart';
-import 'package:eshop_plus/commons/seller/models/seller.dart';
+import 'package:value_market_customer/core/constants/appConstants.dart';
+import 'package:value_market_customer/ui/favorites/blocs/addFavoriteCubit.dart';
+import 'package:value_market_customer/ui/favorites/blocs/getFavoriteCubit.dart';
+import 'package:value_market_customer/ui/favorites/blocs/removeFavoriteCubit.dart';
+import 'package:value_market_customer/commons/blocs/userDetailsCubit.dart';
+import 'package:value_market_customer/ui/favorites/models/offlineFavorite.dart';
+import 'package:value_market_customer/commons/product/models/product.dart';
+import 'package:value_market_customer/commons/seller/models/seller.dart';
 
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

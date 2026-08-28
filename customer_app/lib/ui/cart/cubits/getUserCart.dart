@@ -1,14 +1,14 @@
-import 'package:eshop_plus/ui/cart/cubits/checkCartProductDelCubit.dart';
-import 'package:eshop_plus/ui/profile/promoCode/blocs/localPromoCodeCubit.dart';
-import 'package:eshop_plus/commons/blocs/storesCubit.dart';
-import 'package:eshop_plus/commons/blocs/userDetailsCubit.dart';
-import 'package:eshop_plus/ui/profile/address/models/address.dart';
-import 'package:eshop_plus/ui/cart/models/cart.dart';
-import 'package:eshop_plus/ui/profile/transaction/models/paymentMethod.dart';
-import 'package:eshop_plus/commons/product/models/product.dart';
-import 'package:eshop_plus/ui/profile/promoCode/models/promoCode.dart';
-import 'package:eshop_plus/ui/cart/repositories/cartRepository.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/ui/cart/cubits/checkCartProductDelCubit.dart';
+import 'package:value_market_customer/ui/profile/promoCode/blocs/localPromoCodeCubit.dart';
+import 'package:value_market_customer/commons/blocs/storesCubit.dart';
+import 'package:value_market_customer/commons/blocs/userDetailsCubit.dart';
+import 'package:value_market_customer/ui/profile/address/models/address.dart';
+import 'package:value_market_customer/ui/cart/models/cart.dart';
+import 'package:value_market_customer/ui/profile/transaction/models/paymentMethod.dart';
+import 'package:value_market_customer/commons/product/models/product.dart';
+import 'package:value_market_customer/ui/profile/promoCode/models/promoCode.dart';
+import 'package:value_market_customer/ui/cart/repositories/cartRepository.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';

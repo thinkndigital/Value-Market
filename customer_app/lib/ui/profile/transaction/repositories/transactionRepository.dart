@@ -1,24 +1,24 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:eshop_plus/core/api/apiService.dart';
-import 'package:eshop_plus/core/constants/appConstants.dart';
-import 'package:eshop_plus/core/routes/routes.dart';
-import 'package:eshop_plus/commons/blocs/userDetailsCubit.dart';
-import 'package:eshop_plus/ui/profile/transaction/models/paymentMethod.dart';
-import 'package:eshop_plus/ui/profile/transaction/models/paystackModel.dart';
-import 'package:eshop_plus/utils/extensions/encodingExtension.dart';
-import 'package:eshop_plus/ui/profile/transaction/widgets/stripeService.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
-import 'package:eshop_plus/utils/utils.dart';
+import 'package:value_market_customer/core/api/apiService.dart';
+import 'package:value_market_customer/core/constants/appConstants.dart';
+import 'package:value_market_customer/core/routes/routes.dart';
+import 'package:value_market_customer/commons/blocs/userDetailsCubit.dart';
+import 'package:value_market_customer/ui/profile/transaction/models/paymentMethod.dart';
+import 'package:value_market_customer/ui/profile/transaction/models/paystackModel.dart';
+import 'package:value_market_customer/utils/extensions/encodingExtension.dart';
+import 'package:value_market_customer/ui/profile/transaction/widgets/stripeService.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
+import 'package:value_market_customer/utils/utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:phonepe_payment_sdk/phonepe_payment_sdk.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
-import 'package:eshop_plus/core/configs/appConfig.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/core/configs/appConfig.dart';
 import '../models/transaction.dart';
 
 class TransactionRepository {

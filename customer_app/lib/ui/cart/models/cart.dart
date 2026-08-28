@@ -1,8 +1,8 @@
-import 'package:eshop_plus/ui/profile/address/models/address.dart';
-import 'package:eshop_plus/ui/profile/transaction/models/paymentMethod.dart';
-import 'package:eshop_plus/commons/product/models/product.dart';
-import 'package:eshop_plus/commons/product/models/productVariant.dart';
-import 'package:eshop_plus/ui/profile/promoCode/models/promoCode.dart';
+import 'package:value_market_customer/ui/profile/address/models/address.dart';
+import 'package:value_market_customer/ui/profile/transaction/models/paymentMethod.dart';
+import 'package:value_market_customer/commons/product/models/product.dart';
+import 'package:value_market_customer/commons/product/models/productVariant.dart';
+import 'package:value_market_customer/ui/profile/promoCode/models/promoCode.dart';
 import 'package:get/get.dart';
 
 class Cart {

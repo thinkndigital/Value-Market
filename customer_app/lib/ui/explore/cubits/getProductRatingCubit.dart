@@ -1,7 +1,7 @@
-import 'package:eshop_plus/commons/product/models/productRating.dart';
-import 'package:eshop_plus/commons/product/repositories/productRepository.dart';
+import 'package:value_market_customer/commons/product/models/productRating.dart';
+import 'package:value_market_customer/commons/product/repositories/productRepository.dart';
 
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class ProductRatingState {}

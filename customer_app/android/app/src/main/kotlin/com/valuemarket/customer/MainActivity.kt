@@ -1,4 +1,4 @@
-package com.wrteam.eshop.pro
+package com.valuemarket.customer
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

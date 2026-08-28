@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 Color borderColor = const Color(0xFF4282525);
-Color primaryColor = const Color(0xFFB52046);
+Color primaryColor = const Color(0xFF333F49);
 Color secondaryColor = const Color(0xFF201A1A);
 Color errorColor = const Color(0xFFee1c2f);
 Color successStatusColor = const Color(0xFF0DAE4A);

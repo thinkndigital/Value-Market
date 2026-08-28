@@ -1,6 +1,6 @@
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
-import 'package:eshop_plus/ui/profile/chat/models/chatMessage.dart';
-import 'package:eshop_plus/ui/profile/chat/repositories/chatRepository.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/ui/profile/chat/models/chatMessage.dart';
+import 'package:value_market_customer/ui/profile/chat/repositories/chatRepository.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 

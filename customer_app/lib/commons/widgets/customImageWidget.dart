@@ -1,4 +1,4 @@
-import 'package:eshop_plus/utils/utils.dart';
+import 'package:value_market_customer/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 

@@ -1,4 +1,4 @@
-import 'package:eshop_plus/commons/widgets/customTextContainer.dart';
+import 'package:value_market_customer/commons/widgets/customTextContainer.dart';
 import 'package:flutter/material.dart';
 
 class RatingAndReviewCountContainer extends StatelessWidget {

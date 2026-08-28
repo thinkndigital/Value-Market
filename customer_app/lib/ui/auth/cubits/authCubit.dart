@@ -1,5 +1,5 @@
-import 'package:eshop_plus/commons/models/userDetails.dart';
-import 'package:eshop_plus/ui/auth/repositories/authRepository.dart';
+import 'package:value_market_customer/commons/models/userDetails.dart';
+import 'package:value_market_customer/ui/auth/repositories/authRepository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

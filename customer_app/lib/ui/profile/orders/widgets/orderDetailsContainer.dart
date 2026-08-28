@@ -1,13 +1,13 @@
-import 'package:eshop_plus/ui/profile/orders/blocs/downloadFileCubit.dart';
-import 'package:eshop_plus/ui/profile/orders/blocs/getInvoiceCubit.dart';
-import 'package:eshop_plus/commons/blocs/settingsAndLanguagesCubit.dart';
-import 'package:eshop_plus/commons/widgets/customCircularProgressIndicator.dart';
+import 'package:value_market_customer/ui/profile/orders/blocs/downloadFileCubit.dart';
+import 'package:value_market_customer/ui/profile/orders/blocs/getInvoiceCubit.dart';
+import 'package:value_market_customer/commons/blocs/settingsAndLanguagesCubit.dart';
+import 'package:value_market_customer/commons/widgets/customCircularProgressIndicator.dart';
 import 'package:open_filex/open_filex.dart';
-import 'package:eshop_plus/commons/widgets/customTextContainer.dart';
-import 'package:eshop_plus/core/constants/themeConstants.dart';
-import 'package:eshop_plus/utils/designConfig.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
-import 'package:eshop_plus/utils/utils.dart';
+import 'package:value_market_customer/commons/widgets/customTextContainer.dart';
+import 'package:value_market_customer/core/constants/themeConstants.dart';
+import 'package:value_market_customer/utils/designConfig.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
+import 'package:value_market_customer/utils/utils.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';

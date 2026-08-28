@@ -1,14 +1,14 @@
 import 'dart:convert';
 
-import 'package:eshop_plus/core/api/apiService.dart';
-import 'package:eshop_plus/main.dart';
-import 'package:eshop_plus/ui/profile/chat/blocs/getMessageCubit.dart';
-import 'package:eshop_plus/commons/blocs/settingsAndLanguagesCubit.dart';
-import 'package:eshop_plus/ui/profile/chat/models/chatMessage.dart';
-import 'package:eshop_plus/ui/auth/repositories/authRepository.dart';
-import 'package:eshop_plus/ui/profile/chat/screens/chatScreen.dart';
+import 'package:value_market_customer/core/api/apiService.dart';
+import 'package:value_market_customer/main.dart';
+import 'package:value_market_customer/ui/profile/chat/blocs/getMessageCubit.dart';
+import 'package:value_market_customer/commons/blocs/settingsAndLanguagesCubit.dart';
+import 'package:value_market_customer/ui/profile/chat/models/chatMessage.dart';
+import 'package:value_market_customer/ui/auth/repositories/authRepository.dart';
+import 'package:value_market_customer/ui/profile/chat/screens/chatScreen.dart';
 
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';

@@ -1,8 +1,8 @@
-import 'package:eshop_plus/core/constants/appConstants.dart';
-import 'package:eshop_plus/ui/profile/transaction/models/paymentMethod.dart';
-import 'package:eshop_plus/ui/profile/transaction/repositories/transactionRepository.dart';
-import 'package:eshop_plus/ui/profile/transaction/widgets/stripeService.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/core/constants/appConstants.dart';
+import 'package:value_market_customer/ui/profile/transaction/models/paymentMethod.dart';
+import 'package:value_market_customer/ui/profile/transaction/repositories/transactionRepository.dart';
+import 'package:value_market_customer/ui/profile/transaction/widgets/stripeService.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 

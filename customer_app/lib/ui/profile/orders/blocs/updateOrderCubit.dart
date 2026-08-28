@@ -1,5 +1,5 @@
-import 'package:eshop_plus/ui/profile/orders/models/order.dart';
-import 'package:eshop_plus/ui/profile/orders/repositories/orderRepository.dart';
+import 'package:value_market_customer/ui/profile/orders/models/order.dart';
+import 'package:value_market_customer/ui/profile/orders/repositories/orderRepository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class UpdateOrderState {}

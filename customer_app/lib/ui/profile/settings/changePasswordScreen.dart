@@ -1,12 +1,12 @@
-import 'package:eshop_plus/commons/blocs/updateUserCubit.dart';
-import 'package:eshop_plus/utils/designConfig.dart';
+import 'package:value_market_customer/commons/blocs/updateUserCubit.dart';
+import 'package:value_market_customer/utils/designConfig.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/routes/routes.dart';
 import '../../../commons/blocs/settingsAndLanguagesCubit.dart';
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
-import 'package:eshop_plus/core/constants/themeConstants.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/core/constants/themeConstants.dart';
 import '../../../core/localization/labelKeys.dart';
 import '../../../utils/utils.dart';
 import '../../../utils/validator.dart';

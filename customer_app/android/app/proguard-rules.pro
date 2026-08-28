@@ -53,7 +53,7 @@
 }
 
 # Retain access to model classes
--keep class com.wrteam.eshop.pro.models.** { *; }
+-keep class com.valuemarket.customer.models.** { *; }
 
 
 #If ProGuard is enabled, it might be stripping essential speech recognition classes. To fix this, add the following rules to android/app/proguard-rules.pro:

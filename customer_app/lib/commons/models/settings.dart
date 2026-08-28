@@ -1,4 +1,4 @@
-import 'package:eshop_plus/commons/models/systemSettings.dart';
+import 'package:value_market_customer/commons/models/systemSettings.dart';
 
 class Settings {
   final String? logo;

@@ -1,5 +1,5 @@
-import 'package:eshop_plus/ui/profile/promoCode/models/promoCode.dart';
-import 'package:eshop_plus/core/constants/hiveConstants.dart';
+import 'package:value_market_customer/ui/profile/promoCode/models/promoCode.dart';
+import 'package:value_market_customer/core/constants/hiveConstants.dart';
 import 'package:hive/hive.dart';
 
 class LocalPromocodeCubit {

@@ -1,18 +1,18 @@
-import 'package:eshop_plus/core/configs/appConfig.dart';
-import 'package:eshop_plus/ui/auth/cubits/authCubit.dart';
-import 'package:eshop_plus/ui/profile/settings/deleteAccountCubit.dart';
-import 'package:eshop_plus/commons/blocs/userDetailsCubit.dart';
-import 'package:eshop_plus/commons/widgets/customCircularProgressIndicator.dart';
-import 'package:eshop_plus/commons/widgets/filterContainerForBottomSheet.dart';
+import 'package:value_market_customer/core/configs/appConfig.dart';
+import 'package:value_market_customer/ui/auth/cubits/authCubit.dart';
+import 'package:value_market_customer/ui/profile/settings/deleteAccountCubit.dart';
+import 'package:value_market_customer/commons/blocs/userDetailsCubit.dart';
+import 'package:value_market_customer/commons/widgets/customCircularProgressIndicator.dart';
+import 'package:value_market_customer/commons/widgets/filterContainerForBottomSheet.dart';
 
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
-import 'package:eshop_plus/utils/designConfig.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/utils/designConfig.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/routes/routes.dart';
-import 'package:eshop_plus/core/constants/themeConstants.dart';
+import 'package:value_market_customer/core/constants/themeConstants.dart';
 import '../../../core/localization/labelKeys.dart';
 import '../../../utils/utils.dart';
 import '../../../utils/validator.dart';

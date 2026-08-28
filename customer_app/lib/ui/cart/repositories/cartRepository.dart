@@ -1,8 +1,8 @@
-import 'package:eshop_plus/core/api/apiService.dart';
-import 'package:eshop_plus/ui/cart/models/cart.dart';
+import 'package:value_market_customer/core/api/apiService.dart';
+import 'package:value_market_customer/ui/cart/models/cart.dart';
 
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 
 class CartRepository {
   Future<Cart> fetchUserCart(

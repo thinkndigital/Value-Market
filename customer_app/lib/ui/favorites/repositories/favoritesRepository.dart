@@ -1,16 +1,16 @@
-import 'package:eshop_plus/core/api/apiService.dart';
-import 'package:eshop_plus/core/constants/appConstants.dart';
-import 'package:eshop_plus/ui/favorites/models/offlineFavorite.dart';
-import 'package:eshop_plus/commons/product/models/product.dart';
-import 'package:eshop_plus/commons/seller/models/seller.dart';
-import 'package:eshop_plus/commons/product/repositories/productRepository.dart';
-import 'package:eshop_plus/commons/seller/repositories/sellerRepository.dart';
-import 'package:eshop_plus/core/constants/hiveConstants.dart';
-import 'package:eshop_plus/core/localization/labelKeys.dart';
+import 'package:value_market_customer/core/api/apiService.dart';
+import 'package:value_market_customer/core/constants/appConstants.dart';
+import 'package:value_market_customer/ui/favorites/models/offlineFavorite.dart';
+import 'package:value_market_customer/commons/product/models/product.dart';
+import 'package:value_market_customer/commons/seller/models/seller.dart';
+import 'package:value_market_customer/commons/product/repositories/productRepository.dart';
+import 'package:value_market_customer/commons/seller/repositories/sellerRepository.dart';
+import 'package:value_market_customer/core/constants/hiveConstants.dart';
+import 'package:value_market_customer/core/localization/labelKeys.dart';
 import 'package:hive/hive.dart';
 
-import 'package:eshop_plus/core/api/apiEndPoints.dart';
-import 'package:eshop_plus/core/configs/appConfig.dart';
+import 'package:value_market_customer/core/api/apiEndPoints.dart';
+import 'package:value_market_customer/core/configs/appConfig.dart';
 
 class FavoritesRepository {
   Future<String> addFavoriteProduct(
