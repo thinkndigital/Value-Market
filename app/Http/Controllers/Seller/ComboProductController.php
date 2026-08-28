@@ -29,6 +29,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Services\StoreService;
 use App\Services\MediaService;
 use App\Services\SettingService;
+use App\Services\TenantContext;
 class ComboProductController extends Controller
 {
     public function index()
@@ -53,10 +54,31 @@ class ComboProductController extends Controller
 
     public function store(Request $request, $fromApp = false, $language_code = '')
     {
-        $user_id = isset($request->user_id) && !empty($request->user_id) ? $request->user_id : Auth::user()->id;
+        // Security fix (docs/SECURITY_AUDIT.md §6.2, same fix already made to ProductController::store()):
+        // $user_id previously accepted $request->user_id directly with no verification - any authenticated
+        // seller could create a combo product attributed to any other seller's identity. This controller is
+        // only ever reached via seller/* routes (routes/seller_routes.php), unlike ProductController::store()
+        // which is shared with the admin panel, so there is no legitimate case where the caller isn't the
+        // owning seller - the request value is dropped entirely rather than conditionally overridden.
+        $user_id = Auth::user()->id;
         $seller_id = Seller::where('user_id', $user_id)->value('id');
 
-        $store_id = app(StoreService::class)->getStoreId();
+        // Security fix (docs/SECURITY_AUDIT.md §6.2, same fix already made to PosController/BrandController/
+        // CategoryController/MediaController): the store_id candidate (request or session-based) is verified
+        // against the acting seller's own SellerStore rows before being trusted - SetDefaultStore middleware
+        // can silently repoint session('store_id') via an unauthenticated `?store=slug` query param, and the
+        // request value was previously trusted directly with no check at all further down in $product_data.
+        $candidateStoreId = !empty($request->store_id) ? $request->store_id : app(StoreService::class)->getStoreId();
+        $store_id = app(TenantContext::class)->verifiedSellerStoreId($candidateStoreId);
+        if ($store_id === null) {
+            $message = labels('seller.data_not_found', 'Data Not Found');
+            if ($fromApp) {
+                return response()->json(['error' => true, 'message' => $message]);
+            }
+            return $request->ajax()
+                ? response()->json(['error' => true, 'message' => $message])
+                : redirect()->back()->with('error', $message)->withInput();
+        }
 
         $validator = Validator::make($request->all(), [
             'title' => 'required|string',
@@ -226,7 +248,7 @@ class ComboProductController extends Controller
             'product_ids' => $product_ids ?? '',
             'product_variant_ids' => $product_variant_ids ?? '',
             'status' => 1,
-            'store_id' => $request->store_id != null ? $request->store_id : $store_id,
+            'store_id' => $store_id,
             'attribute' => $attribute ?? '',
             'attribute_value_ids' => $attribute_value_ids ?? '',
         ];
@@ -376,7 +398,23 @@ class ComboProductController extends Controller
         }
 
         $product_type = $product_data[0]->product_type;
-        $store_id = !empty(request('store_id')) ? request('store_id') : app(StoreService::class)->getStoreId();
+
+        // Security fix (docs/SECURITY_AUDIT.md §6.2, same fix as store() above): the store_id candidate is
+        // verified against the acting seller's own SellerStore rows before being trusted - previously a
+        // seller could repoint their own combo product's store_id to a store they don't manage via the
+        // request or a SetDefaultStore-hijacked session.
+        $candidateStoreId = !empty(request('store_id')) ? request('store_id') : app(StoreService::class)->getStoreId();
+        $store_id = app(TenantContext::class)->verifiedSellerStoreId($candidateStoreId);
+        if ($store_id === null) {
+            $message = labels('seller.data_not_found', 'Data Not Found');
+            if ($from_app == true) {
+                return response()->json(['error' => true, 'message' => $message], 404);
+            }
+            return $request->ajax()
+                ? response()->json(['error' => true, 'message' => $message], 404)
+                : redirect()->back()->with('error', $message)->withInput();
+        }
+
         $validator = Validator::make($request->all(), [
             'title' => 'required',
             'short_description' => 'required',
