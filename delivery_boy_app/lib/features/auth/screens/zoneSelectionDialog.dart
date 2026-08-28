@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'package:eshoppro_deliveryboy/features/auth/blocs/zoneListCubit.dart';
-import 'package:eshoppro_deliveryboy/commons/widgets/customTextContainer.dart';
+import 'package:value_market_delivery_boy/features/auth/blocs/zoneListCubit.dart';
+import 'package:value_market_delivery_boy/commons/widgets/customTextContainer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../commons/blocs/settingsAndLanguagesCubit.dart';

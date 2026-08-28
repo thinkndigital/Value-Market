@@ -1,8 +1,8 @@
-import 'package:eshoppro_deliveryboy/core/constants/appConstants.dart';
-import 'package:eshoppro_deliveryboy/core/constants/themeConstants.dart';
-import 'package:eshoppro_deliveryboy/features/orders/models/parcel.dart';
-import 'package:eshoppro_deliveryboy/utils/datetimeUtils.dart';
-import 'package:eshoppro_deliveryboy/utils/extensions/currencyExtension.dart';
+import 'package:value_market_delivery_boy/core/constants/appConstants.dart';
+import 'package:value_market_delivery_boy/core/constants/themeConstants.dart';
+import 'package:value_market_delivery_boy/features/orders/models/parcel.dart';
+import 'package:value_market_delivery_boy/utils/datetimeUtils.dart';
+import 'package:value_market_delivery_boy/utils/extensions/currencyExtension.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/localization/labelKeys.dart';

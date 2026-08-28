@@ -1,4 +1,4 @@
-import 'package:eshoppro_deliveryboy/features/auth/repositories/authRepository.dart';
+import 'package:value_market_delivery_boy/features/auth/repositories/authRepository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class ResetPasswordState {}

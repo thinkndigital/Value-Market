@@ -1,5 +1,5 @@
-import 'package:eshoppro_deliveryboy/features/wallet/blocs/transactionCubit.dart';
-import 'package:eshoppro_deliveryboy/features/wallet/widgets/transactionInfoContainer.dart';
+import 'package:value_market_delivery_boy/features/wallet/blocs/transactionCubit.dart';
+import 'package:value_market_delivery_boy/features/wallet/widgets/transactionInfoContainer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';

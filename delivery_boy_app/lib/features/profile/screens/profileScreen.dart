@@ -1,14 +1,14 @@
-import 'package:eshoppro_deliveryboy/core/constants/themeConstants.dart';
-import 'package:eshoppro_deliveryboy/features/auth/blocs/authCubit.dart';
-import 'package:eshoppro_deliveryboy/commons/blocs/settingsAndLanguagesCubit.dart';
-import 'package:eshoppro_deliveryboy/commons/blocs/userDetailsCubit.dart';
-import 'package:eshoppro_deliveryboy/commons/models/language.dart';
-import 'package:eshoppro_deliveryboy/commons/widgets/customAppbar.dart';
-import 'package:eshoppro_deliveryboy/commons/widgets/customCircularProgressIndicator.dart';
-import 'package:eshoppro_deliveryboy/commons/widgets/customLabelContainer.dart';
-import 'package:eshoppro_deliveryboy/commons/widgets/customTextContainer.dart';
-import 'package:eshoppro_deliveryboy/utils/designConfig.dart';
-import 'package:eshoppro_deliveryboy/core/localization/labelKeys.dart';
+import 'package:value_market_delivery_boy/core/constants/themeConstants.dart';
+import 'package:value_market_delivery_boy/features/auth/blocs/authCubit.dart';
+import 'package:value_market_delivery_boy/commons/blocs/settingsAndLanguagesCubit.dart';
+import 'package:value_market_delivery_boy/commons/blocs/userDetailsCubit.dart';
+import 'package:value_market_delivery_boy/commons/models/language.dart';
+import 'package:value_market_delivery_boy/commons/widgets/customAppbar.dart';
+import 'package:value_market_delivery_boy/commons/widgets/customCircularProgressIndicator.dart';
+import 'package:value_market_delivery_boy/commons/widgets/customLabelContainer.dart';
+import 'package:value_market_delivery_boy/commons/widgets/customTextContainer.dart';
+import 'package:value_market_delivery_boy/utils/designConfig.dart';
+import 'package:value_market_delivery_boy/core/localization/labelKeys.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

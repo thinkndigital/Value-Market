@@ -1,10 +1,10 @@
 
-import 'package:eshoppro_deliveryboy/core/localization/defaultLanguageTranslatedValues.dart';
-import 'package:eshoppro_deliveryboy/commons/models/language.dart';
-import 'package:eshoppro_deliveryboy/commons/models/settings.dart';
-import 'package:eshoppro_deliveryboy/commons/repositories/settingsRepository.dart';
-import 'package:eshoppro_deliveryboy/main.dart';
-import 'package:eshoppro_deliveryboy/core/configs/appConfig.dart';
+import 'package:value_market_delivery_boy/core/localization/defaultLanguageTranslatedValues.dart';
+import 'package:value_market_delivery_boy/commons/models/language.dart';
+import 'package:value_market_delivery_boy/commons/models/settings.dart';
+import 'package:value_market_delivery_boy/commons/repositories/settingsRepository.dart';
+import 'package:value_market_delivery_boy/main.dart';
+import 'package:value_market_delivery_boy/core/configs/appConfig.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

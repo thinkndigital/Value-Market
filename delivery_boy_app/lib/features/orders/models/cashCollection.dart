@@ -1,4 +1,4 @@
-import 'package:eshoppro_deliveryboy/features/orders/models/order.dart';
+import 'package:value_market_delivery_boy/features/orders/models/order.dart';
 
 class CashCollection {
 int? id;

@@ -1,6 +1,6 @@
-import 'package:eshoppro_deliveryboy/features/collections/blocs/cashCollectionCubit.dart';
-import 'package:eshoppro_deliveryboy/features/collections/Widgets/collectionInfoContainer.dart';
-import 'package:eshoppro_deliveryboy/commons/widgets/customCircularProgressIndicator.dart';
+import 'package:value_market_delivery_boy/features/collections/blocs/cashCollectionCubit.dart';
+import 'package:value_market_delivery_boy/features/collections/Widgets/collectionInfoContainer.dart';
+import 'package:value_market_delivery_boy/commons/widgets/customCircularProgressIndicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';

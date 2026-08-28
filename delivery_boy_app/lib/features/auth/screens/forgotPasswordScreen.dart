@@ -1,12 +1,12 @@
 
-import 'package:eshoppro_deliveryboy/core/localization/labelKeys.dart';
-import 'package:eshoppro_deliveryboy/features/auth/blocs/resetPasswordCubit.dart';
-import 'package:eshoppro_deliveryboy/features/auth/widgets/loginContainer.dart';
-import 'package:eshoppro_deliveryboy/commons/widgets/customCircularProgressIndicator.dart';
-import 'package:eshoppro_deliveryboy/commons/widgets/customTextFieldContainer.dart';
-import 'package:eshoppro_deliveryboy/core/configs/appConfig.dart';
-import 'package:eshoppro_deliveryboy/utils/inputValidators.dart';
-import 'package:eshoppro_deliveryboy/core/api/apiEndPoints.dart';
+import 'package:value_market_delivery_boy/core/localization/labelKeys.dart';
+import 'package:value_market_delivery_boy/features/auth/blocs/resetPasswordCubit.dart';
+import 'package:value_market_delivery_boy/features/auth/widgets/loginContainer.dart';
+import 'package:value_market_delivery_boy/commons/widgets/customCircularProgressIndicator.dart';
+import 'package:value_market_delivery_boy/commons/widgets/customTextFieldContainer.dart';
+import 'package:value_market_delivery_boy/core/configs/appConfig.dart';
+import 'package:value_market_delivery_boy/utils/inputValidators.dart';
+import 'package:value_market_delivery_boy/core/api/apiEndPoints.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

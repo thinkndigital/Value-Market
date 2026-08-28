@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:eshoppro_deliveryboy/core/api/apiService.dart';
-import 'package:eshoppro_deliveryboy/core/localization/labelKeys.dart';
-import 'package:eshoppro_deliveryboy/utils/utils.dart';
+import 'package:value_market_delivery_boy/core/api/apiService.dart';
+import 'package:value_market_delivery_boy/core/localization/labelKeys.dart';
+import 'package:value_market_delivery_boy/utils/utils.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path_provider/path_provider.dart';

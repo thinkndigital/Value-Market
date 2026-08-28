@@ -1,5 +1,5 @@
-import 'package:eshoppro_deliveryboy/core/api/apiEndPoints.dart';
-import 'package:eshoppro_deliveryboy/core/configs/appConfig.dart';
+import 'package:value_market_delivery_boy/core/api/apiEndPoints.dart';
+import 'package:value_market_delivery_boy/core/configs/appConfig.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../models/zone.dart';

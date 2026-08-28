@@ -1,4 +1,4 @@
-import 'package:eshoppro_deliveryboy/commons/models/systemSettings.dart';
+import 'package:value_market_delivery_boy/commons/models/systemSettings.dart';
 
 class Settings {
   String? currency;

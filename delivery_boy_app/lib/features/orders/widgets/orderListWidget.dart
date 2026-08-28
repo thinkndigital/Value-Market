@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:eshoppro_deliveryboy/core/constants/themeConstants.dart';
-import 'package:eshoppro_deliveryboy/features/orders/models/parcel.dart';
-import 'package:eshoppro_deliveryboy/features/mainScreen.dart';
-import 'package:eshoppro_deliveryboy/commons/widgets/customLabelContainer.dart';
-import 'package:eshoppro_deliveryboy/commons/widgets/customTextContainer.dart';
-import 'package:eshoppro_deliveryboy/utils/datetimeUtils.dart';
-import 'package:eshoppro_deliveryboy/utils/extensions/currencyExtension.dart';
+import 'package:value_market_delivery_boy/core/constants/themeConstants.dart';
+import 'package:value_market_delivery_boy/features/orders/models/parcel.dart';
+import 'package:value_market_delivery_boy/features/mainScreen.dart';
+import 'package:value_market_delivery_boy/commons/widgets/customLabelContainer.dart';
+import 'package:value_market_delivery_boy/commons/widgets/customTextContainer.dart';
+import 'package:value_market_delivery_boy/utils/datetimeUtils.dart';
+import 'package:value_market_delivery_boy/utils/extensions/currencyExtension.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

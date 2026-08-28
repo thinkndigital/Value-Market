@@ -1,6 +1,6 @@
-import 'package:eshoppro_deliveryboy/core/constants/themeConstants.dart';
-import 'package:eshoppro_deliveryboy/commons/widgets/customRoundedButton.dart';
-import 'package:eshoppro_deliveryboy/utils/designConfig.dart';
+import 'package:value_market_delivery_boy/core/constants/themeConstants.dart';
+import 'package:value_market_delivery_boy/commons/widgets/customRoundedButton.dart';
+import 'package:value_market_delivery_boy/utils/designConfig.dart';
 import 'package:flutter/material.dart';
 import 'customBottomButtonContainer.dart';
 import 'customTextContainer.dart';

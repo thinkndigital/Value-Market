@@ -1,5 +1,5 @@
-import 'package:eshoppro_deliveryboy/core/constants/themeConstants.dart';
-import 'package:eshoppro_deliveryboy/commons/widgets/customLabelContainer.dart';
+import 'package:value_market_delivery_boy/core/constants/themeConstants.dart';
+import 'package:value_market_delivery_boy/commons/widgets/customLabelContainer.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/colors.dart';
 import 'customTextContainer.dart';

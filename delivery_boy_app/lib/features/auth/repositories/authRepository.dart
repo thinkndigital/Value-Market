@@ -1,8 +1,8 @@
-import 'package:eshoppro_deliveryboy/core/constants/hiveConstants.dart';
-import 'package:eshoppro_deliveryboy/commons/models/userDetails.dart';
-import 'package:eshoppro_deliveryboy/core/localization/labelKeys.dart';
+import 'package:value_market_delivery_boy/core/constants/hiveConstants.dart';
+import 'package:value_market_delivery_boy/commons/models/userDetails.dart';
+import 'package:value_market_delivery_boy/core/localization/labelKeys.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:eshoppro_deliveryboy/core/api/apiEndPoints.dart';
+import 'package:value_market_delivery_boy/core/api/apiEndPoints.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../../core/api/apiService.dart';

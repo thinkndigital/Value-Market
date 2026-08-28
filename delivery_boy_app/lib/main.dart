@@ -1,10 +1,10 @@
-import 'package:eshoppro_deliveryboy/core/constants/hiveConstants.dart';
-import 'package:eshoppro_deliveryboy/core/routes/routes.dart';
-import 'package:eshoppro_deliveryboy/core/theme/appTheme.dart';
-import 'package:eshoppro_deliveryboy/features/auth/blocs/authCubit.dart';
-import 'package:eshoppro_deliveryboy/commons/blocs/settingsAndLanguagesCubit.dart';
-import 'package:eshoppro_deliveryboy/features/auth/repositories/authRepository.dart';
-import 'package:eshoppro_deliveryboy/commons/repositories/settingsRepository.dart';
+import 'package:value_market_delivery_boy/core/constants/hiveConstants.dart';
+import 'package:value_market_delivery_boy/core/routes/routes.dart';
+import 'package:value_market_delivery_boy/core/theme/appTheme.dart';
+import 'package:value_market_delivery_boy/features/auth/blocs/authCubit.dart';
+import 'package:value_market_delivery_boy/commons/blocs/settingsAndLanguagesCubit.dart';
+import 'package:value_market_delivery_boy/features/auth/repositories/authRepository.dart';
+import 'package:value_market_delivery_boy/commons/repositories/settingsRepository.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';

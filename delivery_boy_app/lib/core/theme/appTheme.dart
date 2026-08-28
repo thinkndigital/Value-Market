@@ -1,6 +1,6 @@
-import 'package:eshoppro_deliveryboy/core/constants/themeConstants.dart';
-import 'package:eshoppro_deliveryboy/core/theme/colors.dart';
-import 'package:eshoppro_deliveryboy/utils/utils.dart';
+import 'package:value_market_delivery_boy/core/constants/themeConstants.dart';
+import 'package:value_market_delivery_boy/core/theme/colors.dart';
+import 'package:value_market_delivery_boy/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 

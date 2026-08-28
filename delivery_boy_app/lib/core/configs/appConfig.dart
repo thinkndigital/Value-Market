@@ -8,10 +8,10 @@ String initialCountryCode = "+91";
 
 const String defaultLanguageCode = 'en';
 
-const appName = 'eShopPlus DeliveryBoy';
+const appName = 'Value Market Delivery';
 //Your package name
-const String androidPackageName = 'wrteam.eshop.pro.deliveryboy';
-const String iosPackageName = 'wrteam.eshop.pro.deliveryboy';
+const String androidPackageName = 'com.valuemarket.deliveryboy';
+const String iosPackageName = 'com.valuemarket.deliveryboy';
 
 //// Api constants===//
 ////// [Api limits constants]

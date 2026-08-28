@@ -1,13 +1,13 @@
-import 'package:eshoppro_deliveryboy/core/configs/appConfig.dart';
-import 'package:eshoppro_deliveryboy/core/constants/appConstants.dart';
-import 'package:eshoppro_deliveryboy/core/constants/themeConstants.dart';
-import 'package:eshoppro_deliveryboy/features/wallet/blocs/sendWithdrawalReqCubit.dart';
-import 'package:eshoppro_deliveryboy/features/wallet/blocs/transactionCubit.dart';
-import 'package:eshoppro_deliveryboy/features/wallet/blocs/transactionScreen.dart';
+import 'package:value_market_delivery_boy/core/configs/appConfig.dart';
+import 'package:value_market_delivery_boy/core/constants/appConstants.dart';
+import 'package:value_market_delivery_boy/core/constants/themeConstants.dart';
+import 'package:value_market_delivery_boy/features/wallet/blocs/sendWithdrawalReqCubit.dart';
+import 'package:value_market_delivery_boy/features/wallet/blocs/transactionCubit.dart';
+import 'package:value_market_delivery_boy/features/wallet/blocs/transactionScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:eshoppro_deliveryboy/core/api/apiEndPoints.dart';
+import 'package:value_market_delivery_boy/core/api/apiEndPoints.dart';
 
 import '../../../commons/blocs/settingsAndLanguagesCubit.dart';
 import '../../../../utils/utils.dart';

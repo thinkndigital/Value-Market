@@ -1,11 +1,11 @@
 {
-    "name": "eshoppro_deliveryboy",
-    "short_name": "eshoppro_deliveryboy",
+    "name": "Value Market Delivery",
+    "short_name": "Value Market",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Value Market Delivery: driver app for Value Market.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

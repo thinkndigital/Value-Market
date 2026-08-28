@@ -1,5 +1,5 @@
-import 'package:eshoppro_deliveryboy/features/orders/models/cashCollection.dart';
-import 'package:eshoppro_deliveryboy/features/collections/repositories/cashCollectionRepository.dart';
+import 'package:value_market_delivery_boy/features/orders/models/cashCollection.dart';
+import 'package:value_market_delivery_boy/features/collections/repositories/cashCollectionRepository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class CashCollectionState {}

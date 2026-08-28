@@ -25,7 +25,7 @@
 -keep class com.baseflow.permissionhandler.** { *; }
 
 # Keep your application class
--keep class wrteam.eshop.pro.deliveryboy.** { *; }
+-keep class com.valuemarket.deliveryboy.** { *; }
 
 # Keep native methods
 -keepclasseswithmembernames class * {

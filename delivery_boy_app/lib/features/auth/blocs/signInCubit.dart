@@ -1,5 +1,5 @@
-import 'package:eshoppro_deliveryboy/commons/models/userDetails.dart';
-import 'package:eshoppro_deliveryboy/features/auth/repositories/authRepository.dart';
+import 'package:value_market_delivery_boy/commons/models/userDetails.dart';
+import 'package:value_market_delivery_boy/features/auth/repositories/authRepository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class SignInState {}

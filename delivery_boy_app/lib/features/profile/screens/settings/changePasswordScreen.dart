@@ -1,16 +1,16 @@
-import 'package:eshoppro_deliveryboy/core/constants/themeConstants.dart';
-import 'package:eshoppro_deliveryboy/commons/blocs/settingsAndLanguagesCubit.dart';
-import 'package:eshoppro_deliveryboy/features/profile/blocs/updateUserCubit.dart';
-import 'package:eshoppro_deliveryboy/commons/widgets/customAppbar.dart';
-import 'package:eshoppro_deliveryboy/commons/widgets/customCircularProgressIndicator.dart';
-import 'package:eshoppro_deliveryboy/commons/widgets/customRoundedButton.dart';
-import 'package:eshoppro_deliveryboy/commons/widgets/showHidePasswordButton.dart';
-import 'package:eshoppro_deliveryboy/utils/designConfig.dart';
-import 'package:eshoppro_deliveryboy/core/localization/labelKeys.dart';
-import 'package:eshoppro_deliveryboy/utils/inputValidators.dart';
+import 'package:value_market_delivery_boy/core/constants/themeConstants.dart';
+import 'package:value_market_delivery_boy/commons/blocs/settingsAndLanguagesCubit.dart';
+import 'package:value_market_delivery_boy/features/profile/blocs/updateUserCubit.dart';
+import 'package:value_market_delivery_boy/commons/widgets/customAppbar.dart';
+import 'package:value_market_delivery_boy/commons/widgets/customCircularProgressIndicator.dart';
+import 'package:value_market_delivery_boy/commons/widgets/customRoundedButton.dart';
+import 'package:value_market_delivery_boy/commons/widgets/showHidePasswordButton.dart';
+import 'package:value_market_delivery_boy/utils/designConfig.dart';
+import 'package:value_market_delivery_boy/core/localization/labelKeys.dart';
+import 'package:value_market_delivery_boy/utils/inputValidators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:eshoppro_deliveryboy/core/api/apiEndPoints.dart';
+import 'package:value_market_delivery_boy/core/api/apiEndPoints.dart';
 
 import '../../../../core/routes/routes.dart';
 import '../../../../utils/utils.dart';

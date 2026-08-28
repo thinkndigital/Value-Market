@@ -4,17 +4,17 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:ui';
 import 'package:dio/dio.dart';
-import 'package:eshoppro_deliveryboy/core/constants/hiveConstants.dart';
-import 'package:eshoppro_deliveryboy/core/routes/routes.dart';
+import 'package:value_market_delivery_boy/core/constants/hiveConstants.dart';
+import 'package:value_market_delivery_boy/core/routes/routes.dart';
 
-import 'package:eshoppro_deliveryboy/commons/blocs/userDetailsCubit.dart';
+import 'package:value_market_delivery_boy/commons/blocs/userDetailsCubit.dart';
 
-import 'package:eshoppro_deliveryboy/core/api/apiService.dart';
-import 'package:eshoppro_deliveryboy/features/auth/repositories/authRepository.dart';
-import 'package:eshoppro_deliveryboy/features/notification/repositories/notificationRepository.dart';
-import 'package:eshoppro_deliveryboy/features/mainScreen.dart';
-import 'package:eshoppro_deliveryboy/core/configs/appConfig.dart';
-import 'package:eshoppro_deliveryboy/utils/utils.dart';
+import 'package:value_market_delivery_boy/core/api/apiService.dart';
+import 'package:value_market_delivery_boy/features/auth/repositories/authRepository.dart';
+import 'package:value_market_delivery_boy/features/notification/repositories/notificationRepository.dart';
+import 'package:value_market_delivery_boy/features/mainScreen.dart';
+import 'package:value_market_delivery_boy/core/configs/appConfig.dart';
+import 'package:value_market_delivery_boy/utils/utils.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -23,7 +23,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:eshoppro_deliveryboy/core/api/apiEndPoints.dart';
+import 'package:value_market_delivery_boy/core/api/apiEndPoints.dart';
 
 final ReceivePort backgroundMessageport = ReceivePort()
   ..listen(backgroundMessagePortHandler);

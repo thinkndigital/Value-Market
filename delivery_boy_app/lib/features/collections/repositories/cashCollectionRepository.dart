@@ -1,8 +1,8 @@
-import 'package:eshoppro_deliveryboy/core/localization/labelKeys.dart';
-import 'package:eshoppro_deliveryboy/features/orders/models/cashCollection.dart';
-import 'package:eshoppro_deliveryboy/core/api/apiEndPoints.dart';
+import 'package:value_market_delivery_boy/core/localization/labelKeys.dart';
+import 'package:value_market_delivery_boy/features/orders/models/cashCollection.dart';
+import 'package:value_market_delivery_boy/core/api/apiEndPoints.dart';
 import '../../../core/api/apiService.dart';
-import 'package:eshoppro_deliveryboy/core/configs/appConfig.dart';
+import 'package:value_market_delivery_boy/core/configs/appConfig.dart';
 
 class CashCollectionRepository {
 Future<({List<CashCollection> transactions, int total, double balance})>

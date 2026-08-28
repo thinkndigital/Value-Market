@@ -1,4 +1,4 @@
-import 'package:eshoppro_deliveryboy/commons/blocs/settingsAndLanguagesCubit.dart';
+import 'package:value_market_delivery_boy/commons/blocs/settingsAndLanguagesCubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

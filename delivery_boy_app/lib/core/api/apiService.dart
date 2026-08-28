@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:eshoppro_deliveryboy/core/localization/labelKeys.dart';
-import 'package:eshoppro_deliveryboy/features/auth/repositories/authRepository.dart';
-import 'package:eshoppro_deliveryboy/commons/repositories/settingsRepository.dart';
-import 'package:eshoppro_deliveryboy/main.dart';
-import 'package:eshoppro_deliveryboy/core/api/apiEndPoints.dart';
-import 'package:eshoppro_deliveryboy/core/configs/appConfig.dart';
+import 'package:value_market_delivery_boy/core/localization/labelKeys.dart';
+import 'package:value_market_delivery_boy/features/auth/repositories/authRepository.dart';
+import 'package:value_market_delivery_boy/commons/repositories/settingsRepository.dart';
+import 'package:value_market_delivery_boy/main.dart';
+import 'package:value_market_delivery_boy/core/api/apiEndPoints.dart';
+import 'package:value_market_delivery_boy/core/configs/appConfig.dart';
 
 import '../routes/routes.dart';
 import '../../utils/internetConnectivity.dart';

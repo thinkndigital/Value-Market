@@ -1,7 +1,7 @@
-import 'package:eshoppro_deliveryboy/commons/blocs/settingsAndLanguagesCubit.dart';
-import 'package:eshoppro_deliveryboy/commons/widgets/customTextContainer.dart';
-import 'package:eshoppro_deliveryboy/core/localization/labelKeys.dart';
-import 'package:eshoppro_deliveryboy/utils/utils.dart';
+import 'package:value_market_delivery_boy/commons/blocs/settingsAndLanguagesCubit.dart';
+import 'package:value_market_delivery_boy/commons/widgets/customTextContainer.dart';
+import 'package:value_market_delivery_boy/core/localization/labelKeys.dart';
+import 'package:value_market_delivery_boy/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

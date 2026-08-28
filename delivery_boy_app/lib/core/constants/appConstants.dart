@@ -1,4 +1,4 @@
-import 'package:eshoppro_deliveryboy/core/localization/labelKeys.dart';
+import 'package:value_market_delivery_boy/core/localization/labelKeys.dart';
 
 String simpleProductType = 'simple_product';
 String variableProductType = 'variable_product';

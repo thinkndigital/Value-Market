@@ -1,8 +1,8 @@
-import 'package:eshoppro_deliveryboy/core/constants/appConstants.dart';
-import 'package:eshoppro_deliveryboy/core/constants/themeConstants.dart';
-import 'package:eshoppro_deliveryboy/features/orders/models/cashCollection.dart';
-import 'package:eshoppro_deliveryboy/commons/models/systemSettings.dart';
-import 'package:eshoppro_deliveryboy/commons/widgets/customStatusContainer.dart';
+import 'package:value_market_delivery_boy/core/constants/appConstants.dart';
+import 'package:value_market_delivery_boy/core/constants/themeConstants.dart';
+import 'package:value_market_delivery_boy/features/orders/models/cashCollection.dart';
+import 'package:value_market_delivery_boy/commons/models/systemSettings.dart';
+import 'package:value_market_delivery_boy/commons/widgets/customStatusContainer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../commons/blocs/settingsAndLanguagesCubit.dart';

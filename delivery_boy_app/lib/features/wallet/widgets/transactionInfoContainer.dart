@@ -1,5 +1,5 @@
-import 'package:eshoppro_deliveryboy/core/constants/appConstants.dart';
-import 'package:eshoppro_deliveryboy/core/constants/themeConstants.dart';
+import 'package:value_market_delivery_boy/core/constants/appConstants.dart';
+import 'package:value_market_delivery_boy/core/constants/themeConstants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../commons/blocs/settingsAndLanguagesCubit.dart';

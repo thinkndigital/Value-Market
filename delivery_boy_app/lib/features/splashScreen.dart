@@ -1,15 +1,14 @@
-import 'package:eshoppro_deliveryboy/core/routes/routes.dart';
-import 'package:eshoppro_deliveryboy/core/theme/colors.dart';
-import 'package:eshoppro_deliveryboy/features/auth/blocs/authCubit.dart';
-import 'package:eshoppro_deliveryboy/commons/blocs/settingsAndLanguagesCubit.dart';
+import 'package:value_market_delivery_boy/core/routes/routes.dart';
+import 'package:value_market_delivery_boy/core/theme/colors.dart';
+import 'package:value_market_delivery_boy/features/auth/blocs/authCubit.dart';
+import 'package:value_market_delivery_boy/commons/blocs/settingsAndLanguagesCubit.dart';
 
-import 'package:eshoppro_deliveryboy/commons/widgets/customCircularProgressIndicator.dart';
-import 'package:eshoppro_deliveryboy/commons/widgets/errorScreen.dart';
-import 'package:eshoppro_deliveryboy/utils/utils.dart';
+import 'package:value_market_delivery_boy/commons/widgets/customCircularProgressIndicator.dart';
+import 'package:value_market_delivery_boy/commons/widgets/errorScreen.dart';
+import 'package:value_market_delivery_boy/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_svg/svg.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -104,12 +103,12 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                 );
               },
-              child: SvgPicture.asset(
+              child: Image.asset(
                 Utils.getBrandingImagePath(
-                  'app_logo.svg',
+                  'app_logo.png',
                 ),
-                width: 200,
-                height: 200,
+                width: 220,
+                height: 220 * 479 / 861,
               ),
             ),
           );

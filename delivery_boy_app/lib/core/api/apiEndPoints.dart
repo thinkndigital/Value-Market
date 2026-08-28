@@ -1,4 +1,4 @@
-import 'package:eshoppro_deliveryboy/core/configs/appConfig.dart';
+import 'package:value_market_delivery_boy/core/configs/appConfig.dart';
 
 class ApiURL {
 ////Api end points////
