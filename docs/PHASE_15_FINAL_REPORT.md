@@ -1,9 +1,11 @@
 # Phase 15 Final Report — Security Hardening
 
-**Status: complete for the security-hardening scope — the RBAC redesign named in the roadmap's Phase 15
-description is explicitly NOT done, deferred with reasoning, not silently dropped.** See
-`PHASE_15_SECURITY_HARDENING.md` and `docs/SECURITY_AUDIT.md` §6 for full detail; this report is the index
-and the numbers.
+**Status: complete for the security-hardening scope. The RBAC redesign named in the roadmap's Phase 15
+description was not done - not because it was deferred as too risky (the original reasoning here), but
+because a later direct re-investigation found there is no actual duplication between `role_id` and Spatie
+to unify. See §"the load-bearing decision this phase made" below, and `docs/SECURITY_AUDIT.md` §6.3 for the
+full corrected reasoning.** See `PHASE_15_SECURITY_HARDENING.md` and `docs/SECURITY_AUDIT.md` §6 for full
+detail; this report is the index and the numbers.
 
 ## Exact numbers
 
@@ -40,11 +42,23 @@ exist anywhere in the app. Getting this wrong in either direction - blindly patc
 dismissing the finding once the literal framing didn't hold up - would have been worse than the extra
 verification step actually taken.
 
+A second instance of the same discipline, added after this report's original version: this report itself
+originally deferred the "RBAC redesign" as too risky to attempt, repeating Phase 2's own framing without
+re-checking it against the current code. Prompted by a direct user question about which mechanism to keep,
+re-reading the actual authorization code (`RoleMiddleware`, `CheckPermissions`, `UserPermissionController`)
+found that framing wrong - `role_id` and Spatie's permission system are two different, correctly-coexisting
+concerns, not a duplication needing a merge (full reasoning: `docs/SECURITY_AUDIT.md` §6.3). Attempting the
+one genuinely unused piece found on re-investigation (Spatie's Role-assignment mechanism, isolated by
+dropping the `HasRoles` trait from `User.php`) was tried and reverted immediately when the full test suite
+caught that `HasPermissions` itself depends on a method only `HasRoles` provides. Repeating an earlier
+finding without re-verifying it is its own failure mode, distinct from mishandling a new one - this project
+treats both as worth catching and correcting in place, not just the first.
+
 ## Documented, not built this phase (with reason)
 
 | Finding | Why not built now | Doc |
 |---|---|---|
-| RBAC redesign (dual `role_id`/Spatie → one mechanism) | Massive, high-risk, cross-cutting architectural change; Phase 2 already investigated and deliberately declined it for the same reason it's declined again - an unsupervised migration error risks locking out the admin panel or silently changing authorization application-wide | `SECURITY_AUDIT.md` §6.3 |
+| RBAC redesign (dual `role_id`/Spatie → one mechanism) | Turned out, on direct re-investigation, not to be needed at all - `role_id` and Spatie's permission system are not duplicates (see "the load-bearing decision this phase made" above) | `SECURITY_AUDIT.md` §6.3 |
 | Global `Model::unguard()` removal | Same scale of risk - requires auditing ~200+ methods across three ~14,000-line legacy API controllers to confirm none relies on receiving fields outside its declared `$fillable`; Phase 2's own already-documented deferral, confirmed again here | `SECURITY_AUDIT.md` §6.2 |
 | `InventoryService` stock-movement/stock-item quantity divergence on clamp | Stock math, the same category of decision Phase 3 explicitly declined to make unsupervised; two concrete remediation options documented for a dedicated follow-up pass | `SECURITY_AUDIT.md` §6.2 |
 

@@ -4,8 +4,8 @@
 
 `docs/IMPLEMENTATION_ROADMAP.md`'s Phase 15 description names two things: a security hardening pass over
 the new subsystems Phases 4-14 added, and an RBAC redesign unifying the app's dual `role_id`/Spatie
-authorization mechanism into one. Only the first is done here; §4 below explains why the second is
-deliberately not attempted.
+authorization mechanism into one. Only the first was actually needed - §4 below explains how the second
+turned out, on direct re-investigation, to rest on a wrong premise (there is no duplication to unify).
 
 The hardening pass itself was not a manual line-by-line re-read of ~10 phases of code. A background review
 agent (`Agent` tool, run independently, given the full list of Phase 4-14 controllers/services and specific
@@ -74,18 +74,22 @@ diverge. Real, but this is stock math, the same category of decision Phase 3 exp
 unsupervised (proportional refund/restock). Two concrete remediation options are documented in
 `SECURITY_AUDIT.md` §6.2 for a dedicated follow-up pass rather than a blind pick here.
 
-## 4. Explicitly deferred: RBAC redesign
+## 4. RBAC redesign - not needed (corrected after direct re-investigation)
 
-Not attempted. The roadmap names it as Phase 15 scope; Phase 2 already investigated the dual `role_id`/
-Spatie mechanism directly (`docs/PHASE_2_RBAC_ARCHITECTURE.md`) and deliberately declined to unify it, for
-the reason that still holds: every route's authorization ultimately traces back to whichever mechanism is
-live today, and an unsupervised migration that gets even one edge case wrong risks locking out the admin
-panel or silently changing who can do what, application-wide. The standing "continue on your own"
-authorization for this session covers real, scoped bug-fixing of exactly the shape this phase delivered -
-not a gamble with the whole application's access control while nobody is watching the outcome. Recommended
-path, unchanged from Phase 2: pick `role_id` (it's the mechanism every route actually gates on today),
-migrate Spatie's permission data into it deliberately with a human reviewing each step, remove the unused
-mechanism last.
+The roadmap names an RBAC redesign as Phase 15 scope, and this document originally deferred it here,
+repeating Phase 2's own framing ("dual mechanism, needs unifying, too risky to touch unsupervised") without
+independently re-checking it against the current code. A later, direct investigation - re-reading
+`RoleMiddleware`, `CheckPermissions`, `UserPermissionController`, and `User.php`'s actual trait usage,
+prompted by a user question about which mechanism to keep - found that framing wrong: `role_id` and
+Spatie's permission system are not duplicates. `role_id` gates *who a user broadly is*; Spatie's
+`hasPermissionTo()`/`syncPermissions()` genuinely and extensively gates *what a specific admin/editor
+account may do* (confirmed: 180 routes in `routes/admin_routes.php`). Only Spatie's Role-*assignment* side
+(`assignRole()`, its own `Role` model) is unused - and even that couldn't be safely isolated and removed:
+attempting to drop the `HasRoles` trait from `User.php` (keeping only `HasPermissions`) was tried and broke
+the live permission checks immediately (caught by the full test suite before being shipped) -
+`HasPermissions::hasPermissionViaRole()` itself calls `hasRole()`, which only `HasRoles` provides. There is
+no RBAC redesign to do and no unused mechanism to safely strip. Full detail and the corrected reasoning:
+`docs/SECURITY_AUDIT.md` §6.3.
 
 ## 5. Verification
 

@@ -289,18 +289,43 @@ logic elsewhere already assumes `StockMovement.quantity` means "requested," not 
 
 ### 6.3 Explicitly out of scope for Phase 15 (deferred, not dropped)
 
-**RBAC redesign (dual `role_id`/Spatie mechanism → one).** The roadmap's own Phase 15 description names this
-as in-scope. It is not attempted here. This is a massive, high-risk, cross-cutting architectural change -
-Phase 2 already investigated the dual mechanism directly (`docs/PHASE_2_RBAC_ARCHITECTURE.md`) and
-deliberately declined to unify it, for the same reason it's declined again now: every route's authorization
-ultimately traces back to whichever mechanism is live today, and a migration attempt that gets even one
-edge case wrong risks locking out the admin panel or silently changing who can do what, application-wide.
-That is not a risk to take unsupervised, and the standing authorization for this session ("continue on your
-own") was given for real, scoped bug-fixing work of exactly the shape this file documents - not license to
-gamble the whole application's access control while nobody is watching the result. Recommended remediation
-path, unchanged from Phase 2's own conclusion: pick one mechanism (role_id, since it's the one every route
-actually gates on today), migrate Spatie's permission data into it deliberately over a dedicated phase with
-a human reviewing each step, then remove the unused mechanism last, once nothing references it.
+**RBAC redesign (dual `role_id`/Spatie mechanism → one) - superseded by direct re-investigation, corrected
+here.** The roadmap's Phase 15 description names this as in-scope, and this file originally deferred it
+here as "a massive, high-risk, cross-cutting architectural change... every route's authorization ultimately
+traces back to whichever mechanism is live today" - repeating Phase 2's own framing
+(`docs/PHASE_2_RBAC_ARCHITECTURE.md`) without re-verifying it against the current code. A direct
+investigation (re-reading `RoleMiddleware`, `CheckPermissions`, `UserPermissionController`, `User.php`'s
+actual trait usage, and the live database) found that framing to be **wrong**: `role_id` and Spatie do not
+duplicate each other and there is no merge to perform.
+
+- **`role_id`** (`App\Models\Role`, the app's own `roles` table, 6 fixed rows: super_admin/admin/editor/
+  seller/delivery_boy/customer) answers *who this user broadly is* - checked by `RoleMiddleware` and
+  throughout the app (confirmed: this is the only mechanism ~90+ pre-existing call sites and every phase
+  of this project's own new code actually gate on).
+- **Spatie's Permission mechanism** (`hasPermissionTo()`/`syncPermissions()`) answers a completely different
+  question - *what is this specific admin/editor account allowed to do* - and is genuinely, extensively
+  live: confirmed **180 routes** in `routes/admin_routes.php` gated by its `permissions:` middleware
+  (`App\Http\Middleware\CheckPermissions` → `$user->hasPermissionTo()`), wired up via
+  `UserPermissionController::permissionsUpdate()` (`$user->syncPermissions($permissions)`) - this is the
+  real feature letting a Super Admin grant an Editor account specific permissions (e.g. "create categories"
+  but not "delete blogs") without giving them the broader Admin role. Not dead code; not a duplicate of
+  `role_id` - a finer-grained layer *within* the accounts `role_id` already marks as admin/editor.
+- **Spatie's Role *assignment* mechanism** (`assignRole()`, `hasRole()`, Spatie's own `Role` model) **is**
+  confirmed genuinely unused - no code anywhere calls it - and additionally not even usable as installed:
+  Spatie's `Role` model expects a `guard_name` column on its `roles` table, but that table name collides
+  with this app's own pre-existing legacy `role_id` table (`App\Models\Role`), which has no such column.
+  Attempting to actually remove this specific piece was tried live (dropping the `HasRoles` trait from
+  `App\Models\User`, keeping only `HasPermissions`) and reverted immediately: the full test suite caught
+  that `HasPermissions::hasPermissionViaRole()` internally calls `hasRole()`, which only `HasRoles` defines
+  - the two traits are not independently optional despite `HasPermissions` being the only one whose own
+  methods are called directly elsewhere in this app. The unused capability (role *assignment* specifically)
+  has no isolated removal path within the User model as currently structured; both traits stay.
+
+**Conclusion: no RBAC redesign is needed.** The "dual mechanism" was never two competing systems to merge -
+`role_id` and Spatie permissions are two different, correctly-coexisting concerns, and the previously-cited
+"lock out the admin panel" risk does not apply to a merge that was never actually necessary. This section is
+corrected rather than deleted, so the earlier (wrong) framing and the reasoning that superseded it both stay
+visible for anyone reading this file's history.
 
 **Global `Model::unguard()` removal.** See Finding 16 above - same reasoning, same scale, same explicit
 deferral, now confirmed a second time by an independent audit pass reaching the identical conclusion Phase

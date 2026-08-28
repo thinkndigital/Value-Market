@@ -20,6 +20,19 @@ class User extends Authenticatable implements HasMedia
 {
     use InteractsWithMedia;
 
+    // Investigated (see docs/SECURITY_AUDIT.md §6.3): both traits are required together, not independently
+    // optional. Spatie's Permission mechanism (hasPermissionTo()/syncPermissions()) is genuinely live - it
+    // gates ~180 routes across the admin panel (routes/admin_routes.php's `permissions:` middleware) - but
+    // HasPermissions::hasPermissionViaRole() itself calls hasRole(), which only HasRoles defines; dropping
+    // HasRoles here was tried and broke that live permission check (caught by the full test suite before
+    // being shipped - see git history). Spatie's Role *assignment* side (assignRole(), Spatie's own Role
+    // model) is confirmed genuinely unused by any code in this app, and not even usable as-is - Spatie's
+    // Role model expects a `guard_name` column on its `roles` table, but that table name is already this
+    // app's own legacy role_id table (App\Models\Role), which has no such column - but the HasRoles trait
+    // itself must stay, since HasPermissions depends on methods it provides. role_id and Spatie permissions
+    // coexist correctly as two different concerns, not a duplication to merge: role_id answers "who is this
+    // user" (super_admin/admin/editor/seller/delivery_boy/customer), Spatie permissions answer "what is
+    // this specific admin/editor account allowed to do."
     use HasApiTokens, HasFactory, Notifiable, HasPermissions, HasRoles;
 
     /**
