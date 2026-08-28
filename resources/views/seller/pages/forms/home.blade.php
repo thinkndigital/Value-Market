@@ -12,7 +12,9 @@
         use App\Services\CurrencyService;
         use App\Services\OrderService;
     @endphp
-    @include('Chatify::layouts.headLinks')
+    @push('chatify_head')
+        @include('Chatify::layouts.headLinks')
+    @endpush
     <section class="main-content">
         <x-seller.breadcrumb :title="labels('admin_labels.dashboard', 'Dashboard')" :subtitle="labels('admin_labels.all_information_about_your_store', 'All Information About your Store')" :breadcrumbs="[]" />
         <section class="dashboard overview-data">

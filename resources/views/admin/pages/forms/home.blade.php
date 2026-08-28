@@ -7,7 +7,9 @@
     use App\Services\OrderService;
 @endphp
 @section('content')
-    @include('Chatify::layouts.headLinks')
+    @push('chatify_head')
+        @include('Chatify::layouts.headLinks')
+    @endpush
     <div class="d-flex row align-items-center">
         <div class="col-md-6 col-xl-6 page-info-title">
             <h3>{{ labels('admin_labels.dashboard', 'Dashboard') }}

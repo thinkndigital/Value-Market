@@ -68,4 +68,11 @@
     <link rel="stylesheet"
         href="{{ asset('assets/admin/custom/custom.css') }}?v={{ \Illuminate\Support\Str::random(10) }}">
 
+    {{-- Bug fix: Chatify::layouts.headLinks (title/meta/style/script tags meant for a real <head>) was being
+    @include'd partway through @yield('content') on the home/dashboard page - the HTML5 parser reprocesses
+    stray head-only elements found in <body> using its "in head" rules, which silently swallowed everything
+    the dashboard rendered after that point. home.blade.php now @push()es it into this stack instead, so it
+    actually lands in <head> where it belongs. --}}
+    @stack('chatify_head')
+
 </head>

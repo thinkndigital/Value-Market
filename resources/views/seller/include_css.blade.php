@@ -64,4 +64,10 @@
     <link rel="stylesheet"
         href="{{ asset('assets/admin/custom/custom.css') }}?v={{ \Illuminate\Support\Str::random(10) }}">
 
+    {{-- Bug fix (same as resources/views/admin/include_css.blade.php): Chatify::layouts.headLinks is a real
+    <head> partial, but home.blade.php was @include'ing it partway through @yield('content') - the HTML5
+    parser reprocesses stray head-only elements found in <body>, silently swallowing everything rendered
+    after that point. home.blade.php now @push()es it into this stack so it lands in <head>. --}}
+    @stack('chatify_head')
+
 </head>
