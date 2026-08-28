@@ -330,3 +330,57 @@ visible for anyone reading this file's history.
 **Global `Model::unguard()` removal.** See Finding 16 above - same reasoning, same scale, same explicit
 deferral, now confirmed a second time by an independent audit pass reaching the identical conclusion Phase
 2 already documented.
+
+### 6.4 `SetDefaultStore` / `StoreService::getStoreId()` IDOR sweep (post-Phase 15 follow-up)
+
+**Root cause.** `SetDefaultStore` (`app/Http/Middleware/SetDefaultStore.php`) runs in the global `web`
+middleware group and reads `?store=<slug>` off *any* web request's query string with zero ownership check,
+overwriting `session('store_id')`. This is a correct, intentional feature for anonymous customer storefront
+browsing (real demo links like `?store=prime-pantry` exist in `resources/views/webCategoriesStyle.blade.php`
+and `webProductCardStyle.blade.php`). The bug is that `StoreService::getStoreId()` - which just reads back
+that same session value - is also trusted by Seller-panel (and Admin-panel) controllers for
+authorization-relevant `store_id` resolution, letting an authenticated seller silently repoint the session
+their own write requests use just by loading any page with `?store=<victim-slug>` in the URL first (no
+special access needed - any public storefront link works). `StoreService::getStoreId()` itself can't be
+fixed centrally without breaking the admin panel (admins aren't rows in `seller_store`), so the fix is an
+opt-in verification helper, `TenantContext::verifiedSellerStoreId($candidateStoreId)`
+(`app/Services/TenantContext.php`): confirms the *authenticated* user actually manages the given `store_id`
+via a `SellerStore` row, returning `null` (reject) otherwise. Callers keep resolving their own candidate
+`store_id` (session, request, or both) and just verify it before using it.
+
+**Write-path (money/stock/data-creating) call sites fixed, in the order worked through:**
+
+- `Seller\PosController::place_order()` / `combo_place_order()` - a POS sale (real stock deduction, wallet/
+  earnings effects) previously didn't check `Auth::user()` at all.
+- `Seller\v1\ApiController::add_brands()` (mobile API) and `Seller\BrandController::store()` (web panel) -
+  `brands` has no `seller_id` of its own, `store_id` *is* the tenant boundary.
+- `Seller\ProductController::update()` - the same `seller_id`-forgery-on-write gap `store()` and
+  `ComboProductController::update()` had already been fixed for, but this method was missed in that earlier
+  pass.
+- `Seller\CategoryController::store()`.
+- `Seller\MediaController::upload()` - worse than the rest: this one trusted `$request->input('store_id')`
+  and `$request->input('seller_id')` **directly**, no session/`SetDefaultStore` step needed at all.
+- `Seller\ComboProductController::store()` - same direct-request-trust pattern as `MediaController::upload()`
+  for both `seller_id` (via `$request->user_id`) and `store_id`.
+- `Seller\ComboProductController::update()` - `store_id` had the same unverified-candidate write gap;
+  `seller_id` was already protected by a pre-existing ownership check (Phase 2, Task 16).
+
+Each fix has a paired regression test under `tests/Feature/Phase15/*StoreOwnershipTest.php` (or, for
+`PosController`, `tests/Feature/Phase15/PosStoreOwnershipTest.php`) proving both the attack is rejected and
+the legitimate owning seller is unaffected.
+
+**Checked and found to have no working write path (nothing to fix):**
+
+- `Seller\AttributeController` - the `Route::resource(...)->except('show')` registration implies
+  `store`/`update`/`destroy`, but the controller only defines `index`/`list`/`getAttributes`/
+  `getAttributeValue` - those routes would fatal with "call to undefined method" if ever hit. No seller-side
+  attribute-creation code exists anywhere in the app (grepped); pre-existing dead routes, out of scope for a
+  security-focused pass since there is no live request to secure.
+- `Seller\ComboProductAttributeController` - only `index()`/`list()`, both read-only.
+
+**Explicitly not yet done - lower priority, read-only exposure only.** `StoreService::getStoreId()` has
+~59 call sites across ~16 Seller-panel controllers (and a separate ~24 in the Admin panel, out of scope -
+admins legitimately choose stores). All the write/data-creating ones above are now fixed; the remaining
+~50 are `list()`/`index()`/`show()`/report-style read methods, where the impact of a `SetDefaultStore`
+session hijack is information disclosure (seeing another store's listing data) rather than data corruption
+or forged ownership - not started, per the same risk-based prioritization this section documents.
