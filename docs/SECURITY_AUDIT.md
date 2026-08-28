@@ -287,6 +287,33 @@ any caller's behavior. (b) is the lower-risk option and the one this deferral re
 follow-up pass, but it wasn't implemented blind here without first confirming no report or reconciliation
 logic elsewhere already assumes `StockMovement.quantity` means "requested," not "applied."
 
+**Follow-up (attempted, reverted): option (b) is not actually safe as originally scoped.** Implemented it
+directly - clamp against `StockItem.quantity`'s own running total before writing the ledger row - and the
+full test suite caught a real regression immediately:
+`tests/Feature/Phase5/ProductServiceUpdateStockLedgerTest::test_a_deduction_call_writes_an_out_movement`
+expects a deduction against a variant seeded with `stock: 5` (via the legacy `Product_variants.stock`
+field) to ledger a quantity of `2`; the attempted fix ledgered `0` instead. Root cause: `StockItem` (the
+Phase 5 ledger's own running total) and `Product_variants.stock`/`Product.stock` (the pre-Phase-5 legacy
+field `ProductService::updateStock()` still authoritatively decrements) are **two independent tracking
+systems that were never backfilled to agree** - a `StockItem` row is created lazily at `quantity = 0` on
+first use (`InventoryService::recordMovement()`), regardless of what the legacy field already held. For
+any variant whose stock predates Phase 5 (or simply hasn't had a `recordMovement()` call yet, which is
+every variant on first deduction), clamping against `StockItem.quantity` clamps against a value with no
+relationship to the real available stock - turning "record what was actually possible" into "record zero,
+because the shadow ledger never knew the real number." This would have silently zeroed out ledger entries
+for real, valid order-placement deductions across the majority of pre-existing inventory - a worse bug than
+the one being fixed. Reverted immediately (matching this project's established discipline: a fix the test
+suite catches gets reverted, not shipped with the test loosened).
+
+**What (b) actually requires, not yet done:** a one-time backfill migration seeding `stock_items.quantity`
+from `Product_variants.stock`/`Product.stock` for every existing variant (choosing which legacy field wins
+where a product has both product- and variant-level stock, `stock_type` already encodes that per-product)
+*before* `recordMovement()` can safely trust `StockItem.quantity` as ground truth. That backfill is a real,
+separate data-migration decision (which stock number is "correct" for a variant that already drifted
+between the two systems pre-Phase-5) - out of scope for this security-audit pass to guess at, and squarely
+the kind of "financial/inventory math this codebase treats with above-average care" this finding already
+flagged as needing a dedicated, deliberate pass rather than a quick patch.
+
 ### 6.3 Explicitly out of scope for Phase 15 (deferred, not dropped)
 
 **RBAC redesign (dual `role_id`/Spatie mechanism → one) - superseded by direct re-investigation, corrected
