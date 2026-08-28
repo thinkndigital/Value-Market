@@ -118,16 +118,6 @@
             </div>
         </div>
     </div>
-    @if (config('constants.ALLOW_MODIFICATION') == 0)
-        <a target="blank"
-            href="https://codecanyon.net/item/eshop-plus-multi-vendor-ecommerce-multi-module-website-in-laravel/56605998"
-            class="position-fixed bottom-0 m-3 z-3 text-decoration-none">
-            <div class="btn btn-primary d-flex align-items-center gap-1 mb-4 rounded-pill px-3 py-2">
-                <i class="anm anm-cart-plus"></i>
-                Buy Now
-            </div>
-        </a>
-    @endif
     <hr class="horizontal light m-0">
     <div class="footer-bottom clearfix">
         <div class="container-fluid">
