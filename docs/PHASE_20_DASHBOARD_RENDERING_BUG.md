@@ -104,3 +104,22 @@ While screenshotting the fixed dashboard, the Orders Overview card showed clearl
 products. This looks like a pre-existing query bug in the admin dashboard's order-status counts, unrelated to
 the rendering bug this phase fixes - flagged here for a dedicated look, not investigated or touched in this
 pass.
+
+**The Revenue Analytics and Customer Statistics charts still don't render** (found while checking whether
+this phase's fix also resolved them - it didn't, and they're a separate, pre-existing issue). Both are
+`ApexCharts` instances instantiated in inline `<script>` blocks inside `@section('content')`. `ApexCharts`
+itself is only ever loaded via `admin.include_script.blade.php` (`assets/js/plugins/apexcharts.js`), which -
+like the jQuery issue this phase already fixed - is `@include`d after `</body>`, i.e. after the inline script
+that tries to use it. The `document.ready()` wrapper *should* make this safe (it doesn't fire until the whole
+document, script tags included, has finished parsing) - but a live browser check showed `window.ApexCharts`
+still `undefined` 45 seconds after page load, even though the browser did eventually issue a request for
+`apexcharts.js` and that request returns a valid 522KB UMD bundle (`curl`-verified, HTTP 200, well-formed).
+`admin.include_script.blade.php` loads roughly 60 scripts in strict sequence (several genuinely duplicated -
+both `jquery.min.js` and `jquery.js`, both `jquery-sortable.js` and `sortable.js`, the whole FilePond dist
+bundle alongside a separate `filepond.js`) with no bundling, deferral, or parallelization, on top of a second,
+independent full copy of most of that same list already loaded by the login page moments earlier. Whether
+`apexcharts.js` genuinely never finishes executing, or would work given more patience than tested here (45s),
+this script-loading architecture is fragile and slow regardless of the specific charts' fate - it's a real
+finding, but fixing it (bundling/deduplicating/deferring ~60 legacy script includes) is a distinctly different
+and much larger undertaking than this phase's parsing-corruption fix, and is flagged here rather than
+attempted blind.
