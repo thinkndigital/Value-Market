@@ -246,12 +246,12 @@
                                             <div class="d-flex justify-content-between">
                                                 <p class="m-0">{{ labels('admin_labels.received', 'Received') }}</p>
                                                 <p class="total-order m-0 mt-1">
-                                                    {{ app(OrderService::class)->ordersCount('received', '', '', $store_id) }}
+                                                    {{ $orders_status_counts['received'] }}
                                                 </p>
                                             </div>
                                             @php
-                                                $currentRecivedOrder = app(OrderService::class)->ordersCount('received', '', '', $store_id);
-                                                $maxValue = app(OrderService::class)->ordersCount('', '', '', $store_id);
+                                                $currentRecivedOrder = $orders_status_counts['received'];
+                                                $maxValue = $orders_status_counts['all'];
                                                 if ($currentRecivedOrder > 0 && $maxValue > 0) {
                                                     $recivedOrderWidth = ($currentRecivedOrder / $maxValue) * 100;
                                                 } else {
@@ -261,7 +261,7 @@
 
                                             <div class="progress" role="progressbar"
                                                 aria-label="Animated striped example"
-                                                aria-valuenow="{{ app(OrderService::class)->ordersCount('received', '', '', $store_id) }}"
+                                                aria-valuenow="{{ $orders_status_counts['received'] }}"
                                                 aria-valuemin="0" aria-valuemax="100">
                                                 <div class="progress-bar-primary progress-bar-striped progress-bar-animated"
                                                     style="width: <?= $recivedOrderWidth ?>%"></div>
@@ -310,13 +310,13 @@
                                             <div class="d-flex justify-content-between">
                                                 <p class="m-0">{{ labels('admin_labels.processed', 'Processed') }}</p>
                                                 <p class="total-order m-0 mt-1">
-                                                    {{ app(OrderService::class)->ordersCount('processed', '', '', $store_id) }}
+                                                    {{ $orders_status_counts['processed'] }}
                                                 </p>
                                             </div>
 
                                             @php
-                                                $currentProcessedOrder = app(OrderService::class)->ordersCount('processed', '', '', $store_id);
-                                                $maxValue = app(OrderService::class)->ordersCount('', '', '', $store_id);
+                                                $currentProcessedOrder = $orders_status_counts['processed'];
+                                                $maxValue = $orders_status_counts['all'];
 
                                                 if ($currentProcessedOrder > 0 && $maxValue > 0) {
                                                     $processedOrderWidth = ($currentProcessedOrder / $maxValue) * 100;
@@ -327,7 +327,7 @@
 
                                             <div class="progress" role="progressbar"
                                                 aria-label="Animated striped example"
-                                                aria-valuenow="{{ app(OrderService::class)->ordersCount('processed', '', '', $store_id) }}"
+                                                aria-valuenow="{{ $orders_status_counts['processed'] }}"
                                                 aria-valuemin="0" aria-valuemax="100">
                                                 <div class="progress-bar-info progress-bar-striped progress-bar-animated"
                                                     style="width: <?= $processedOrderWidth ?>%"></div>
@@ -366,12 +366,12 @@
                                             <div class="d-flex justify-content-between">
                                                 <p class="m-0">{{ labels('admin_labels.shipped', 'Shipped') }}</p>
                                                 <p class="total-order m-0 mt-1">
-                                                    {{ app(OrderService::class)->ordersCount('shipped', '', '', $store_id) }}
+                                                    {{ $orders_status_counts['shipped'] }}
                                                 </p>
                                             </div>
                                             @php
-                                                $currentShippedOrder = app(OrderService::class)->ordersCount('shipped', '', '', $store_id);
-                                                $maxValue = app(OrderService::class)->ordersCount('', '', '', $store_id);
+                                                $currentShippedOrder = $orders_status_counts['shipped'];
+                                                $maxValue = $orders_status_counts['all'];
 
                                                 if ($currentShippedOrder > 0 && $maxValue > 0) {
                                                     $shippedOrderWidth = ($currentShippedOrder / $maxValue) * 100;
@@ -382,7 +382,7 @@
 
                                             <div class="progress" role="progressbar"
                                                 aria-label="Animated striped example"
-                                                aria-valuenow="{{ app(OrderService::class)->ordersCount('shipped', '', '', $store_id) }}"
+                                                aria-valuenow="{{ $orders_status_counts['shipped'] }}"
                                                 aria-valuemin="0" aria-valuemax="100">
                                                 <div class="progress-bar-warning progress-bar-striped progress-bar-animated"
                                                     style="width: <?= $shippedOrderWidth ?>%"></div>
@@ -409,12 +409,12 @@
                                             <div class="d-flex justify-content-between">
                                                 <p class="m-0">{{ labels('admin_labels.delivered', 'Delivered') }}</p>
                                                 <p class="total-order m-0 mt-1">
-                                                    {{ app(OrderService::class)->ordersCount('delivered', '', '', $store_id) }}
+                                                    {{ $orders_status_counts['delivered'] }}
                                                 </p>
                                             </div>
                                             @php
-                                                $currentDeliveredOrder = app(OrderService::class)->ordersCount('delivered', '', '', $store_id);
-                                                $maxValue = app(OrderService::class)->ordersCount('', '', '', $store_id);
+                                                $currentDeliveredOrder = $orders_status_counts['delivered'];
+                                                $maxValue = $orders_status_counts['all'];
 
                                                 if ($currentDeliveredOrder > 0 && $maxValue > 0) {
                                                     $deliveredOrderWidth = ($currentDeliveredOrder / $maxValue) * 100;
@@ -425,7 +425,7 @@
 
                                             <div class="progress" role="progressbar"
                                                 aria-label="Animated striped example"
-                                                aria-valuenow="{{ app(OrderService::class)->ordersCount('delivered', '', '', $store_id) }}"
+                                                aria-valuenow="{{ $orders_status_counts['delivered'] }}"
                                                 aria-valuemin="0" aria-valuemax="100">
                                                 <div class="progress-bar-success progress-bar-striped progress-bar-animated"
                                                     style="width: <?= $deliveredOrderWidth ?>%"></div>
@@ -488,12 +488,12 @@
                                             <div class="d-flex justify-content-between">
                                                 <p class="m-0">{{ labels('admin_labels.cancelled', 'Cancelled') }}</p>
                                                 <p class="total-order m-0 mt-1">
-                                                    {{ app(OrderService::class)->ordersCount('cancelled', '', '', $store_id) }}
+                                                    {{ $orders_status_counts['cancelled'] }}
                                                 </p>
                                             </div>
                                             @php
-                                                $currentRecivedOrder = app(OrderService::class)->ordersCount('cancelled', '', '', $store_id);
-                                                $maxValue = app(OrderService::class)->ordersCount('', '', '', $store_id);
+                                                $currentRecivedOrder = $orders_status_counts['cancelled'];
+                                                $maxValue = $orders_status_counts['all'];
 
                                                 if ($currentRecivedOrder > 0 && $maxValue > 0) {
                                                     $cancelledOrderWidth = ($currentRecivedOrder / $maxValue) * 100;
@@ -504,7 +504,7 @@
 
                                             <div class="progress" role="progressbar"
                                                 aria-label="Animated striped example"
-                                                aria-valuenow="{{ app(OrderService::class)->ordersCount('received', '', '', $store_id) }}"
+                                                aria-valuenow="{{ $orders_status_counts['received'] }}"
                                                 aria-valuemin="0" aria-valuemax="100">
                                                 <div class="progress-bar-danger progress-bar-striped progress-bar-animated"
                                                     style="width: <?= $cancelledOrderWidth ?>%"></div>
@@ -536,12 +536,12 @@
                                             <div class="d-flex justify-content-between">
                                                 <p class="m-0">{{ labels('admin_labels.returned', 'Returned') }}</p>
                                                 <p class="total-order m-0 mt-1">
-                                                    {{ app(OrderService::class)->ordersCount('returned', '', '', $store_id) }}
+                                                    {{ $orders_status_counts['returned'] }}
                                                 </p>
                                             </div>
                                             @php
-                                                $currentRecivedOrder = app(OrderService::class)->ordersCount('returned', '', '', $store_id);
-                                                $maxValue = app(OrderService::class)->ordersCount('', '', '', $store_id);
+                                                $currentRecivedOrder = $orders_status_counts['returned'];
+                                                $maxValue = $orders_status_counts['all'];
 
                                                 if ($currentRecivedOrder > 0 && $maxValue > 0) {
                                                     $returnedOrderWidth = ($currentRecivedOrder / $maxValue) * 100;
@@ -552,7 +552,7 @@
 
                                             <div class="progress" role="progressbar"
                                                 aria-label="Animated striped example"
-                                                aria-valuenow="{{ app(OrderService::class)->ordersCount('received', '', '', $store_id) }}"
+                                                aria-valuenow="{{ $orders_status_counts['received'] }}"
                                                 aria-valuemin="0" aria-valuemax="100">
                                                 <div class="progress-bar-pink progress-bar-striped progress-bar-animated"
                                                     style="width: <?= $returnedOrderWidth ?>%"></div>

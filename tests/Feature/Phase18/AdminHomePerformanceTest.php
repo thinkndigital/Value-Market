@@ -41,7 +41,17 @@ class AdminHomePerformanceTest extends TestCase
         // Baseline was 26 (measured against this exact controller before the fix); this must stay well
         // below it, not just "less than 26" - the weekly-sales loop alone accounted for 6 fully redundant
         // queries, monthly-data merging removed 2 more.
-        $this->assertLessThanOrEqual(16, $count, '/admin/home must not regress back toward its old 26-query baseline.');
+        //
+        // Phase 19 (docs/PHASE_19_ADMIN_HOME_QUERY_PROFILING.md) raised this threshold from 16 to 23: real
+        // profiling found home.blade.php calling ordersCount() 24 TIMES inline in the template during
+        // rendering - invisible to this test, which only ever measured the controller in isolation, never
+        // ->render(). Those 24 blade-side calls collapsed to 7 (one per distinct status + the all-statuses
+        // total) and moved into the controller so the view can read precomputed values instead of querying
+        // per call site - a net reduction from ~24+14=38 real queries per page load down to ~21, even
+        // though this specific controller-only count goes up by 7. See
+        // tests/Feature/Phase19/AdminHomeQueryProfilingTest.php for the render-phase assertion this test
+        // could never see.
+        $this->assertLessThanOrEqual(23, $count, '/admin/home must not regress back toward its old 26-query baseline.');
     }
 
     public function test_count_new_users_returns_identical_results_to_the_original_five_query_version(): void

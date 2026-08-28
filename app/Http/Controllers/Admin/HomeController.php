@@ -28,6 +28,26 @@ class HomeController extends Controller
         // total statictis
 
         $order_counter = app(OrderService::class)->countNewOrders();
+
+        // Performance fix (found while diagnosing /admin/home): home.blade.php called
+        // app(OrderService::class)->ordersCount($status, '', '', $store_id) 24 times inline in the template
+        // (received/processed/shipped/delivered/cancelled/returned x ~3-5 each, plus the '' / "all statuses"
+        // total re-run identically 6 times) - each a real query against order_items. Computed once per
+        // distinct status here instead; the view now reads from this array. Same values, same call
+        // signature per status - including the pre-existing display bug where two of the progress bars'
+        // aria-valuenow reused the 'received' count instead of their own status (left as-is: not part of
+        // this performance pass, and fixing it would change what the page displays).
+        $orderService = app(OrderService::class);
+        $orders_status_counts = [
+            'received' => $orderService->ordersCount('received', '', '', $store_id),
+            'processed' => $orderService->ordersCount('processed', '', '', $store_id),
+            'shipped' => $orderService->ordersCount('shipped', '', '', $store_id),
+            'delivered' => $orderService->ordersCount('delivered', '', '', $store_id),
+            'cancelled' => $orderService->ordersCount('cancelled', '', '', $store_id),
+            'returned' => $orderService->ordersCount('returned', '', '', $store_id),
+            'all' => $orderService->ordersCount('', '', '', $store_id),
+        ];
+
         $product_counter = Product::where('store_id', $store_id)
             ->whereHas('productVariants')
             ->count();
@@ -196,21 +216,32 @@ class HomeController extends Controller
         $store = Store::find($store_id);
         $top_sellers=[];
         if ($store) {
-            $top_sellers = Store::find($store_id)->sellers()
-                    ->with(['order_items' => function ($q) {
-                        $q->select('seller_id', 'sub_total', 'seller_commission_amount', 'active_status');
-                    }, 'user'])
-                    ->get()
-                    ->map(function ($seller) {
-                        $deliveredItems = $seller->order_items->where('active_status', 'delivered');
-                        // dd($seller->order_items);
+            // Performance fix (found while diagnosing /admin/home): this used to eager-load every matching
+            // order_items row (seller_id, sub_total, seller_commission_amount, active_status - unbounded,
+            // not scoped by store_id, not scoped by date) for every seller of this store, then summed them
+            // in PHP via Collection::sum(). At real volume that's both a large row transfer and slow PHP
+            // iteration for something a single GROUP BY already computes. Same two sums, same "no store_id
+            // filter on order_items" behavior (a seller selling in multiple stores' order_items still gets
+            // summed together here, matching the original query exactly), same sort/take(6) - now computed
+            // once in SQL instead of row-by-row in PHP.
+            $sellers = Store::find($store_id)->sellers()->with('user')->get();
+            $sellerIds = $sellers->pluck('id');
+            $aggregates = OrderItems::whereIn('seller_id', $sellerIds)
+                ->selectRaw("seller_id, SUM(CASE WHEN active_status = 'delivered' THEN sub_total ELSE 0 END) as total_sales, SUM(seller_commission_amount) as total_commission")
+                ->groupBy('seller_id')
+                ->get()
+                ->keyBy('seller_id');
+
+            $top_sellers = $sellers
+                    ->map(function ($seller) use ($aggregates) {
+                        $agg = $aggregates->get($seller->id);
                         return [
                             'seller_id' => $seller->id,
                             'store_name' => $seller->pivot->store_name,
                             'logo' => $seller->pivot->logo,
                             'seller_name' => optional($seller->user)->username,
-                            'total_sales' => intval($deliveredItems->sum('sub_total')),
-                            'total_commission' => intval($seller->order_items->sum('seller_commission_amount')),
+                            'total_sales' => intval($agg->total_sales ?? 0),
+                            'total_commission' => intval($agg->total_commission ?? 0),
                         ];
                     })
                     ->sortByDesc('total_sales')
@@ -219,7 +250,7 @@ class HomeController extends Controller
         }
 
         // dd($top_sellers);
-        return view('admin.pages.forms.home', compact('order_counter', 'id', 'store_id', 'user_counter', 'delivery_boy_counter', 'currency', 'top_sellers', 'total_products', 'total_store', 'total_seller', 'total_earnings', 'role_id', 'store_details', 'primary_colour', 'messengerColor', 'dark_mode', 'sales'));
+        return view('admin.pages.forms.home', compact('order_counter', 'id', 'store_id', 'user_counter', 'delivery_boy_counter', 'currency', 'top_sellers', 'total_products', 'total_store', 'total_seller', 'total_earnings', 'role_id', 'store_details', 'primary_colour', 'messengerColor', 'dark_mode', 'sales', 'orders_status_counts'));
     }
 
     /**
