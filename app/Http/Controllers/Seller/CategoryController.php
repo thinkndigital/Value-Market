@@ -14,6 +14,7 @@ use App\Services\TranslationService;
 use App\Traits\HandlesValidation;
 use App\Services\StoreService;
 use App\Services\MediaService;
+use App\Services\TenantContext;
 class CategoryController extends Controller
 {
     use HandlesValidation;
@@ -29,6 +30,15 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         $storeId = app(StoreService::class)->getStoreId();
+
+        // Security fix (docs/SECURITY_AUDIT.md §6.2, same fix already made to PosController::place_order()/
+        // combo_place_order() and BrandController::store()): SetDefaultStore middleware lets an
+        // unauthenticated `?store=slug` query param silently repoint session('store_id'), which
+        // StoreService::getStoreId() then trusts blindly - a seller could create categories attributed to a
+        // store_id they don't manage. Verify ownership before using it.
+        if (app(TenantContext::class)->verifiedSellerStoreId($storeId) === null) {
+            return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
+        }
 
         // Validate request data
         $rules = [
