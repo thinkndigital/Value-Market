@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Intervention\Image\Facades\Image;
 use App\Services\StoreService;
 use App\Services\MediaService;
+use App\Services\TenantContext;
 use SimpleXMLElement;
 use Illuminate\Support\Facades\Config;
 
@@ -71,7 +72,16 @@ class MediaController extends Controller
             $mediaIds = [];
             $store_id = !empty($request->input('store_id')) ? $request->input('store_id') : app(StoreService::class)->getStoreId();
             $user_id = Auth::user()->id;
-            $seller_id = !empty($request->input('seller_id')) ? $request->input('seller_id') : Seller::where('user_id', $user_id)->value('id');
+            // Security fix (docs/SECURITY_AUDIT.md §6.2): this previously trusted $request->input('store_id')
+            // and $request->input('seller_id') directly, with no ownership check at all - a seller could
+            // attribute uploaded media to an arbitrary store_id/seller_id just by sending it in the request.
+            // seller_id is now always derived from the authenticated user (never taken from the request);
+            // store_id (whether it came from the request or the session-based StoreService fallback) is
+            // verified against the acting seller's own SellerStore rows.
+            $seller_id = Seller::where('user_id', $user_id)->value('id');
+            if (app(TenantContext::class)->verifiedSellerStoreId($store_id) === null) {
+                return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
+            }
 
             $media_storage_settings = fetchDetails(StorageType::class, ['is_default' => 1], '*');
             $disk = !$media_storage_settings->isEmpty() ? $media_storage_settings[0]->name : 'public';
