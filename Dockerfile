@@ -149,7 +149,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         exif \
     && pecl install imagick \
     && docker-php-ext-enable imagick \
-    && a2enmod rewrite \
+    && a2enmod rewrite deflate expires \
     && apt-get purge -y unzip git \
     && rm -rf /var/lib/apt/lists/*
 
