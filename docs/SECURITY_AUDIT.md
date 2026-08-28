@@ -378,12 +378,37 @@ the legitimate owning seller is unaffected.
   security-focused pass since there is no live request to secure.
 - `Seller\ComboProductAttributeController` - only `index()`/`list()`, both read-only.
 
-**Explicitly not yet done - lower priority, read-only exposure only.** `StoreService::getStoreId()` has
-~59 call sites across ~16 Seller-panel controllers (and a separate ~24 in the Admin panel, out of scope -
-admins legitimately choose stores). All the write/data-creating ones above are now fixed; the remaining
-~50 are `list()`/`index()`/`show()`/report-style read methods, where the impact of a `SetDefaultStore`
-session hijack is information disclosure (seeing another store's listing data) rather than data corruption
-or forged ownership - not started, per the same risk-based prioritization this section documents.
+**Read-only call sites - completed.** `StoreService::getStoreId()` has ~59 call sites across ~16
+Seller-panel controllers (and a separate ~24 in the Admin panel, out of scope - admins legitimately choose
+stores). All write/data-creating ones were fixed first (above); the remaining ~50 read-only
+(`list()`/`index()`/`show()`/report-style) call sites were then triaged by an actual risk check rather than
+fixed uniformly: most of them **also** filter by the authenticated seller's own `seller_id` (derived from
+`Auth::id()`, not attacker-controlled) in the same query - for those, even a `SetDefaultStore`-hijacked
+`store_id` can only narrow results toward empty, it cannot leak another seller's data, so they were left
+as-is (confirmed safe, not fixed for the sake of uniformity). Only the call sites where `store_id` was the
+*sole* tenant boundary - because the model has no `seller_id` concept at all (`Brand`, `Attribute`,
+`Attribute_values`), or the check was simply missing where a sibling method already had it
+(`ComboProductFaqController::list()`) - were genuinely exploitable, and those are now fixed:
+
+- `Seller\ProductController::edit()` (the single most severe of this batch - no ownership check *at all*,
+  not even store_id-hijack-dependent: a store can host multiple sellers, so any co-seller in the same store
+  could load another seller's full product edit-form data, pricing/shipping/brand included, with zero
+  session manipulation needed). Fixed via `ProductPolicy`'s `view` ability, the same rule `update()` already
+  uses.
+- `Seller\ProductController::get_brands()`/`getBrands()`/`getDigitalProductData()` - `Brand` has no
+  `seller_id`; `getDigitalProductData()` listed digital products (name/price/stock) with no seller filter at
+  all.
+- `Seller\ComboProductFaqController::list()` - this controller's other methods already verify per-record
+  ownership via `TenantContext::userOwnsSeller()`; `list()` alone had no equivalent check.
+- `Seller\AttributeController::list()`/`getAttributeValue()` - `Attribute`/`Attribute_values` have no
+  `seller_id` concept; `getAttributeValue()` took `store_id` directly from the request, no session hijack
+  even needed.
+
+All seven verified via `TenantContext::verifiedSellerStoreId()`, each rejecting with an empty result shaped
+to match that method's existing success response (view name / plain array / JSON keys) rather than a generic
+error wrapper, so no API contract changed - only what data an unauthorized `store_id` can retrieve. Paired
+tests: `tests/Feature/Phase15/ProductControllerReadOwnershipTest.php` and
+`tests/Feature/Phase15/ComboProductFaqAndAttributeReadOwnershipTest.php`.
 
 ### 6.5 CRITICAL - full account takeover via `Seller\UserController`/`Delivery_boy\UserController::update()`
 
