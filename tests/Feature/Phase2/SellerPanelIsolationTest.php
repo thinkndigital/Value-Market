@@ -136,6 +136,54 @@ class SellerPanelIsolationTest extends TestCase
         $this->assertSame('admin.pages.views.no_data_found', $view->name());
     }
 
+    public function test_product_update_denies_a_non_owning_seller_and_does_not_steal_ownership(): void
+    {
+        [, $owner] = $this->makeSeller();
+        $product = $this->makeProductOwnedBy($owner);
+
+        [$attackerUser] = $this->makeSeller();
+        Auth::login($attackerUser);
+
+        $request = new Request(['pro_input_name' => 'Hijacked', 'short_description' => 'x', 'category_id' => $product->category_id]);
+        $response = app(ProductController::class)->update($request, $product->id, true);
+        $data = json_decode($response->getContent(), true);
+
+        $this->assertTrue($data['error']);
+        $this->assertSame($owner->id, $product->fresh()->seller_id, 'Ownership must not be reassigned to the attacker.');
+    }
+
+    /**
+     * Security fix (found while investigating docs/SECURITY_AUDIT.md §6.2's Model::unguard() deferral): the
+     * ProductPolicy check in update() only gates WHICH product a seller may touch - it did not stop
+     * seller_id (previously taken from request('seller_id')) from being written into that same,
+     * already-owned product a few lines down, letting a seller who legitimately owns a product reassign it
+     * to another seller's identity through the update form. Distinct from the test above (that attacker
+     * never owned the product at all and is blocked by the Policy check before this ever mattered) - this
+     * one owns the product and gets past the Policy check, so it's the update payload itself that must not
+     * trust the request's seller_id.
+     */
+    public function test_product_update_does_not_let_the_owning_seller_reassign_seller_id(): void
+    {
+        [$ownerUser, $owner] = $this->makeSeller();
+        $product = $this->makeProductOwnedBy($owner);
+        [, $otherSeller] = $this->makeSeller();
+        Auth::login($ownerUser);
+
+        $request = new Request([
+            'pro_input_name' => 'Updated', 'short_description' => 'x', 'category_id' => $product->category_id,
+            'seller_id' => $otherSeller->id, // tries to claim a different seller's identity anyway
+            'product_type' => 'simple_product', 'deliverable_type' => 1,
+            'simple_price' => '10', 'simple_special_price' => '0', 'pro_input_image' => 'x.png',
+        ]);
+        $this->app->instance('request', $request);
+
+        $response = app(ProductController::class)->update($request, $product->id, true);
+        $data = json_decode($response->getContent(), true);
+
+        $this->assertFalse($data['error']);
+        $this->assertSame($owner->id, $product->fresh()->seller_id, 'A seller must not be able to reassign their own product to another seller.');
+    }
+
     // --- Seller\ComboProductController ---
 
     public function test_combo_destroy_denies_a_non_owning_seller(): void

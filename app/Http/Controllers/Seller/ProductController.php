@@ -924,6 +924,20 @@ class ProductController extends Controller
             return response()->json(['error' => true, 'message' => labels('admin_labels.unauthorized_access', 'Unauthorized access to this product!')]);
         }
 
+        // Security fix (found while investigating docs/SECURITY_AUDIT.md §6.2's Model::unguard() deferral,
+        // same fix ComboProductController::update() already got in Phase 2 Task 16 for combo products but
+        // this method was missed): the ProductPolicy check just above only gates WHICH product a seller may
+        // touch - it does not stop $seller_id (set from request('seller_id') above) from being written into
+        // that same, already-owned product's row a few dozen lines down, letting a seller who legitimately
+        // owns a product reassign it to any other seller's identity through the update form. A seller may
+        // never change a product's seller_id via this endpoint - the policy check above already guarantees
+        // $sellerId is the only valid value for a product they're allowed to reach. Admins/editors (this
+        // method also backs admin/products) legitimately reassign products between sellers, so this only
+        // applies when the caller is actually a seller.
+        if (Auth::user()->isSeller()) {
+            $seller_id = $sellerId;
+        }
+
         $validator = Validator::make($request->all(), [
             'pro_input_name' => 'required',
             'short_description' => 'required',
