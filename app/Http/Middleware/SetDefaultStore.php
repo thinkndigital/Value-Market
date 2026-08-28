@@ -25,6 +25,21 @@ class SetDefaultStore
                 ->where('status', 1)
                 ->first();
 
+            // Bug fix (docs/PHASE_20_DASHBOARD_RENDERING_BUG.md follow-up): no store is required to ever have
+            // is_default_store=1 - it's only ever set by an admin explicitly checking a box when creating or
+            // editing a store (Admin\StoreController), never automatically. On a fresh multi-store install
+            // where nobody has done that yet, $defaultStore was always null, leaving session('store_id')
+            // permanently empty for every visitor and admin. Downstream code then disagreed on what an empty
+            // store scope means - some dashboard cards (Product::where('store_id', '')) matched nothing and
+            // showed 0, while others (OrderService::ordersCount()'s `if (!empty($store_id))` guard) silently
+            // skipped their store filter entirely and summed every store's data together - producing the
+            // dashboard's "0 sellers/0 products but 29,646 delivered orders" nonsensical combination. Falling
+            // back to the earliest active store keeps every request store-scoped by something real, matching
+            // what the rest of the codebase already assumes "the current store" always resolves to.
+            if (!$defaultStore) {
+                $defaultStore = Store::where('status', 1)->orderBy('id')->first();
+            }
+
             $default_store_id = $defaultStore ? $defaultStore->id : '';
             $default_store_name = $defaultStore ? $defaultStore->name : '';
             $default_store_image = $defaultStore ? $defaultStore->image : '';

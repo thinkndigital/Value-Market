@@ -99,11 +99,12 @@ Now falls back to `window.location.origin + "/"` when the element isn't present.
 
 ## What this phase did not touch
 
-While screenshotting the fixed dashboard, the Orders Overview card showed clearly-wrong numbers (e.g.
-"Delivered 29646", "Cancelled 29708", "Returned 29815") on a dev database with 0 sellers, 0 orders, and 0
-products. This looks like a pre-existing query bug in the admin dashboard's order-status counts, unrelated to
-the rendering bug this phase fixes - flagged here for a dedicated look, not investigated or touched in this
-pass.
+While screenshotting the fixed dashboard, the Orders Overview card showed clearly-wrong-looking numbers (e.g.
+"Delivered 29646") next to "0 sellers/0 products" on the same page. This was originally flagged here as a
+suspected pre-existing query bug on "an empty test database" - that assumption was wrong (the dev DB actually
+holds 145k real `order_items` rows across 3 stores, seeded for Phase 19's own performance profiling) and has
+since been root-caused and fixed as its own follow-up: see `docs/PHASE_20_1_STORE_SCOPE_FALLBACK.md`. Left
+the incorrect note here as a paper trail rather than deleting it silently.
 
 **The Revenue Analytics and Customer Statistics charts still don't render** (found while checking whether
 this phase's fix also resolved them - it didn't, and they're a separate, pre-existing issue). Both are
