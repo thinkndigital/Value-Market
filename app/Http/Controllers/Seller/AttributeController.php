@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Attribute_values;
 use Illuminate\Routing\Controller;
 use App\Services\StoreService;
+use App\Services\TenantContext;
 class AttributeController extends Controller
 {
     public function index()
@@ -18,6 +19,12 @@ class AttributeController extends Controller
     public function list(Request $request)
     {
         $store_id = !empty($request->store_id) ? $request->store_id : app(StoreService::class)->getStoreId();
+        // Security fix (docs/SECURITY_AUDIT.md §6.4): Attribute has no seller_id concept - store_id was the
+        // only boundary, taken directly from the request first (worse than the usual SetDefaultStore
+        // session hijack - no hijack even needed) and the session as a fallback.
+        if (app(TenantContext::class)->verifiedSellerStoreId($store_id) === null) {
+            return response()->json(['rows' => [], 'total' => 0]);
+        }
         $search = trim($request->search);
         $sort = $request->sort ?? 'id';
         $order = $request->order ?? 'DESC';
@@ -119,6 +126,11 @@ class AttributeController extends Controller
     public function getAttributeValue(Request $request)
     {
         $store_id = $request->input('store_id', app(StoreService::class)->getStoreId());
+        // Security fix (docs/SECURITY_AUDIT.md §6.4): same gap as list() above - Attribute_values has no
+        // seller_id concept, and store_id came directly from the request with no ownership check.
+        if (app(TenantContext::class)->verifiedSellerStoreId($store_id) === null) {
+            return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found'), 'total' => 0, 'data' => []]);
+        }
         $search = trim($request->input('search'));
         $attribute_id = $request->input('attribute_id');
         $sort = $request->input('sort', 'id');

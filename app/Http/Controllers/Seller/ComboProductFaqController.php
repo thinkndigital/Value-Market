@@ -55,6 +55,13 @@ class ComboProductFaqController extends Controller
     public function list(Request $request)
     {
         $store_id = app(StoreService::class)->getStoreId();
+        // Security fix (docs/SECURITY_AUDIT.md §6.4): unlike this controller's other methods (which already
+        // verify per-record ownership via TenantContext::userOwnsSeller()), list() only ever filtered by
+        // store_id - taken from a SetDefaultStore-hijackable session - with no ownership check, letting a
+        // seller list another store's combo-product FAQs.
+        if (app(TenantContext::class)->verifiedSellerStoreId($store_id) === null) {
+            return response()->json(['rows' => [], 'total' => 0]);
+        }
         $search = trim(request('search'));
         $sort = (request('sort')) ? request('sort') : "id";
         $order = (request('order')) ? request('order') : "DESC";
