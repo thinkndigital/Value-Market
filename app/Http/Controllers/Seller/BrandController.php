@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Seller;
 use App\Models\Brand;
 use App\Models\Language;
 use App\Models\Product;
+use App\Models\SellerStore;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Auth;
 use App\Services\TranslationService;
 use App\Traits\HandlesValidation;
 use App\Services\StoreService;
@@ -25,6 +27,17 @@ class BrandController extends Controller
     {
         $storeId = app(StoreService::class)->getStoreId();
 
+        // Security fix (docs/SECURITY_AUDIT.md §6.2, same fix already made to Seller\v1\ApiController::
+        // add_brands() for the mobile-API version of this same feature): StoreService::getStoreId() reads
+        // session('store_id'), which SetDefaultStore middleware sets from an unauthenticated `?store=slug`
+        // query parameter on any web request - a seller could navigate their own panel with that parameter
+        // set to another seller's store slug and have it silently redirect their session there, then create
+        // a Brand row under that other seller's store_id (brands has no seller_id column of its own -
+        // store_id IS the tenant boundary here). Verifies the authenticated seller actually manages the
+        // resolved store_id before proceeding.
+        if (!SellerStore::where('user_id', Auth::id())->where('store_id', $storeId)->exists()) {
+            return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
+        }
 
         $rules = [
             'brand_name' => 'required|string',
