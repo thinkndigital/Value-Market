@@ -384,3 +384,51 @@ admins legitimately choose stores). All the write/data-creating ones above are n
 ~50 are `list()`/`index()`/`show()`/report-style read methods, where the impact of a `SetDefaultStore`
 session hijack is information disclosure (seeing another store's listing data) rather than data corruption
 or forged ownership - not started, per the same risk-based prioritization this section documents.
+
+### 6.5 CRITICAL - full account takeover via `Seller\UserController`/`Delivery_boy\UserController::update()`
+
+Found while continuing the §6.4 sweep by checking whether other Seller-panel controllers had similar
+unguarded write paths. This is unrelated to `SetDefaultStore`/`store_id` - a distinct, more severe bug found
+along the way, and the single worst finding of this entire security effort.
+
+**The bug.** `seller/account/update/{id}` (`Seller\UserController::update()`) and
+`delivery_boy/account/update/{id}` (`Delivery_boy\UserController::update()`) both took `$id` straight from
+the URL/form-action with **no ownership check at all** - `User::find($id)`, then that record's
+`username`/`email`/`mobile`/`address`/**`password`** were overwritten (a full password reset via the
+`old_password`/`new_password` fields) and `role_id` was force-set (to `Role::SELLER`/`3` respectively), with
+**no filter on what role `$id` actually was**. Any authenticated seller or delivery boy could take over
+**any other account** - another seller, another delivery boy, or any user id at all - just by changing the
+id in the request. Both controllers' `edit()` methods had the matching read-side gap (the target user's full
+row, unfiltered, handed to the view). Confirmed via the route definitions
+(`routes/seller_routes.php:52`, `routes/delivery_boy_routes.php:46`) that `{id}` is a raw, unbound URL
+segment, not tied to the authenticated user by any middleware or route-model-binding constraint.
+
+**Why this wasn't caught by the store_id sweep.** These pages are "my own account settings" - there is no
+`store_id` involved anywhere in the vulnerable code path, so none of the `TenantContext`/`SellerStore`
+ownership patterns used throughout §6.4 apply. The fix is simpler and different in kind: `$id !==
+Auth::id()` → reject, before touching anything else.
+
+**Checked for the same pattern elsewhere:**
+- The customer-facing mobile API (`App\v1\ApiController::update_user()` and every other `User::find($user_id)`
+  call site in that file except one, grepped individually) already derives `$user_id` from
+  `auth()->user()->id`, never from a request/route parameter - safe by construction.
+- No separate Seller/Delivery_boy mobile-API "update profile" endpoint exists (grepped
+  `Seller\v1\ApiController`/`Delivery_boy\v1\ApiController` for `update`/`*Profile*` methods - none found);
+  the mobile apps for those roles call the same two now-fixed web routes.
+- `App\v1\ApiController::paypal_transaction_webview($user_id, $order_id, $amount)` also takes `$user_id` as
+  a raw parameter and does `User::find($user_id)` - but only *reads* the user (email, for the PayPal form)
+  and never writes to it. Lower-severity (info disclosure of an email address via a payment redirect flow,
+  not account takeover) and not fixed in this pass - flagged here for a dedicated look rather than touched
+  blind, since PayPal's own redirect flow may legitimately need this parameter unauthenticated and changing
+  it risks breaking real payments without a deeper look at that integration.
+- `Admin\*` controllers' many `User::find($id)` call sites are unrestricted **by design** - an admin
+  managing arbitrary sellers/delivery boys/customers is the actual, intended feature of the admin panel, not
+  a bug.
+
+**Fix.** Both `edit()` and `update()` in both controllers now reject with `admin.pages.views.no_data_found`
+(GET) or a JSON `{'error':true,...}` (PUT, matching each controller's existing response style) before doing
+anything else, unless the requested `$id` equals `Auth::id()`. Tests:
+`tests/Feature/Phase15/SellerUserControllerAccountOwnershipTest.php` and
+`tests/Feature/Phase15/DeliveryBoyUserControllerAccountOwnershipTest.php` (4 tests each: update denied
+cross-account with the victim's password proven unchanged, edit denied cross-account, edit allowed for the
+owner, update allowed past the ownership gate for the owner).
