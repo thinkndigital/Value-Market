@@ -1383,7 +1383,13 @@ class OrderService
                     $settings = json_decode($settings, true);
                     $timestemp = strtotime($delivery_date);
                     $today = date('Y-m-d');
-                    $return_till = date('Y-m-d', strtotime($delivery_date . ' + ' . $settings['max_days_to_return_item'] . ' days'));
+                    // Bug fix: database/migrations/2025_01_01_000016_baseline_default_settings.php's default
+                    // system_settings row never seeded this key (it's only ever written once an admin saves
+                    // the System Settings page), so this line 500'd with "Undefined array key
+                    // max_days_to_return_item" on any order-detail fetch on a fresh install. Defaulting to 0
+                    // days matches the codebase's own stated convention of not trusting settings keys to
+                    // exist unconditionally (see that migration's own doc comment).
+                    $return_till = date('Y-m-d', strtotime($delivery_date . ' + ' . ($settings['max_days_to_return_item'] ?? 0) . ' days'));
                 }
             }
 

@@ -7292,51 +7292,46 @@ Defined Methods:-
             ]);
         }
 
-        // Retrieve the order
-        $order = app(OrderService::class)->fetchOrders($order_id);
-
-        if ($order['order_data']->isEmpty()) {
-            $data['user'] = $user;
-            $data['payment_type'] = 'paypal';
-            $returnURL = route('app_payment_status');
-            $cancelURL = route('app_payment_status');
-            $notifyURL = route('ipn');
-            $txn_id = time() . '-' . rand();
-            $payeremail = $user->email;
-            $paypal = new PayPal();
-
-            $paypal->addField('return', $returnURL);
-            $paypal->addField('cancel_return', $cancelURL);
-            $paypal->addField('notify_url', $notifyURL);
-            $paypal->addField('item_name', 'Test');
-            $paypal->addField('custom', $user_id . '|' . $payeremail);
-            $paypal->addField('item_number', $order_id);
-            $paypal->addField('amount', $amount);
-
-            // Render paypal form
-            $data = $paypal->paypal_auto_form();
+        // Security fix (docs/SECURITY_AUDIT.md §6.5 follow-up, "paypal_transaction_webview() info
+        // disclosure"): this endpoint is unauthenticated by necessity (loaded directly as a webview URL, no
+        // bearer token available) and previously did zero ownership check between $user_id and $order_id -
+        // either request parameter could be any value, and the target user's real email was always embedded
+        // in the rendered PayPal auto-submit form's hidden 'custom' field regardless of whether $order_id
+        // matched anything that user actually placed. $order_id has two legitimate shapes in this app (see
+        // Admin\Webhook.php's own parsing of the same convention): a numeric real order id, or a
+        // "wallet-refill-user-{user_id}-{system_time}-{random}" synthetic id used for wallet top-ups. Both
+        // are now required to actually belong to $user_id before the email is disclosed; anything else gets
+        // a generic "not found" instead.
+        if (is_numeric($order_id)) {
+            $order = app(OrderService::class)->fetchOrders($order_id, $user_id);
+            if ($order['order_data']->isEmpty()) {
+                return response()->json(['error' => true, 'message' => 'Order Not Found', 'data' => []]);
+            }
+        } elseif (strpos($order_id, 'wallet-refill-user') !== false) {
+            $walletRefillOwnerId = explode('-', $order_id)[3] ?? null;
+            if (!is_numeric($walletRefillOwnerId) || (int) $walletRefillOwnerId !== (int) $user_id) {
+                return response()->json(['error' => true, 'message' => 'Order Not Found', 'data' => []]);
+            }
         } else {
-            $data['user'] = $user;
-            $data['order'] = !empty($order['order_data']) ? $order['order_data'][0] : '';
-            $data['payment_type'] = 'paypal';
-            $returnURL = route('app_payment_status');
-            $cancelURL = route('app_payment_status');
-            $notifyURL = route('ipn');
-            $txn_id = time() . '-' . rand();
-            $payeremail = $user->email;
-            $paypal = new PayPal();
-
-            $paypal->addField('return', $returnURL);
-            $paypal->addField('cancel_return', $cancelURL);
-            $paypal->addField('notify_url', $notifyURL);
-            $paypal->addField('item_name', 'Test');
-            $paypal->addField('custom', $user_id . '|' . $payeremail);
-            $paypal->addField('item_number', $order_id);
-            $paypal->addField('amount', $amount);
-
-            // Render paypal form
-            $data = $paypal->paypal_auto_form();
+            return response()->json(['error' => true, 'message' => 'Order Not Found', 'data' => []]);
         }
+
+        $returnURL = route('app_payment_status');
+        $cancelURL = route('app_payment_status');
+        $notifyURL = route('ipn');
+        $payeremail = $user->email;
+        $paypal = new PayPal();
+
+        $paypal->addField('return', $returnURL);
+        $paypal->addField('cancel_return', $cancelURL);
+        $paypal->addField('notify_url', $notifyURL);
+        $paypal->addField('item_name', 'Test');
+        $paypal->addField('custom', $user_id . '|' . $payeremail);
+        $paypal->addField('item_number', $order_id);
+        $paypal->addField('amount', $amount);
+
+        // Render paypal form
+        $paypal->paypal_auto_form();
     }
 
 

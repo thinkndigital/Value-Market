@@ -470,9 +470,46 @@ Auth::id()` → reject, before touching anything else.
 - `App\v1\ApiController::paypal_transaction_webview($user_id, $order_id, $amount)` also takes `$user_id` as
   a raw parameter and does `User::find($user_id)` - but only *reads* the user (email, for the PayPal form)
   and never writes to it. Lower-severity (info disclosure of an email address via a payment redirect flow,
-  not account takeover) and not fixed in this pass - flagged here for a dedicated look rather than touched
-  blind, since PayPal's own redirect flow may legitimately need this parameter unauthenticated and changing
-  it risks breaking real payments without a deeper look at that integration.
+  not account takeover). **Fixed as a follow-up** (see below) rather than left deferred, once the PayPal
+  integration itself was actually read in enough depth to fix it safely.
+
+#### 6.5.1 Follow-up: `paypal_transaction_webview()` info disclosure - fixed
+
+The endpoint is unauthenticated by necessity - it's loaded directly as a webview URL by the mobile app, with
+no bearer token available for a normal `auth:sanctum` check - so the fix couldn't be "require login" the way
+the account-takeover fix above was. Instead it closes the actual gap: previously `$order_id` was looked up
+with zero check that it belonged to `$user_id` at all (`OrderService::fetchOrders($order_id)` with no
+`$user_id` argument, despite the method supporting one), and the target user's real email was embedded in
+the rendered PayPal auto-submit form's hidden `custom` field regardless of whether a matching order was even
+found - the "no order found" branch disclosed the email exactly as readily as the "order found" branch. An
+attacker who knew nothing but a candidate `user_id` (sequential, easily enumerated) could view any user's
+email by hitting the URL with any `order_id`.
+
+`$order_id` has two legitimate shapes in this app, both already handled elsewhere in the codebase (see
+`Admin\Webhook.php`'s own parsing of the same convention): a numeric real order id, or a synthetic
+`wallet-refill-user-{user_id}-{time}-{random}` id used for wallet top-ups (confirmed via
+`App\v1\ApiController.php:7588` and `Admin\Webhook.php:216-223`). Both are now required to actually belong to
+`$user_id` before anything is disclosed - the numeric case via `fetchOrders($order_id, $user_id)` (now
+passing the owner filter the method already supported), the wallet-refill case by parsing the embedded user
+id out of the string and comparing it to `$user_id`. Anything else (mismatched owner, or an `$order_id` that
+matches neither shape) gets a generic "Order Not Found" JSON response instead. The two near-identical
+found/not-found branches in the original method (which built the exact same PayPal form either way) were
+also collapsed into one, since `$data['order']` was assigned but never actually used by
+`paypal_auto_form()`.
+
+Found and fixed incidentally while writing this test: `OrderService::fetchOrders()`'s per-item return-window
+calculation read `$settings['max_days_to_return_item']` with no null-coalescing fallback, and
+`database/migrations/2025_01_01_000016_baseline_default_settings.php`'s default `system_settings` row never
+seeded that key (it's only ever written once an admin saves the System Settings page) - so any order-detail
+fetch on a fresh install crashed with `Undefined array key "max_days_to_return_item"`. Defaulted to `0` days,
+matching that same migration's own stated purpose (documented in its own header comment) of not trusting
+settings keys to exist unconditionally.
+
+Tests: `tests/Feature/PaypalTransactionWebviewOwnershipTest.php` (6 tests) - a numeric order belonging to a
+different user does not leak the email; the same order belonging to the requesting user still renders the
+form with their own email; a wallet-refill id for a different user does not leak the email; a matching
+wallet-refill id still renders the form; an unrecognised non-numeric `order_id` does not leak the email; an
+unknown `user_id` gets a clean JSON error. Full suite: 381/381 passing.
 - `Admin\*` controllers' many `User::find($id)` call sites are unrestricted **by design** - an admin
   managing arbitrary sellers/delivery boys/customers is the actual, intended feature of the admin panel, not
   a bug.
