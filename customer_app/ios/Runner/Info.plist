@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>eShop Plus</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>eShop Plus</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(FLUTTER_BUILD_NAME)</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>GIDClientID</key>
+	<string>504527708104-mkqaceps2dbvgs1colq38ntp8285fvc0.apps.googleusercontent.com</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>ppemerchantsdkv1</string>
+		<string>ppemerchantsdkv2</string>
+		<string>ppemerchantsdkv3</string>
+		<string>paytmmp</string>
+		<string>gpay</string>
+	</array>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>app needs access to the camera to capture image for profile picture</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Your location is needed to display accurate information.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>app needs access to the location to get the current location to add address</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>app needs access to the location to get the current location to add address</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>app needs access to the access microphone to listen to the voice</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>app needs access to the photo library to upload images for profile picture</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>app needs access to the speech to search products</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>	
+	<string>Required for speech-to-text functionality.</string>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>io.flutter.embedded_views_preview</key>
+	<true/>
+	<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>eshop-pro.eshopweb.store</string>
+						<string>com.googleusercontent.apps.504527708104-mkqaceps2dbvgs1colq38ntp8285fvc0</string>
+				</array>
+					
+			</dict>
+		</array>
+		<key>LSApplicationQueriesSchemes</key>
+		<array>
+			<string>https</string>
+		</array>
+	<key>NSUserActivityTypes</key>
+		<array>
+			<string>NSUserActivityTypeBrowsingWeb</string>
+		</array>
+	
+
+</dict>
+</plist>

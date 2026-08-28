@@ -1,0 +1,51 @@
+buildscript {
+    
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    // dependencies {
+    //     classpath 'com.android.tools.build:gradle:7.3.0'
+    //     classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    // }
+}
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+   
+}
+
+rootProject.buildDir = '../build'
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+
+subprojects { subproject ->
+    if (subproject.name == 'pusher_channels_flutter') {
+        subproject.afterEvaluate {
+            // Remove the package attribute from the AndroidManifest.xml
+            def manifestFile = file("${subproject.projectDir}/src/main/AndroidManifest.xml")
+            if (manifestFile.exists()) {
+                def manifestContent = manifestFile.text
+                manifestContent = manifestContent.replaceAll('package="com.pusher.channels_flutter"', '')
+                manifestFile.text = manifestContent
+            }
+
+            // Add the namespace property to build.gradle
+            subproject.android {
+                namespace = 'com.pusher.channels_flutter'
+            }
+        }
+    }
+}
+
+subprojects {
+    project.evaluationDependsOn(':app')
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}

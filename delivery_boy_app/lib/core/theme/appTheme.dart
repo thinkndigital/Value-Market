@@ -1,0 +1,53 @@
+import 'package:eshoppro_deliveryboy/core/constants/themeConstants.dart';
+import 'package:eshoppro_deliveryboy/core/theme/colors.dart';
+import 'package:eshoppro_deliveryboy/utils/utils.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+class AppTheme {
+static ThemeData getThemeData(BuildContext context) =>
+Theme.of(context).copyWith(
+textTheme: GoogleFonts.rubikTextTheme(Theme.of(context).textTheme),
+scaffoldBackgroundColor: const Color(0xFFF5F8F9),
+shadowColor: const Color(0x3F000000),
+hintColor: secondaryColor.withValues(alpha: 0.67),
+appBarTheme: const AppBarTheme(
+backgroundColor: Colors.white,
+),
+iconTheme: IconThemeData(color: secondaryColor),
+dividerColor: borderColor.withValues(alpha: 0.4),
+inputDecorationTheme: InputDecorationTheme(
+iconColor: borderColor.withValues(alpha: 0.4),
+border: OutlineInputBorder(
+borderSide: BorderSide(color: borderColor.withValues(alpha: 0.4)),
+borderRadius: const BorderRadius.all(Radius.circular(borderRadius)),
+),
+enabledBorder: OutlineInputBorder(
+borderSide: BorderSide(color: borderColor.withValues(alpha: 0.4)),
+borderRadius: BorderRadius.circular(borderRadius)),
+errorBorder: OutlineInputBorder(
+borderSide: BorderSide(color: errorColor),
+borderRadius: BorderRadius.circular(borderRadius)),
+focusedErrorBorder: OutlineInputBorder(
+borderSide: BorderSide(color: primaryColor),
+borderRadius: BorderRadius.circular(borderRadius)),
+focusedBorder: OutlineInputBorder(
+borderSide: BorderSide(color: primaryColor),
+borderRadius: BorderRadius.circular(borderRadius)),
+disabledBorder: OutlineInputBorder(
+borderSide:
+BorderSide(color: secondaryColor.withValues(alpha: 0.67)),
+borderRadius: BorderRadius.circular(borderRadius)),
+),
+bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+backgroundColor: Colors.white, elevation: 1),
+colorScheme: ColorScheme.fromSeed(
+seedColor: primaryColor,
+primary: primaryColor,
+primaryContainer: Utils.getColorFromHexValue('#FFFFFF'),
+secondary: secondaryColor,
+shadow: const Color(0x3F000000),
+error: errorColor,
+),
+);
+}
