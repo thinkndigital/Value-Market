@@ -113,6 +113,36 @@ class ProductController extends Controller
     {
 
         $store_id = !empty(request('store_id')) ? request('store_id') : app(StoreService::class)->getStoreId();
+
+        // Security fix (found while investigating docs/SECURITY_AUDIT.md §6.2's Model::unguard() deferral):
+        // seller_id (below, used for both the permissions lookup and the created product row) was taken
+        // directly from the request with no verification at all - the 'seller_id' validation rule is even
+        // commented out a few lines down. Any authenticated seller could create a product attributed to ANY
+        // other seller's identity, and forge the seller_id/store_id pair the permissions lookup uses to
+        // decide whether the product auto-publishes without admin approval. store_id itself was also taken
+        // from the request or (via StoreService::getStoreId()) a session value that a separate, unrelated
+        // bug (SetDefaultStore middleware's unauthenticated `?store=slug` handling, not fixed here - see
+        // the ongoing investigation) can be redirected to point at another seller's store.
+        //
+        // This method is also the handler for admin/products (routes/admin_routes.php) - an admin/editor
+        // legitimately chooses which seller a product belongs to, so the check below only applies when the
+        // caller is actually a seller; that existing (trusted) behavior for admins is untouched.
+        if (Auth::user()->isSeller()) {
+            $ownsStore = SellerStore::where('user_id', Auth::id())->where('store_id', $store_id)->exists();
+            if (!$ownsStore) {
+                $message = labels('seller.data_not_found', 'Data Not Found');
+                if ($fromApp) {
+                    return response()->json(['error' => true, 'message' => $message]);
+                }
+                return $request->ajax()
+                    ? response()->json(['error' => true, 'message' => $message])
+                    : redirect()->back()->with('error', $message)->withInput();
+            }
+            // Every later use of $request->seller_id in this method (the permissions lookup and the
+            // product row itself) now reads this server-derived value instead of whatever the request sent.
+            $request->merge(['seller_id' => Seller::where('user_id', Auth::id())->value('id')]);
+        }
+
         // dd('here');
         $validator = Validator::make($request->all(), [
             'pro_input_name' => 'required',
