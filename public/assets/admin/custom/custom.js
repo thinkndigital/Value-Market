@@ -141,7 +141,12 @@ iziToast.settings({
     position: "topRight",
 });
 
-var appUrl = document.getElementById("app_url").dataset.appUrl;
+// Bug fix: this threw "Cannot read properties of null (reading 'dataset')" and silently killed every line
+// below it in this shared, panel-wide script on any page that doesn't render the #app_url element - the
+// admin/seller/delivery_boy login pages, which use their own pre-auth layout without x-*.header. Falling
+// back to the browser's own origin keeps the rest of this file (form validation, media pickers, AJAX
+// endpoints used across authenticated pages) running everywhere instead of dying on load.
+var appUrl = document.getElementById("app_url")?.dataset.appUrl || (window.location.origin + "/");
 var from = "admin";
 if (
     window.location.href.indexOf("seller/") > -1 &&
