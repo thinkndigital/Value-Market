@@ -23,11 +23,29 @@ class UserController extends Controller
 {
     public function edit(User $user)
     {
+        // Security fix (docs/SECURITY_AUDIT.md §6.4): same gap as Seller\UserController's account pages -
+        // route-model binding resolved whatever user the URL asked for with no ownership check at all. This
+        // page is "my own account settings"; a delivery boy may only view their own.
+        if ($user->id !== Auth::id()) {
+            return view('admin.pages.views.no_data_found');
+        }
+
         return view('delivery_boy.pages.forms.account', ['user' => $user]);
     }
 
     public function update(Request $request, $id)
     {
+
+        // Security fix (docs/SECURITY_AUDIT.md §6.4): $id came straight from the URL with no ownership
+        // check - any authenticated delivery boy could take over ANY OTHER account (full password reset via
+        // new_password, email/mobile/address overwrite, role_id force-set) just by changing the id. Same
+        // vulnerability, same fix, as Seller\UserController::update() found moments earlier in this sweep.
+        if ((int) $id !== (int) Auth::id()) {
+            if ($request->ajax()) {
+                return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')], 404);
+            }
+            return redirect()->back()->with('error', labels('seller.data_not_found', 'Data Not Found'));
+        }
 
         $validator = Validator::make($request->all(), [
             'name' => 'required',
