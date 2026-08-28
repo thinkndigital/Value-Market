@@ -23,7 +23,7 @@ Route::get('get_cities', [ApiController::class, 'get_cities']);
 Route::get('get_zipcodes', [ApiController::class, 'get_zipcodes']);
 Route::get('get_languages', [ApiController::class, 'get_languages']);
 Route::get('get_language_labels', [ApiController::class, 'get_language_labels']);
-Route::get('get_zones', [ApiController::class, 'get_zones'])->name('get_zones')->middleware('language');
+Route::get('get_zones', [ApiController::class, 'get_zones'])->name('delivery_boy_api.get_zones')->middleware('language');
 
 Route::group(['middleware' => ['check_token', 'auth:sanctum']], function () {
     Route::get('get_delivery_boy_details', [ApiController::class, 'get_delivery_boy_details'])->middleware('language');

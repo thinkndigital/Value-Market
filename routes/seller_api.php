@@ -29,7 +29,7 @@ Route::get('get_settings', [ApiController::class, 'get_settings']);
 Route::get('verify_user', [ApiController::class, 'verify_user'])->middleware('language');
 Route::post('reset_password', [ApiController::class, 'reset_password']);
 Route::get('get_user_details', [ApiController::class, 'get_user_details']);
-Route::get('get_zones', [ApiController::class, 'get_zones'])->name('get_zones')->middleware('language');
+Route::get('get_zones', [ApiController::class, 'get_zones'])->name('seller_api.get_zones')->middleware('language');
 Route::get('get_all_categories', [ApiController::class, 'get_all_categories']);
 
 Route::group(['middleware' => ['check_token', 'auth:sanctum']], function () {

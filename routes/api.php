@@ -59,6 +59,13 @@ Route::post('search_products', [ApiController::class, 'search_products'])->middl
 Route::post('get_most_searched_history', [ApiController::class, 'get_most_searched_history']);
 Route::get('get_paypal_link', [ApiController::class, 'get_paypal_link']);
 Route::get('/paypal_transaction_webview', [ApiController::class, 'paypal_transaction_webview'])->name('paypal_transaction_webview');
+// Phase 17 (docs/PHASE_17_FULL_QA_PRODUCTION_READINESS.md): kept this file's own route name as the bare
+// `get_zones` (nothing in the app calls it by name either way) - routes/seller_api.php and
+// routes/delivery_boy_api.php register the same URI+name for their own copies of this endpoint, which broke
+// `php artisan route:cache` (a duplicate route name is a hard error at cache-build time, not just at
+// runtime) since Laravel's named-route registry is process-wide, not scoped per route file/group. Those two
+// were given distinct prefixed names instead; no code anywhere calls route('get_zones') by name, so this is
+// a name-only change with no effect on the actual URI paths the Flutter apps hit.
 Route::get('get_zones', [ApiController::class, 'get_zones'])->name('get_zones')->middleware('language');
 Route::get('test', [ApiController::class, 'test'])->name('test');
 Route::get('handle_paystack_callback', [ApiController::class, 'handle_paystack_callback']);
