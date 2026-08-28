@@ -157,7 +157,11 @@ class AffiliateService
      */
     public function approveConversionsForOrder(int $orderId): void
     {
-        $pending = ReferralConversion::where('order_id', $orderId)->where('status', ReferralConversion::STATUS_PENDING)->get();
+        // Phase 16 (docs/PHASE_16_PERFORMANCE_OPTIMIZATION.md): eager-load link - the loop below reads
+        // $conversion->link->user_id for every row; without this each row lazily queries its own
+        // AffiliateLink (N+1). One order rarely has more than a couple of conversions today, but there's no
+        // reason to pay per-row query cost for something a single eager-load avoids entirely.
+        $pending = ReferralConversion::with('link')->where('order_id', $orderId)->where('status', ReferralConversion::STATUS_PENDING)->get();
 
         foreach ($pending as $conversion) {
             $referenceId = 'affiliate-commission-' . $conversion->id;
@@ -193,7 +197,8 @@ class AffiliateService
      */
     public function reverseConversionsForOrder(int $orderId): void
     {
-        $approved = ReferralConversion::where('order_id', $orderId)->where('status', ReferralConversion::STATUS_APPROVED)->get();
+        // Phase 16: see approveConversionsForOrder() above.
+        $approved = ReferralConversion::with('link')->where('order_id', $orderId)->where('status', ReferralConversion::STATUS_APPROVED)->get();
 
         foreach ($approved as $conversion) {
             $referenceId = 'affiliate-commission-reversal-' . $conversion->id;
