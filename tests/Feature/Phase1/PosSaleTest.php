@@ -10,11 +10,14 @@ use App\Models\Order;
 use App\Models\OrderItems;
 use App\Models\Product;
 use App\Models\Product_variants;
+use App\Models\Role;
 use App\Models\Seller;
+use App\Models\SellerStore;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
 /**
@@ -60,14 +63,36 @@ class PosSaleTest extends TestCase
         ]);
     }
 
-    /** @return array{0: User, 1: Product, 2: Product_variants} customer, product, variant */
+    /** Shared across every seller this file creates - see seedSellerWithSellableProduct()'s docblock. */
+    private const TEST_STORE_ID = 100;
+
+    /**
+     * @return array{0: User, 1: Product, 2: Product_variants} customer, product, variant
+     *
+     * Security fix (docs/SECURITY_AUDIT.md §6.2): PosController::place_order()/combo_place_order() now
+     * verify the acting seller actually manages the store_id their session resolves to
+     * (TenantContext::verifiedSellerStoreId()) - previously neither method checked Auth::user() at all, the
+     * exact gap that fix closes. This helper logs the seller in and gives them a real, owned store (a fixed
+     * store_id shared across every seller this test file creates - verifiedSellerStoreId() only checks
+     * "does the currently authenticated user manage this store_id", not product ownership, so a shared
+     * store_id is fine here and keeps every existing test scenario, none of which are about store
+     * ownership, working unchanged).
+     */
     private function seedSellerWithSellableProduct(int $stock = 10): array
     {
         $sellerUser = User::forceCreate([
             'username' => 'pos_seller_' . uniqid(), 'password' => 'x', 'disk' => 'public',
-            'serviceable_cities' => '', 'type' => 'phone',
+            'serviceable_cities' => '', 'type' => 'phone', 'role_id' => Role::SELLER,
         ]);
         $seller = Seller::forceCreate(['user_id' => $sellerUser->id, 'disk' => 'public', 'status' => 1]);
+        SellerStore::forceCreate([
+            'seller_id' => $seller->id, 'user_id' => $sellerUser->id, 'store_id' => self::TEST_STORE_ID,
+            'slug' => 'store-' . uniqid(), 'store_name' => 'Store', 'store_description' => 'Store',
+            'logo' => '', 'store_thumbnail' => '', 'disk' => 'public', 'store_url' => '',
+            'permissions' => json_encode(['require_products_approval' => 0]),
+        ]);
+        Auth::login($sellerUser);
+        session(['store_id' => self::TEST_STORE_ID]);
 
         $category = Category::forceCreate([
             'name' => json_encode(['en' => 'Category']), 'slug' => 'cat-' . uniqid(), 'image' => '', 'banner' => '',

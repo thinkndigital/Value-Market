@@ -10,12 +10,15 @@ use App\Models\OrderItems;
 use App\Models\PosPayment;
 use App\Models\Product;
 use App\Models\Product_variants;
+use App\Models\Role;
 use App\Models\Seller;
+use App\Models\SellerStore;
 use App\Models\Setting;
 use App\Models\StockMovement;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
 /**
@@ -41,14 +44,27 @@ class PosMultiItemAndPaymentsTest extends TestCase
         ]);
     }
 
-    /** @return array{0: User, 1: Seller, 2: array<int, Product_variants>} */
+    /**
+     * @return array{0: User, 1: Seller, 2: array<int, Product_variants>}
+     *
+     * Security fix (docs/SECURITY_AUDIT.md §6.2): PosController::place_order() now verifies the acting
+     * seller manages the session's store_id (TenantContext::verifiedSellerStoreId()).
+     */
     private function seedSellerWithTwoVariants(int $stockEach = 10): array
     {
         $sellerUser = User::forceCreate([
             'username' => 'pos_seller_' . uniqid(), 'password' => 'x', 'disk' => 'public',
-            'serviceable_cities' => '', 'type' => 'phone',
+            'serviceable_cities' => '', 'type' => 'phone', 'role_id' => Role::SELLER,
         ]);
         $seller = Seller::forceCreate(['user_id' => $sellerUser->id, 'disk' => 'public', 'status' => 1]);
+        SellerStore::forceCreate([
+            'seller_id' => $seller->id, 'user_id' => $sellerUser->id, 'store_id' => 100,
+            'slug' => 'store-' . uniqid(), 'store_name' => 'Store', 'store_description' => 'Store',
+            'logo' => '', 'store_thumbnail' => '', 'disk' => 'public', 'store_url' => '',
+            'permissions' => json_encode(['require_products_approval' => 0]),
+        ]);
+        Auth::login($sellerUser);
+        session(['store_id' => 100]);
         $category = Category::forceCreate([
             'name' => json_encode(['en' => 'Category']), 'slug' => 'cat-' . uniqid(), 'image' => '', 'banner' => '',
         ]);

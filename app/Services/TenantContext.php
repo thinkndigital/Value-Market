@@ -95,4 +95,34 @@ class TenantContext
     {
         return Seller::where('user_id', $user->id)->exists();
     }
+
+    /**
+     * Security fix (docs/SECURITY_AUDIT.md §6.2, the ongoing SetDefaultStore/StoreService::getStoreId()
+     * investigation): StoreService::getStoreId() reads session('store_id'), which SetDefaultStore
+     * middleware can silently repoint at ANY store via an unauthenticated `?store=slug` query parameter on
+     * any web request - a legitimate feature for anonymous customers browsing a specific seller's public
+     * storefront, but never intended to also decide which store an authenticated SELLER is acting on
+     * behind the scenes. This is the one place that verifies a candidate store_id (from getStoreId() or a
+     * request parameter - callers keep their own existing resolution logic, this only verifies the result)
+     * actually belongs to the acting seller, via the same App\Models\SellerStore ownership check already
+     * applied individually to add_brands()/ProductController::store()/BrandController::store() before this
+     * method existed. Returns null (never the unverified value) if the caller isn't a seller, has no
+     * candidate store_id, or doesn't manage the one given - callers must treat null as "not authorized",
+     * not "no store selected."
+     *
+     * Deliberately does not attempt to resolve a fallback store_id itself (e.g. "pick their first store") -
+     * that would be a behavior change for READ endpoints (which endpoint should show which store's default
+     * data is a product decision, not a security one) and this method's only job is verification.
+     */
+    public function verifiedSellerStoreId($candidateStoreId): ?int
+    {
+        $user = Auth::user();
+        if ($user === null || !$user->isSeller() || empty($candidateStoreId)) {
+            return null;
+        }
+
+        $owns = \App\Models\SellerStore::where('user_id', $user->id)->where('store_id', $candidateStoreId)->exists();
+
+        return $owns ? (int) $candidateStoreId : null;
+    }
 }

@@ -4,6 +4,7 @@ namespace Tests\Feature\Phase2;
 
 use App\Models\Role;
 use App\Models\Seller;
+use App\Models\SellerStore;
 use App\Models\User;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -96,5 +97,56 @@ class TenantContextTest extends TestCase
 
         $tenantContext->sellerIdFor($user);
         $this->assertTrue(true);
+    }
+
+    // --- verifiedSellerStoreId() (docs/SECURITY_AUDIT.md §6.2, SetDefaultStore investigation) ---
+
+    private function makeSellerWithStore(int $storeId): User
+    {
+        [$user, $seller] = $this->makeSellerUser();
+        SellerStore::forceCreate([
+            'seller_id' => $seller->id, 'user_id' => $user->id, 'store_id' => $storeId,
+            'slug' => 'store-' . uniqid(), 'store_name' => 'Store', 'store_description' => 'Store',
+            'logo' => '', 'store_thumbnail' => '', 'disk' => 'public', 'store_url' => '',
+            'permissions' => json_encode(['require_products_approval' => 0]),
+        ]);
+
+        return $user;
+    }
+
+    public function test_verified_seller_store_id_returns_the_store_when_the_seller_manages_it(): void
+    {
+        $user = $this->makeSellerWithStore(4001);
+        Auth::login($user);
+
+        $this->assertSame(4001, app(TenantContext::class)->verifiedSellerStoreId(4001));
+    }
+
+    public function test_verified_seller_store_id_returns_null_for_a_store_the_seller_does_not_manage(): void
+    {
+        $user = $this->makeSellerWithStore(4002);
+        Auth::login($user);
+
+        $this->assertNull(app(TenantContext::class)->verifiedSellerStoreId(4003));
+    }
+
+    public function test_verified_seller_store_id_returns_null_for_a_non_seller(): void
+    {
+        $admin = User::forceCreate([
+            'username' => 'admin_' . uniqid(), 'password' => 'x', 'disk' => 'public',
+            'serviceable_cities' => '', 'type' => 'phone', 'role_id' => Role::SUPER_ADMIN,
+        ]);
+        Auth::login($admin);
+
+        $this->assertNull(app(TenantContext::class)->verifiedSellerStoreId(4004));
+    }
+
+    public function test_verified_seller_store_id_returns_null_for_an_empty_candidate(): void
+    {
+        $user = $this->makeSellerWithStore(4005);
+        Auth::login($user);
+
+        $this->assertNull(app(TenantContext::class)->verifiedSellerStoreId(''));
+        $this->assertNull(app(TenantContext::class)->verifiedSellerStoreId(null));
     }
 }

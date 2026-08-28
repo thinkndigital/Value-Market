@@ -7,6 +7,7 @@ use App\Models\ComboProduct;
 use App\Models\Currency;
 use App\Models\Role;
 use App\Models\Seller;
+use App\Models\SellerStore;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -56,7 +57,16 @@ class PosComboStockTest extends TestCase
             'serviceable_cities' => '', 'type' => 'phone', 'mobile' => (string) random_int(6000000000, 6999999999),
         ]);
 
+        // Security fix (docs/SECURITY_AUDIT.md §6.2): combo_place_order() now verifies the acting seller
+        // manages the session's store_id (TenantContext::verifiedSellerStoreId()).
+        SellerStore::forceCreate([
+            'seller_id' => $seller->id, 'user_id' => $sellerUser->id, 'store_id' => 100,
+            'slug' => 'store-' . uniqid(), 'store_name' => 'Store', 'store_description' => 'Store',
+            'logo' => '', 'store_thumbnail' => '', 'disk' => 'public', 'store_url' => '',
+            'permissions' => json_encode(['require_products_approval' => 0]),
+        ]);
         Auth::login($sellerUser);
+        session(['store_id' => 100]);
 
         $request = new Request([
             'data' => json_encode([

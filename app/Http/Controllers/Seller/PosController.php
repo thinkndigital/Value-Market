@@ -29,6 +29,7 @@ use App\Services\ProductService;
 use App\Services\ComboProductService;
 use App\Services\CartService;
 use App\Services\StoreService;
+use App\Services\TenantContext;
 use App\Services\SellerService;
 use App\Services\MediaService;
 use App\Services\SettingService;
@@ -206,6 +207,13 @@ class PosController extends Controller
     {
 
         $store_id = app(StoreService::class)->getStoreId();
+        // Security fix (docs/SECURITY_AUDIT.md §6.2, SetDefaultStore investigation): $store_id is a session
+        // value SetDefaultStore middleware can silently repoint at any store via an unauthenticated
+        // `?store=slug` query parameter - without this, a POS sale (real stock deduction + wallet/earnings
+        // effects) could be attributed to a store the acting seller doesn't manage.
+        if (app(TenantContext::class)->verifiedSellerStoreId($store_id) === null) {
+            return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
+        }
         if (!$request->has('data') || empty($request->input('data'))) {
             $response = [
                 'error' => true,
@@ -739,6 +747,10 @@ class PosController extends Controller
     {
 
         $store_id = app(StoreService::class)->getStoreId();
+        // Security fix: see place_order() above - same reasoning, same fix.
+        if (app(TenantContext::class)->verifiedSellerStoreId($store_id) === null) {
+            return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
+        }
         if (!$request->has('data') || empty($request->input('data'))) {
             $response = [
                 'error' => true,
