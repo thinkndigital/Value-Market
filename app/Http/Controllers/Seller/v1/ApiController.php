@@ -4874,6 +4874,15 @@ class ApiController extends Controller
             return $response;
         }
         $storeId = $request['store_id'] ?? '';
+        // Security fix (docs/SECURITY_AUDIT.md §6, found while auditing Model::unguard()): store_id was
+        // taken directly from the request with no check the authenticated seller actually manages that
+        // store - any logged-in seller could create a Brand row under ANY other seller's store_id, since
+        // `brands` has no seller_id column of its own; store_id IS the tenant boundary here. Same
+        // ownership-check pattern this controller already uses elsewhere (e.g. get_seller_stores()).
+        $ownsStore = SellerStore::where('user_id', Auth::id())->where('store_id', $storeId)->exists();
+        if (!$ownsStore) {
+            return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
+        }
         $brandData = $request->all();
         $existingBrand = Brand::where('store_id', $storeId)
             ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(name, '$.en')) = ?", $brandData['brand_name'])
