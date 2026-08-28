@@ -291,15 +291,30 @@ class MediaController extends Controller
         $quality = (intval($quality) <= 0 || intval($quality) > 100) ? 90 : intval($quality);
 
         try {
-            // Check if the URL contains the allowed domain
-            if (strpos($url, $appUrl) === false && strpos($url, $awsBucket) === false) {
-                throw new Exception('Domain is restricted');
-            }
+            // Bug fix (same as Admin\MediaController::dynamic_image()): this always fetched $url over HTTP,
+            // even for images already sitting on local disk - under `php artisan serve` (single-threaded)
+            // that's a guaranteed self-deadlock for any locally-hosted image, since the one worker ends up
+            // waiting on a response only that same busy worker could produce; in production (multiple
+            // php-fpm workers) it doesn't deadlock but still burns a full unnecessary HTTP round trip per
+            // resize. Resolve the URL's own path against public/ first; only fetch remotely when it isn't
+            // really a local file. realpath() resolves any ../ traversal in the URL and returns false if
+            // nothing exists there; the startsWith check keeps the resolved path inside public/ even if
+            // realpath() did resolve to somewhere outside it - this is a publicly reachable endpoint, so it
+            // must never be able to serve or leak a file (.env, storage/, etc.) from outside the webroot.
+            $publicRoot = realpath(public_path());
+            $realLocalPath = realpath(public_path(parse_url($url, PHP_URL_PATH) ?? ''));
+            $isLocalFile = $realLocalPath !== false && str_starts_with($realLocalPath, $publicRoot . DIRECTORY_SEPARATOR);
 
-            // Download the image from the provided URL
-            $imageData = @file_get_contents($url);
-            if ($imageData === false) {
-                throw new Exception('Failed to download image');
+            if ($isLocalFile) {
+                $imageData = file_get_contents($realLocalPath);
+            } else {
+                if (strpos($url, $appUrl) === false && (empty($awsBucket) || strpos($url, $awsBucket) === false)) {
+                    throw new Exception('Domain is restricted');
+                }
+                $imageData = @file_get_contents($url);
+                if ($imageData === false) {
+                    throw new Exception('Failed to download image');
+                }
             }
 
             // Determine MIME type based on file content

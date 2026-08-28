@@ -480,21 +480,36 @@ class MediaController extends Controller
         $quality = ($quality <= 0 || $quality > 100) ? 90 : $quality;
 
         try {
-            // Validate domain
-            if (strpos($url, $appUrl) === false && strpos($url, $awsBucket) === false) {
-                throw new Exception('Domain is restricted');
-            }
+            // Bug fix: this used to decide "local vs remote" (and whether the domain was even allowed) by
+            // string-matching $url against config('app.url') - fragile to any scheme/host/port mismatch
+            // between APP_URL and however the image URL was actually built (asset() uses the request's own
+            // host, which routinely differs from APP_URL in dev, behind a proxy, or behind a CDN). When they
+            // didn't match, this fell through to file_get_contents($url) as a "remote" fetch - even for an
+            // image that was genuinely on this same server, making a real HTTP request back to itself. Under
+            // `php artisan serve` (single-threaded, one request at a time) that's a guaranteed deadlock: the
+            // one worker is stuck waiting on a response only that same busy worker could ever produce, and
+            // every other request queues up behind it until PHP's socket timeout gives up. In production
+            // (php-fpm, multiple workers) it doesn't deadlock, but it still burns a full HTTP round trip
+            // resizing a file that was already sitting right there on local disk, and under enough concurrent
+            // load can still exhaust the worker pool the same way. Resolve the URL's own path against the
+            // public/ directory instead - this doesn't care what host/scheme the URL string uses, only
+            // whether a real local file exists at that path.
+            // realpath() both resolves any ../ traversal in the URL's path and returns false if the file
+            // doesn't exist; the startsWith check keeps the resolved path inside public/ even if realpath()
+            // did successfully resolve something outside it (a symlink escape, or a raw traversal string) -
+            // this is a publicly reachable endpoint, so it must never be able to serve or leak a file
+            // (.env, storage/, etc.) from outside the public webroot.
+            $publicRoot = realpath(public_path());
+            $realLocalPath = realpath(public_path(parse_url($url, PHP_URL_PATH) ?? ''));
+            $isLocalFile = $realLocalPath !== false && str_starts_with($realLocalPath, $publicRoot . DIRECTORY_SEPARATOR);
 
-            // Convert full URL to local file path if it's a local image
-            if (Str::startsWith($url, $appUrl)) {
-                $relativePath = str_replace($appUrl, '', $url);
-                $localPath = public_path($relativePath);
-                if (!file_exists($localPath)) {
-                    throw new Exception('Local file not found');
-                }
-                $imageData = file_get_contents($localPath);
+            if ($isLocalFile) {
+                $imageData = file_get_contents($realLocalPath);
             } else {
-                // Fallback to remote image (e.g., from S3)
+                // Not a local file - validate it's at least pointing somewhere allowed before fetching remotely.
+                if (strpos($url, $appUrl) === false && (empty($awsBucket) || strpos($url, $awsBucket) === false)) {
+                    throw new Exception('Domain is restricted');
+                }
                 $imageData = @file_get_contents($url);
                 if ($imageData === false) {
                     throw new Exception('Failed to download image');
