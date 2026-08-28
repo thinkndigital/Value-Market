@@ -132,7 +132,11 @@ Route::group(
 
         // tax
     
-        Route::resource("seller/tax", TaxController::class)->names(['index' => 'tax.index',])->except('show');
+        Route::resource("seller/tax", TaxController::class)->names([
+            'index' => 'tax.index',
+            'edit' => 'seller.tax.edit',
+            'update' => 'seller.tax.update',
+        ])->except('show');
 
         Route::get('/tax/list', [TaxController::class, 'list'])->name('tax.list');
 
@@ -140,8 +144,15 @@ Route::group(
 
         //attributes
     
+        // AttributeController (seller) only implements index/list/getAttributes/getAttributeValue - no
+        // create/store/edit/update/destroy method exists (attribute values are managed inline from the
+        // product form). Renamed for route:cache uniqueness even though they remain unreachable in
+        // practice; see docs/ROUTE_NAME_DEDUPLICATION.md.
         Route::resource("seller/products/attributes", AttributeController::class)->names([
             'index' => 'attributes.index',
+            'create' => 'seller.attributes.create',
+            'update' => 'seller.attributes.update',
+            'destroy' => 'seller.attributes.destroy',
         ])->except('show');
 
         Route::get('seller/attributes/list', [AttributeController::class, 'list'])->name('seller_attributes.list');
@@ -150,10 +161,15 @@ Route::group(
 
         //products
     
+        // 'store'/'update'/'destroy' excepted: each already has a working, separately-named legacy route
+        // elsewhere in this file (seller_products.store / seller.products.update / seller.products.destroy)
+        // pointing to the same controller methods; the resource defaults were redundant and collided on
+        // name with admin's equivalent resource. 'create' is kept and renamed for uniqueness.
         Route::resource("seller/products", ProductController::class)->names([
             'index' => 'seller.products.index',
             'edit' => 'seller.products.edit',
-        ])->except('show');
+            'create' => 'seller.products.create',
+        ])->except(['show', 'store', 'update', 'destroy']);
         Route::post('seller/products', [ProductController::class, 'store'])->name('seller_products.store')->middleware(['demo_restriction']);
 
         Route::get('seller/products/update_status/{id}', [ProductController::class, 'update_status'])->middleware(['demo_restriction']);
@@ -193,9 +209,15 @@ Route::group(
 
         //product faqs
     
+        // 'destroy' excepted: the legacy 'seller/product_faqs/destroy/{id}' route below already claims
+        // 'seller.product_faqs.destroy'. 'create'/'edit'/'update' renamed with the seller. prefix - no
+        // legacy alternative existed and they collided on name with admin's equivalent resource.
         Route::resource("seller/product_faqs", ProductFaqController::class)->names([
             'index' => 'seller.product_faqs.index',
-        ])->except('show');
+            'create' => 'seller.product_faqs.create',
+            'edit' => 'seller.product_faqs.edit',
+            'update' => 'seller.product_faqs.update',
+        ])->except(['show', 'destroy']);
         Route::post('seller/product_faqs', [ProductFaqController::class, 'store'])->name('seller.product_faqs.store')->middleware(['demo_restriction']);
         Route::get('seller/product_faqs/list', [ProductFaqController::class, 'list'])->name('seller.product_faqs.list');
         Route::get('seller/product_faqs/edit/{id}', [ProductFaqController::class, 'edit']);
@@ -205,9 +227,15 @@ Route::group(
 
         //combo product faqs
     
+        // 'destroy' excepted: the legacy 'seller/combo_product_faqs/destroy/{id}' route below already
+        // claims 'seller.combo_product_faqs.destroy'. 'create'/'edit'/'update' renamed with the seller.
+        // prefix - no legacy alternative existed and they collided on name with admin's equivalent resource.
         Route::resource("seller/combo_product_faqs", ComboProductFaqController::class)->names([
             'index' => 'seller.combo_product_faqs.index',
-        ])->except('show');
+            'create' => 'seller.combo_product_faqs.create',
+            'edit' => 'seller.combo_product_faqs.edit',
+            'update' => 'seller.combo_product_faqs.update',
+        ])->except(['show', 'destroy']);
         Route::post('seller/combo_product_faqs', [ComboProductFaqController::class, 'store'])->name('seller.combo_product_faqs.store')->middleware(['demo_restriction']);
         Route::get('seller/combo_product_faqs/list', [ComboProductFaqController::class, 'list'])->name('seller.combo_product_faqs.list');
         Route::get('seller/combo_product_faqs/edit/{id}', [ComboProductFaqController::class, 'edit']);
@@ -225,9 +253,14 @@ Route::group(
 
         // Return request
     
+        // ReturnRequestController (seller) only implements index/list/update(no route param) - no
+        // create/store/edit/destroy method exists on either the admin or seller controller, and the
+        // real update flow is the separately-named 'seller.return_request.update' route below (POST,
+        // no id in the URI). create/store/edit/destroy/(resource-)update are genuinely dead code -
+        // excepted rather than renamed; see docs/ROUTE_NAME_DEDUPLICATION.md.
         Route::resource("seller/return_request", ReturnRequestController::class)->names([
             'index' => 'seller.return_request.index',
-        ])->except('show');
+        ])->except(['show', 'create', 'store', 'edit', 'update', 'destroy']);
         Route::post('seller/return_request/update', [ReturnRequestController::class, 'update'])->name('seller.return_request.update')->middleware(['demo_restriction']);
         Route::get('seller/return_request/list', [ReturnRequestController::class, 'list'])->name('seller.return_request.list');
 
@@ -280,19 +313,26 @@ Route::group(
     
         Route::resource("seller/chat", MessagesController::class)->names([
             'index' => 'seller.chat.index',
+            'create' => 'seller.chat.create',
+            'store' => 'seller.chat.store',
+            'show' => 'seller.chat.show',
+            'edit' => 'seller.chat.edit',
+            'update' => 'seller.chat.update',
+            'destroy' => 'seller.chat.destroy',
         ]);
 
 
         // Orders Section
     
+        // 'destroy' excepted: the legacy 'seller/orders/destroy/{id}' route below already claims (now
+        // renamed to) 'seller.orders.destroy' and points to the same OrderController::destroy() method.
         Route::resource("seller/orders", OrderController::class)->names([
             'index' => 'seller.orders.index',
-            // 'store' => 'feature_section.store',
             'edit' => 'seller.orders.edit',
-
-            // 'update' => 'feature_section.update',
-    
-        ])->except('show');
+            'create' => 'seller.orders.create',
+            'store' => 'seller.orders.store',
+            'update' => 'seller.orders.update',
+        ])->except(['show', 'destroy']);
 
         Route::get('/seller/orders/get_order_tracking', [OrderController::class, 'get_order_tracking'])->name('seller.get_order_tracking');
         Route::post('seller/orders/update_order_status', [OrderController::class, 'update_order_status'])->middleware(['demo_restriction']);
@@ -310,7 +350,7 @@ Route::group(
 
         Route::get('seller/orders/order_item_list', [OrderController::class, 'order_item_list'])->name('seller.orders.item_list');
 
-        Route::get('seller/orders/destroy/{id}', [OrderController::class, 'destroy'])->name('orders.destroy')->middleware(['demo_restriction']);
+        Route::get('seller/orders/destroy/{id}', [OrderController::class, 'destroy'])->name('seller.orders.destroy')->middleware(['demo_restriction']);
 
         Route::post('seller/orders/send_digital_product', [OrderController::class, 'send_digital_product'])->name('seller.orders.send_digital_product')->middleware(['demo_restriction']);
 
@@ -322,12 +362,16 @@ Route::group(
             session(['store_name' => $request->store_name]);
             session(['store_image' => $request->store_image]);
             return response()->json(['success' => true]);
-        })->name('set_store');
+        })->name('seller.set_store');
 
         // combo products attributes
     
         Route::resource("seller/combo_product_attributes", ComboProductAttributeController::class)->names([
             'index' => 'seller.combo_product_attributes.index',
+            'create' => 'seller.combo_product_attributes.create',
+            'edit' => 'seller.combo_product_attributes.edit',
+            'update' => 'seller.combo_product_attributes.update',
+            'destroy' => 'seller.combo_product_attributes.destroy',
         ])->except('show');
         Route::get(
             'seller/combo_product_attributes/list',
@@ -336,10 +380,15 @@ Route::group(
 
         // combo products
     
+        // 'store'/'update'/'destroy' excepted: each already has a working, separately-named legacy route
+        // just below (seller.combo_products.store/.update/.destroy) pointing to the same controller
+        // methods; the resource defaults were redundant and collided on name with admin's equivalent
+        // resource. 'create' is kept and renamed for uniqueness.
         Route::resource("seller/combo_products", ComboProductController::class)->names([
             'index' => 'seller.combo_products.index',
             'edit' => 'seller.combo_products.edit',
-        ])->except('show');
+            'create' => 'seller.combo_products.create',
+        ])->except(['show', 'store', 'update', 'destroy']);
         Route::put('seller/combo_products/update/{id}', [ComboProductController::class, 'update'])->name('seller.combo_products.update')->middleware(['demo_restriction']);
 
 
@@ -370,11 +419,11 @@ Route::group(
     
         Route::get("seller/settings/language", [LanguageController::class, 'index']);
 
-        Route::put("seller/settings/languages/savelabel", [LanguageController::class, 'savelabel'])->name('savelabel');
+        Route::put("seller/settings/languages/savelabel", [LanguageController::class, 'savelabel'])->name('seller.savelabel');
 
-        Route::get('seller/settings/languages/change', [LanguageController::class, 'change'])->name('changeLang');
+        Route::get('seller/settings/languages/change', [LanguageController::class, 'change'])->name('seller.changeLang');
 
-        Route::get("seller/settings/set-language/{locale}", [LanguageController::class, 'setLanguage'])->name('set-language'); // language
+        Route::get("seller/settings/set-language/{locale}", [LanguageController::class, 'setLanguage'])->name('seller.set-language'); // language
     
 
         //Reports
@@ -396,7 +445,7 @@ Route::group(
 
         Route::post('seller/orders/delete_parcel', [OrderController::class, 'delete_parcel'])->middleware(['demo_restriction']);
 
-        Route::get("seller/seller/get_seller_deliverable_type", [UserController::class, 'get_seller_deliverable_type'])->name('admin.sellers.get_seller_deliverable_type');
+        Route::get("seller/seller/get_seller_deliverable_type", [UserController::class, 'get_seller_deliverable_type'])->name('seller.sellers.get_seller_deliverable_type');
 
         Route::get('seller/zones/seller_zones_data', [UserController::class, 'seller_zones_data']);
 

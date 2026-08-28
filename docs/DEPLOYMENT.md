@@ -40,7 +40,7 @@ cleanly from empty on a fresh database, in order, with no errors - not just indi
 checked). `--force` is required outside `local`/`testing` environments; Laravel will otherwise prompt for
 confirmation, which blocks a non-interactive deploy.
 
-### 3. Standard production optimizations - with one caveat
+### 3. Standard production optimizations
 
 ```
 php artisan config:cache
@@ -50,21 +50,16 @@ Verified clean this phase.
 ```
 php artisan route:cache
 ```
-**Currently fails.** This codebase has ~50 groups of routes across the admin/seller/delivery_boy panels and
-the customer/seller/delivery_boy v1 API surfaces that share the same route **name** on different URIs (e.g.
-`products.update` is registered once under `admin/products/{product}` and again, separately, under
-`seller/products/{product}` - Laravel's named-route registry is process-wide, not scoped per route file).
-`route:cache` treats a duplicate name as a hard build-time error. One instance (`get_zones`, duplicated
-across `routes/api.php`/`seller_api.php`/`delivery_boy_api.php`) was fixed this phase - confirmed unused by
-name anywhere in the codebase, so renaming two of the three was a pure, zero-risk, name-only change. The
-remaining ~50 were investigated at a sample (`categories.update`, `taxes.destroy`, `blogs.destroy`) and
-found to currently resolve to the *intended* route by coincidence of registration order, not by design - so
-this is confirmed **not** an observed live bug today, but it is both (a) blocking a standard Laravel
-performance optimization and (b) a latent risk: a future route-file reordering, or adding one more route
-under either name, could silently change which URL `route('name', ...)` generates in Blade code that
-currently works by accident. See `docs/PHASE_17_FULL_QA_PRODUCTION_READINESS.md` §2 for the full list and
-why fixing all ~50 wasn't attempted blind this phase. Until resolved, **skip `route:cache`** - the
-application runs correctly without it, just marginally slower per-request on route resolution.
+**Resolved - now succeeds.** The `get_zones` duplicate (`routes/api.php`/`seller_api.php`/
+`delivery_boy_api.php`) was fixed in an earlier phase. The remaining 68 duplicate route-name groups across
+`routes/admin_routes.php`/`seller_routes.php`/`delivery_boy_routes.php`/`web.php` (Laravel's named-route
+registry is process-wide, not scoped per route file, so two routes registered under the same name anywhere
+in the app collide) were resolved in full: each was individually checked for its actual `route()` callers
+and the real controller method it points to before deciding whether to delete a dead legacy route, except a
+redundant resource-generated duplicate, or rename panel-specific copies apart - see
+`docs/ROUTE_NAME_DEDUPLICATION.md` for the complete breakdown, the two patterns found, and the
+verification performed. `php artisan route:cache` now succeeds with zero duplicate-name errors;
+`php artisan test` stayed at 381 passed with no new failures.
 
 ```
 php artisan view:cache

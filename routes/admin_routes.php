@@ -92,6 +92,7 @@ Route::group(
             //categories
     
             Route::resource("categories", CategoryController::class)->except(['show'])
+                ->names(['update' => 'admin.categories.update'])
                 ->missing(function (Request $request) {
                     return Redirect::route('categories.index');
                 })->middleware('CheckDefaultStore');
@@ -139,9 +140,14 @@ Route::group(
 
             // blog categories
     
+            // Only 'index' is wired to a real BlogController action; create/store/edit/update/destroy
+            // are handled by the legacy explicit routes below (createBlog/storeBlog/editBlog/updateBlog/
+            // destroyBlog) - BlogController has no store()/edit()/update()/destroy() methods at all, so
+            // Route::resource()'s default registrations for those four actions would 500 if ever hit.
+            // Excepted here (route-name dedup) rather than left to collide - see docs/ROUTE_NAME_DEDUPLICATION.md.
             Route::resource("blogs", BlogController::class)->names([
                 'index' => 'admin.blogs.index',
-            ])->except('show')->middleware('CheckDefaultStore');
+            ])->except(['show', 'store', 'edit', 'update', 'destroy'])->middleware('CheckDefaultStore');
 
 
             Route::post("/blog_categories", [BlogController::class, 'storeCategory'])->name('blog_category.store')->middleware(['demo_restriction'])->middleware('permissions:create blog_categories');
@@ -307,7 +313,7 @@ Route::group(
 
             Route::post("settings/seller_terms_and_conditions", [SettingController::class, 'storeSellerTermsAndConditions'])->name('seller_terms_and_conditions.store')->middleware(['demo_restriction'])->middleware('permissions:edit admin_policies');
 
-            Route::get("settings/seller_terms_and_conditions", [SettingController::class, 'sellerTermsAndCondition'])->name('seller_terms_and_conditions.view')->middleware(['demo_restriction'])->middleware('permissions:edit admin_policies');
+            Route::get("settings/seller_terms_and_conditions", [SettingController::class, 'sellerTermsAndCondition'])->name('admin.seller_terms_and_conditions.view')->middleware(['demo_restriction'])->middleware('permissions:edit admin_policies');
 
             // delivery boy policies
     
@@ -319,10 +325,12 @@ Route::group(
 
             // brand
     
+            // 'edit'/'destroy' excepted: the legacy routes below (brands/edit/{id}, brands/destroy/{id})
+            // already claim 'brands.edit'/'brands.destroy' and point to the same controller methods -
+            // the resource defaults were exact redundant duplicates causing the name collision.
             Route::resource("brands", BrandController::class)->names([
                 'index' => 'brands.index',
-                'edit' => 'brands.edit',
-            ])->except('show')->middleware('CheckDefaultStore');
+            ])->except(['show', 'edit', 'destroy'])->middleware('CheckDefaultStore');
 
             Route::post('brands', [BrandController::class, 'store'])->middleware(['demo_restriction'])->name('brands.store')->middleware('permissions:create brands');
 
@@ -342,10 +350,12 @@ Route::group(
 
             //taxes
     
+            // 'destroy' excepted: the legacy 'tax/destroy/{id}' route below already claims 'taxes.destroy'
+            // and points to the same TaxController::destroy() method.
             Route::resource("taxes", TaxController::class)->names([
                 'index' => 'taxes.index',
                 'edit' => 'taxes.edit',
-            ])->except('show');
+            ])->except(['show', 'destroy']);
 
             Route::get('/tax/update_status/{id}', [TaxController::class, 'update_status'])->middleware(['demo_restriction'])->middleware('permissions:edit tax');
 
@@ -357,18 +367,20 @@ Route::group(
 
             Route::get('tax/destroy/{id}', [TaxController::class, 'destroy'])->name('taxes.destroy')->middleware(['demo_restriction'])->middleware('permissions:delete tax');
 
-            Route::get('tax/edit/{id}', [TaxController::class, 'edit'])->name('tax.edit');
+            Route::get('tax/edit/{id}', [TaxController::class, 'edit'])->name('admin.tax.edit');
 
-            Route::put('tax/update/{id}', [TaxController::class, 'update'])->name('tax.update')->middleware(['demo_restriction'])->middleware('permissions:edit tax');
+            Route::put('tax/update/{id}', [TaxController::class, 'update'])->name('admin.tax.update')->middleware(['demo_restriction'])->middleware('permissions:edit tax');
 
             Route::get('tax/get_taxes', [TaxController::class, 'getTaxes']);
 
 
             //promocode
     
+            // 'destroy' excepted: the legacy 'promo_codes/destroy/{id}' route below already claims
+            // 'promo_codes.destroy' and points to the same PromoCodeController::destroy() method.
             Route::resource("promo_codes", PromoCodeController::class)->names([
                 'index' => 'promo_codes.index',
-            ])->except('show')->middleware('CheckDefaultStore');
+            ])->except(['show', 'destroy'])->middleware('CheckDefaultStore');
             Route::post('promo_codes', [PromoCodeController::class, 'store'])->name('promo_codes.store')->middleware(['demo_restriction'])->middleware('permissions:create promo_code');
             Route::get('/promo_code/update_status/{id}', [PromoCodeController::class, 'update_status'])->middleware(['demo_restriction'])->middleware('permissions:edit promo_code');
 
@@ -386,9 +398,17 @@ Route::group(
 
         //attributes
     
+        // AttributeController (admin) only implements index/list/store/update_status/getAttributes - no
+        // edit/update/destroy method exists, and no admin UI links to them (attribute values are managed
+        // inline from the product form). 'create'/'update'/'destroy' below are renamed for route:cache
+        // uniqueness (matching seller's equivalent resource) even though they remain unreachable in
+        // practice; see docs/ROUTE_NAME_DEDUPLICATION.md.
         Route::resource("admin/attributes", AttributeController::class)->names([
             'index' => 'admin.attributes.index',
             'edit' => 'admin.attributes.edit',
+            'create' => 'admin.attributes.create',
+            'update' => 'admin.attributes.update',
+            'destroy' => 'admin.attributes.destroy',
         ])->except('show')->middleware('CheckDefaultStore');
         Route::get(
             'admin/attributes/list',
@@ -398,15 +418,23 @@ Route::group(
         Route::get('/attribute/update_status/{id}', [AttributeController::class, 'update_status'])->middleware(['demo_restriction'])->middleware('permissions:edit attributes');
         Route::post('admin/attribute/getAttributes', [AttributeController::class, 'getAttributes']);
 
-        Route::get('attributes/destroy/{id}', [AttributeController::class, 'destroy'])->name('attributes.destroy')->middleware(['demo_restriction'])->middleware('permissions:delete attributes');
+        // Legacy 'attributes/destroy/{id}' -> AttributeController::destroy() removed: destroy() does not
+        // exist on this controller (would 500 if ever hit), it collided on name with both the admin and
+        // seller resource routes above, and grep confirms zero route() callers and no hardcoded href to
+        // this URL anywhere in the app - genuinely dead code, not a rename candidate.
 
         //products
     
 
+        // 'store'/'update'/'destroy' are excepted: each already has a working, separately-named legacy
+        // route at a different URI just below (admin.products.store/.update/.destroy) that the app
+        // actually uses; the resource-default actions were redundant and collided on name with seller's
+        // equivalent resource. 'create' is kept and renamed for uniqueness (no legacy alternative exists).
         Route::resource("admin/products", ProductController::class)->names([
             'index' => 'admin.products.index',
             'edit' => 'admin.products.edit',
-        ])->except('show')->middleware('CheckDefaultStore');
+            'create' => 'admin.products.create',
+        ])->except(['show', 'store', 'update', 'destroy'])->middleware('CheckDefaultStore');
 
         Route::get(
             'admin/products/list',
@@ -481,11 +509,13 @@ Route::group(
 
         // Feature Section
     
+        // 'update'/'destroy' excepted: the legacy routes below already claim 'feature_section.update'/
+        // '.destroy' and point to the same FeaturedSectionsController methods.
         Route::resource("admin/feature_section", FeaturedSectionsController::class)->names([
             'index' => 'feature_section.index',
             'edit' => 'feature_section.edit',
 
-        ])->except('show')->middleware('CheckDefaultStore');
+        ])->except(['show', 'update', 'destroy'])->middleware('CheckDefaultStore');
         Route::get(
             'admin/feature_section/list',
             [FeaturedSectionsController::class, 'list']
@@ -515,10 +545,15 @@ Route::group(
         Route::get('admin/pickup_location/edit/{id}', [PickupLocationController::class, 'edit'])->name('admin.pickup_location.edit');
         // Orders Section
     
+        // 'destroy' excepted: the legacy 'admin/order/destroy/{id}' route below already claims
+        // 'admin.orders.destroy' and points to the same OrderController::destroy() method.
         Route::resource("admin/orders", OrderController::class)->names([
             'index' => 'admin.orders.index',
             'edit' => 'admin.orders.edit',
-        ])->except('show')->middleware('CheckDefaultStore');
+            'create' => 'admin.orders.create',
+            'store' => 'admin.orders.store',
+            'update' => 'admin.orders.update',
+        ])->except(['show', 'destroy'])->middleware('CheckDefaultStore');
 
         Route::get('admin/orders/order_tracking', [OrderController::class, 'order_tracking'])->name('admin.orders.order_tracking');
         Route::post('admin/orders/update_order_status', [OrderController::class, 'update_order_status'])->middleware(['demo_restriction'])->middleware('permissions:edit orders');
@@ -551,9 +586,14 @@ Route::group(
 
         // Return request
     
+        // ReturnRequestController (admin) only implements index/list/update(no route param) - no
+        // create/store/edit/destroy method exists on either the admin or seller controller, and the
+        // real update flow is the separately-named 'admin.return_request.update' route below (POST,
+        // no id in the URI). create/store/edit/destroy/(resource-)update are genuinely dead code -
+        // excepted rather than renamed; see docs/ROUTE_NAME_DEDUPLICATION.md.
         Route::resource("admin/return_request", ReturnRequestController::class)->names([
             'index' => 'admin.return_request.index',
-        ])->except('show');
+        ])->except(['show', 'create', 'store', 'edit', 'update', 'destroy']);
         Route::post('admin/return_request/update', [ReturnRequestController::class, 'update'])->name('admin.return_request.update')->middleware(['demo_restriction']);
         Route::get('admin/return_request/list', [ReturnRequestController::class, 'list'])->name('admin.return_request.list');
 
@@ -593,10 +633,12 @@ Route::group(
 
         // slider
     
+        // 'update'/'destroy' excepted: the legacy routes below already claim 'sliders.update'/
+        // 'sliders.destroy' and point to the same SliderController methods.
         Route::resource("admin/sliders", SliderController::class)->names([
             'index' => 'sliders.index',
             'edit' => 'sliders.edit',
-        ])->except('show')->middleware('CheckDefaultStore');
+        ])->except(['show', 'update', 'destroy'])->middleware('CheckDefaultStore');
         Route::post('admin/sliders', [SliderController::class, 'store'])->name('sliders.store')->middleware(['demo_restriction'])->middleware('permissions:create slider_images');
         Route::put('admin/sliders/update/{id}', [SliderController::class, 'update'])->name('sliders.update')->middleware(['demo_restriction'])->middleware('permissions:edit slider_images');
         Route::get(
@@ -610,14 +652,22 @@ Route::group(
     
         Route::resource("admin/chat", MessagesController::class)->names([
             'index' => 'admin.chat.index',
+            'create' => 'admin.chat.create',
+            'store' => 'admin.chat.store',
+            'show' => 'admin.chat.show',
+            'edit' => 'admin.chat.edit',
+            'update' => 'admin.chat.update',
+            'destroy' => 'admin.chat.destroy',
         ]);
 
         //offers
     
+        // 'update'/'destroy' excepted: the legacy routes below already claim 'offers.update'/
+        // 'offers.destroy' and point to the same OfferController methods.
         Route::resource("admin/offers", OfferController::class)->names([
             'index' => 'offers.index',
             'edit' => 'offers.edit',
-        ])->except('show')->middleware('CheckDefaultStore');
+        ])->except(['show', 'update', 'destroy'])->middleware('CheckDefaultStore');
         Route::put('admin/offers/update/{id}', [OfferController::class, 'update'])->name('offers.update')->middleware(['demo_restriction'])->middleware('permissions:edit offer_images');
         Route::get(
             '/offers/list',
@@ -628,9 +678,15 @@ Route::group(
 
         //product faqs
     
+        // 'destroy' excepted: the legacy 'admin/product_faqs/destroy/{id}' route below already claims
+        // 'admin.product_faqs.destroy'. 'create'/'edit'/'update' renamed with the admin. prefix - they had
+        // no legacy alternative and collided on name with seller's equivalent resource.
         Route::resource("admin/product_faqs", ProductFaqController::class)->names([
             'index' => 'admin.product_faqs.index',
-        ])->except('show')->middleware('CheckDefaultStore');
+            'create' => 'admin.product_faqs.create',
+            'edit' => 'admin.product_faqs.edit',
+            'update' => 'admin.product_faqs.update',
+        ])->except(['show', 'destroy'])->middleware('CheckDefaultStore');
         Route::post('admin/product_faqs', [ProductFaqController::class, 'store'])->name('product_faqs.store')->middleware(['demo_restriction'])->middleware('permissions:create product_faq');
         Route::get('admin/product_faqs/list', [ProductFaqController::class, 'list'])->name('admin.product_faqs.list');
 
@@ -641,9 +697,15 @@ Route::group(
 
         //combo product faqs
     
+        // 'destroy' excepted: the legacy 'admin/combo_product_faqs/destroy/{id}' route below already
+        // claims 'admin.combo_product_faqs.destroy'. 'create'/'edit'/'update' renamed with the admin.
+        // prefix - no legacy alternative existed and they collided on name with seller's equivalent resource.
         Route::resource("admin/combo_product_faqs", ComboProductFaqController::class)->names([
             'index' => 'admin.combo_product_faqs.index',
-        ])->except('show')->middleware('CheckDefaultStore');
+            'create' => 'admin.combo_product_faqs.create',
+            'edit' => 'admin.combo_product_faqs.edit',
+            'update' => 'admin.combo_product_faqs.update',
+        ])->except(['show', 'destroy'])->middleware('CheckDefaultStore');
         Route::post('admin/combo_product_faqs', [ComboProductFaqController::class, 'store'])->name('combo_product_faqs.store')->middleware(['demo_restriction'])->middleware('permissions:create combo_product_faq');
         Route::get('admin/combo_product_faqs/list', [ComboProductFaqController::class, 'list'])->name('admin.combo_product_faqs.list');
         Route::get('admin/combo_product_faqs/destroy/{id}', [ComboProductFaqController::class, 'destroy'])->name('admin.combo_product_faqs.destroy')->middleware(['demo_restriction'])->middleware('permissions:delete combo_product_faq');
@@ -677,10 +739,12 @@ Route::group(
 
         // delivery_boys
     
+        // 'destroy' excepted: the legacy 'delivery_boys/destroy/{id}' route below already claims
+        // 'delivery_boys.destroy' and points to the same Delivery_boyController::destroy() method.
         Route::resource("admin/delivery_boys", Delivery_boyController::class)->names([
             'index' => 'delivery_boys.index',
             'edit' => 'admin.delivery_boys.edit',
-        ])->except('show')->middleware('CheckDefaultStore');
+        ])->except(['show', 'destroy'])->middleware('CheckDefaultStore');
 
         Route::post("admin/delivery_boys", [Delivery_boyController::class, 'store'])->name('delivery_boys.store')->middleware(['demo_restriction'])->middleware('permissions:create delivery_boy');
 
@@ -815,9 +879,11 @@ Route::group(
 
         // ticket system
     
+        // 'edit'/'update'/'destroy' excepted: the legacy routes below already claim 'ticket_types.edit'/
+        // '.update'/'.destroy' and point to the same TicketController methods.
         Route::resource("admin/tickets/ticket_types", TicketController::class)->names([
             'index' => 'ticket_types.index',
-        ])->except('show');
+        ])->except(['show', 'edit', 'update', 'destroy']);
 
         Route::post('admin/tickets/ticket_types', [TicketController::class, 'store'])->name('ticket_types.store')->middleware(['demo_restriction'])->middleware('permissions:create tickets');
 
@@ -845,9 +911,11 @@ Route::group(
 
         // custom message
     
+        // 'edit'/'update'/'destroy' excepted: the legacy routes below already claim 'custom_message.edit'/
+        // '.update'/'.destroy' and point to the same CustomMessageController methods.
         Route::resource("admin/custom_message", CustomMessageController::class)->names([
             'index' => 'admin.custom_message.index',
-        ])->except('show');
+        ])->except(['show', 'edit', 'update', 'destroy']);
 
         Route::post('admin/custom_message', [CustomMessageController::class, 'store'])->name('custom_message.store')->middleware(['demo_restriction'])->middleware('permissions:create custom_message');
 
@@ -911,7 +979,7 @@ Route::group(
             session(['store_name' => $request->store_name]);
             session(['store_image' => $request->store_image]);
             return response()->json(['success' => true]);
-        })->name('set_store');
+        })->name('admin.set_store');
 
         Route::get('admin/store/get_stores_list', [StoreController::class, 'get_stores_list']);
 
@@ -936,9 +1004,15 @@ Route::group(
 
         // combo products attributes
     
+        // 'update'/'destroy' excepted: the legacy routes below already claim
+        // 'admin.combo_product_attributes.update' (GET edit-form, misleadingly named "update") and
+        // '.destroy', pointing to the same controller methods. 'create'/'edit' renamed with the admin.
+        // prefix - no legacy alternative existed and they collided with seller's equivalent resource.
         Route::resource("admin/combo_product_attributes", ComboProductAttributeController::class)->names([
             'index' => 'admin.combo_product_attributes.index',
-        ])->except('show')->middleware('CheckDefaultStore');
+            'create' => 'admin.combo_product_attributes.create',
+            'edit' => 'admin.combo_product_attributes.edit',
+        ])->except(['show', 'update', 'destroy'])->middleware('CheckDefaultStore');
         Route::get(
             'admin/combo_product_attributes/list',
             [ComboProductAttributeController::class, 'list']
@@ -958,12 +1032,15 @@ Route::group(
 
         //combo products
     
+        // 'store'/'update'/'destroy' excepted: each already has a working, separately-named legacy route
+        // just below (admin.combo_products.store/.update/.destroy) pointing to the same controller
+        // methods; the resource defaults were redundant and collided on name with seller's equivalent
+        // resource. 'create' is kept and renamed for uniqueness (no legacy alternative exists).
         Route::resource("admin/combo_products", ComboProductController::class)->names([
             'index' => 'admin.combo_products.index',
             'edit' => 'admin.combo_products.edit',
-            // 'update' => 'admin.combo_products.update',
-    
-        ])->except('show')->middleware('CheckDefaultStore');
+            'create' => 'admin.combo_products.create',
+        ])->except(['show', 'store', 'update', 'destroy'])->middleware('CheckDefaultStore');
 
         Route::get('admin/combo_products/destroy/{id}', [ComboProductController::class, 'destroy'])->name('admin.combo_products.destroy')->middleware(['demo_restriction'])->middleware('permissions:delete combo_product');
 
@@ -1017,9 +1094,9 @@ Route::group(
 
         Route::post('admin/settings/language', [LanguageController::class, 'store'])->name('language.store')->middleware(['demo_restriction']);
 
-        Route::put("admin/settings/languages/savelabel", [LanguageController::class, 'savelabel'])->name('savelabel')->middleware(['demo_restriction']);
+        Route::put("admin/settings/languages/savelabel", [LanguageController::class, 'savelabel'])->name('admin.savelabel')->middleware(['demo_restriction']);
 
-        Route::get('admin/settings/languages/change', [LanguageController::class, 'change'])->name('changeLang');
+        Route::get('admin/settings/languages/change', [LanguageController::class, 'change'])->name('admin.changeLang');
 
         Route::get("admin/settings/set-language/{locale}", [LanguageController::class, 'setLanguage'])->name('admin.set-language');
 
@@ -1028,9 +1105,9 @@ Route::group(
 
         Route::post('admin/web_settings/language', [FrontLanguageController::class, 'store'])->name('web_language.store')->middleware(['demo_restriction']);
 
-        Route::put("admin/web_settings/languages/savelabel", [FrontLanguageController::class, 'savelabel'])->name('savelabel')->middleware(['demo_restriction']);
+        Route::put("admin/web_settings/languages/savelabel", [FrontLanguageController::class, 'savelabel'])->name('front.savelabel')->middleware(['demo_restriction']);
 
-        Route::get('admin/web_settings/languages/change', [FrontLanguageController::class, 'change'])->name('changeLang');
+        Route::get('admin/web_settings/languages/change', [FrontLanguageController::class, 'change'])->name('front.changeLang');
 
         Route::get("admin/web_settings/set-language/{locale}", [FrontLanguageController::class, 'setLanguage'])->name('front.set-language');
 
@@ -1094,9 +1171,11 @@ Route::group(
 
         // zones
     
+        // 'update' excepted: the legacy 'admin/zones/update/{id}' route below already claims
+        // 'zones.update' and points to the same ZoneController::update() method.
         Route::resource("admin/zones", ZoneController::class)->names([
             'index' => 'admin.zones.index',
-        ])->except('show');
+        ])->except(['show', 'update']);
         Route::post('admin/zones', [ZoneController::class, 'store'])->name('admin.zones.store')->middleware(['demo_restriction'])->middleware('permissions:create zones');
         Route::put('admin/zones/update/{id}', [ZoneController::class, 'update'])->name('zones.update')->middleware(['demo_restriction'])->middleware('permissions:edit zones');
         Route::get(

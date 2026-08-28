@@ -520,7 +520,7 @@ class OrderController extends Controller
 
             // Action buttons
             $edit_url = route('seller.orders.edit', $item->order_id);
-            $delete_url = route('orders.destroy', $item->id);
+            $delete_url = route('seller.orders.destroy', $item->id);
             $action = '<div class="dropdown bootstrap-table-dropdown">
                     <a href="#" class="text-dark" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <i class="bx bx-dots-horizontal-rounded"></i>

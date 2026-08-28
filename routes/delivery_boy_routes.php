@@ -22,6 +22,10 @@ Route::group(
 
         Route::resource("delivery_boy/orders", OrderController::class)->names([
             'index' => 'delivery_boy.orders.index',
+            'create' => 'delivery_boy.orders.create',
+            'store' => 'delivery_boy.orders.store',
+            'update' => 'delivery_boy.orders.update',
+            'destroy' => 'delivery_boy.orders.destroy',
         ])->except('show');
         Route::get('delivery_boy/orders/{order}/edit', [OrderController::class, 'edit'])->name('delivery_boy.orders.edit');
         Route::get('delivery_boy/orders/order_item_list', [OrderController::class, 'order_item_list'])->name('delivery_boy.orders.item_list');
@@ -54,11 +58,11 @@ Route::group(
 
         Route::get("delivery_boy/settings/language", [LanguageController::class, 'index']);
 
-        Route::put("delivery_boy/settings/languages/savelabel", [LanguageController::class, 'savelabel'])->name('savelabel');
+        Route::put("delivery_boy/settings/languages/savelabel", [LanguageController::class, 'savelabel'])->name('delivery_boy.savelabel');
 
-        Route::get('delivery_boy/settings/languages/change', [LanguageController::class, 'change'])->name('changeLang');
+        Route::get('delivery_boy/settings/languages/change', [LanguageController::class, 'change'])->name('delivery_boy.changeLang');
 
-        Route::get("delivery_boy/settings/set-language/{locale}", [LanguageController::class, 'setLanguage'])->name('set-language'); // language
+        Route::get("delivery_boy/settings/set-language/{locale}", [LanguageController::class, 'setLanguage'])->name('delivery_boy.set-language'); // language
     }
 
 
