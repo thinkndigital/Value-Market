@@ -26,6 +26,13 @@ class UserController extends Controller
 
     public function edit($id)
     {
+        // Security fix (docs/SECURITY_AUDIT.md §6.4): same gap as update() below - $id came straight from
+        // the URL with no ownership check, returning the target user's full row (including PII) to the
+        // view. This page is "my own account settings"; a seller may only view their own.
+        if ((int) $id !== (int) Auth::id()) {
+            return view('admin.pages.views.no_data_found');
+        }
+
         $seller_data = User::find($id);
         $store_id = app(StoreService::class)->getStoreId();
 
@@ -49,6 +56,17 @@ class UserController extends Controller
 
     public function update(Request $request, $id, $fromApp = false)
     {
+
+        // Security fix (docs/SECURITY_AUDIT.md §6.4): this route (seller/account/update/{id}) had NO
+        // ownership check at all - $id came straight from the URL and was used to User::find($id), then
+        // that record's username/email/mobile/password/address were overwritten (including a full password
+        // reset) and its role_id was force-set to Role::SELLER. Any authenticated seller could take over
+        // ANY OTHER account - another seller, or any user id at all, since there was no role filter either
+        // - just by changing the id in the request. This page is "my own account settings"; only the
+        // authenticated user may update their own record here.
+        if ((int) $id !== (int) Auth::id()) {
+            return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')], 404);
+        }
 
         $seller_data = User::find($id);
         $seller_id = Seller::where('user_id', $id)->value('id');
