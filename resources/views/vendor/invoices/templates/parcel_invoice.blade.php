@@ -381,12 +381,10 @@
                                                                                 $product_variants[0]['variant_values'],
                                                                             )
                                                                             : '-';
-                                                                    // Of this template's 2 real callers, only Admin\OrderController::
-                                                                    // generatInvoicePDF() ever populated 'product_price'/'product_special_price'
-                                                                    // - Seller\OrderController::generatInvoicePDF() only ever set 'price'/
-                                                                    // 'discounted_price', so this ternary threw "Undefined array key
-                                                                    // product_price" on every seller-panel invoice download. Both callers
-                                                                    // populate 'price'/'discounted_price', so that's the field this now reads.
+                                                                    // Same fix as invoice.blade.php: generatParcelInvoicePDF() populates
+                                                                    // 'price'/'discounted_price' on each parcel item, not
+                                                                    // 'product_price'/'product_special_price' (only Admin\OrderController::
+                                                                    // generatInvoicePDF() ever set those).
                                                                     $price =
                                                                         isset($row['discounted_price']) &&
                                                                         $row['discounted_price'] > 0

@@ -172,9 +172,12 @@ class ParcelInvoiceOwnershipTest extends TestCase
             return;
         } catch (\Throwable $e) {
             // Execution reached past the ownership check without a 403/404 abort - proving the fix does not
-            // block the legitimate owner, which is what this test is about. Any failure from here on is the
-            // unrelated PDF-rendering pipeline (e.g. dompdf's container binding not available in this test
-            // run) rather than the security check under test.
+            // block the legitimate owner, which is what this test is about. The PDF-rendering pipeline
+            // itself DOES actually work end to end (see tests/Feature/InvoicePdfGenerationTest.php, which
+            // found and fixed real bugs in it) - this test's own fixture just doesn't set up a default
+            // Currency row or the view-data AppServiceProvider::boot() normally shares (both needed for a
+            // real render, deliberately kept minimal here since ownership, not rendering, is this test's
+            // concern), so it stays defensive rather than duplicating that fuller setup.
         }
         $this->assertTrue(true);
     }
