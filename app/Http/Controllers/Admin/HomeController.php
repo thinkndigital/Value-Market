@@ -82,10 +82,14 @@ class HomeController extends Controller
         ];
 
         // Fetch data for each type
-
-        $monthRes = $this->getMonthlyData('sub_total', $store_id);
-        $monthCommissionRes = $this->getMonthlyData('admin_commission_amount', $store_id);
-        $monthSalesRes = $this->getMonthlyData('quantity', $store_id);
+        // Performance fix (found while diagnosing /admin/home): these were 3 separate calls to
+        // getMonthlyData(), each running its own identical GROUP BY YEAR/MONTH query against order_items,
+        // differing only in which single column got SUM()'d. Same GROUP BY, same rows - merged into one
+        // query selecting all three sums at once; same three result arrays as before.
+        $monthCombinedRes = $this->getMonthlyDataCombined($store_id);
+        $monthRes = array_map(fn ($row) => ['month_name' => $row['month_name'], 'total' => $row['sub_total']], $monthCombinedRes);
+        $monthCommissionRes = array_map(fn ($row) => ['month_name' => $row['month_name'], 'total' => $row['admin_commission_amount']], $monthCombinedRes);
+        $monthSalesRes = array_map(fn ($row) => ['month_name' => $row['month_name'], 'total' => $row['quantity']], $monthCombinedRes);
 
         // Merge the database results with the allMonths array, replacing existing values
         $monthWiseRevenueDetail = array_merge($allMonths, array_combine(array_column($monthRes, 'month_name'), array_map('intval', array_column($monthRes, 'total'))));
@@ -113,13 +117,16 @@ class HomeController extends Controller
             'day' => []
         ];
         $currentDate = Carbon::now();
+        // Performance fix (found while diagnosing /admin/home): getWeeklySalesData() already computes all 7
+        // days of the week in one query (it groups by DATE(created_at) across the whole week) - the loop
+        // below only ever reads $dayRes[...][$i], a single index into that same result, so calling it again
+        // on every iteration re-ran the identical heavy GROUP BY query against order_items 7 times for no
+        // reason. Same output, called once instead of 7 times.
+        $dayRes = $this->getWeeklySalesData('order_items', 'created_at', 'sub_total', 'admin_commission_amount', 'quantity', $store_id);
         // Loop to retrieve data for each day of the week
         for ($i = 0; $i < 7; $i++) {
             // Get the day name for the current iteration
             $dayName = $currentDate->copy()->startOfWeek()->addDays($i)->format('D, d M');
-
-            // Get sales data for the current day
-            $dayRes = $this->getWeeklySalesData('order_items', 'created_at', 'sub_total', 'admin_commission_amount', 'quantity', $store_id);
 
             // If data exists for the current day
             if (isset($dayRes['total_revenue'][$i])) {
@@ -215,9 +222,13 @@ class HomeController extends Controller
         return view('admin.pages.forms.home', compact('order_counter', 'id', 'store_id', 'user_counter', 'delivery_boy_counter', 'currency', 'top_sellers', 'total_products', 'total_store', 'total_seller', 'total_earnings', 'role_id', 'store_details', 'primary_colour', 'messengerColor', 'dark_mode', 'sales'));
     }
 
-    private function getMonthlyData($type, $store_id)
+    /**
+     * Performance fix: replaces 3 separate getMonthlyData() calls (one per SUM'd column) with a single
+     * query computing all three sums per month in one pass - same GROUP BY/ORDER BY as before.
+     */
+    private function getMonthlyDataCombined($store_id)
     {
-        return OrderItems::selectRaw("SUM($type) as total, DATE_FORMAT(created_at, '%b') AS month_name")
+        return OrderItems::selectRaw("SUM(sub_total) as sub_total, SUM(admin_commission_amount) as admin_commission_amount, SUM(quantity) as quantity, DATE_FORMAT(created_at, '%b') AS month_name")
             ->where('store_id', $store_id)
             ->groupByRaw('YEAR(CURDATE()), MONTH(created_at)')
             ->orderByRaw('YEAR(CURDATE()), MONTH(created_at)')

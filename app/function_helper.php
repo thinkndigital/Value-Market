@@ -529,30 +529,26 @@ function countNewUsers()
     $startOfPreviousMonth = Carbon::now()->subMonth()->startOfMonth();
     $endOfPreviousMonth = Carbon::now()->subMonth()->endOfMonth();
 
-    // Total users with role_id = 2
-    $totalUsers = User::where('role_id', $roleId)->count();
+    // Performance fix (found while diagnosing /admin/home, which calls this once per page load): these
+    // used to be 5 separate COUNT queries against the same users/role_id set, differing only in which
+    // WHERE condition narrowed them further. Same 5 conditions, run as one query's CASE WHEN branches
+    // instead of 5 round trips - identical semantics to each original ->where()/->count() call.
+    $counts = User::where('role_id', $roleId)
+        ->selectRaw(
+            'COUNT(*) as total_users,
+            SUM(CASE WHEN created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as current_month_users,
+            SUM(CASE WHEN created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as previous_month_users,
+            SUM(CASE WHEN active = 1 THEN 1 ELSE 0 END) as active_user,
+            SUM(CASE WHEN active = 0 OR active IS NULL THEN 1 ELSE 0 END) as inactive_user',
+            [$startOfCurrentMonth, $endOfCurrentMonth, $startOfPreviousMonth, $endOfPreviousMonth]
+        )
+        ->first();
 
-    // Current month users
-    $currentMonthUsers = User::where('role_id', $roleId)
-        ->whereBetween('created_at', [$startOfCurrentMonth, $endOfCurrentMonth])
-        ->count();
-
-    // Previous month users
-    $previousMonthUsers = User::where('role_id', $roleId)
-        ->whereBetween('created_at', [$startOfPreviousMonth, $endOfPreviousMonth])
-        ->count();
-
-    // Active users
-    $activeUser = User::where('role_id', $roleId)
-        ->where('active', 1)
-        ->count();
-
-    // Inactive users (either 0 or null)
-    $inactiveUser = User::where('role_id', $roleId)
-        ->where(function ($query) {
-            $query->where('active', 0)
-                ->orWhereNull('active');
-        })->count();
+    $totalUsers = (int) $counts->total_users;
+    $currentMonthUsers = (int) $counts->current_month_users;
+    $previousMonthUsers = (int) $counts->previous_month_users;
+    $activeUser = (int) $counts->active_user;
+    $inactiveUser = (int) $counts->inactive_user;
 
     // Percentage change calculation
     $percentageChange = 0;
