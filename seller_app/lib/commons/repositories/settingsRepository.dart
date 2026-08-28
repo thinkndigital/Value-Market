@@ -1,10 +1,10 @@
-import 'package:eshopplus_seller/commons/models/language.dart';
-import 'package:eshopplus_seller/commons/models/settings.dart';
-import 'package:eshopplus_seller/core/api/apiEndPoints.dart';
-import 'package:eshopplus_seller/core/api/apiService.dart';
-import 'package:eshopplus_seller/core/constants/hiveConstants.dart';
-import 'package:eshopplus_seller/features/auth/repositories/authRepository.dart';
-import 'package:eshopplus_seller/utils/utils.dart';
+import 'package:value_market_seller/commons/models/language.dart';
+import 'package:value_market_seller/commons/models/settings.dart';
+import 'package:value_market_seller/core/api/apiEndPoints.dart';
+import 'package:value_market_seller/core/api/apiService.dart';
+import 'package:value_market_seller/core/constants/hiveConstants.dart';
+import 'package:value_market_seller/features/auth/repositories/authRepository.dart';
+import 'package:value_market_seller/utils/utils.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
 

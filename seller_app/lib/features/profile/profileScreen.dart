@@ -1,19 +1,19 @@
-import 'package:eshopplus_seller/commons/widgets/customCircularProgressIndicator.dart';
-import 'package:eshopplus_seller/commons/widgets/customLabelContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/customRoundedButton.dart';
-import 'package:eshopplus_seller/core/constants/themeConstants.dart';
-import 'package:eshopplus_seller/commons/blocs/settingsAndLanguagesCubit.dart';
-import 'package:eshopplus_seller/commons/blocs/storesCubit.dart';
-import 'package:eshopplus_seller/commons/blocs/userDetailsCubit.dart';
-import 'package:eshopplus_seller/commons/models/language.dart';
-import 'package:eshopplus_seller/commons/models/userDetails.dart';
-import 'package:eshopplus_seller/commons/widgets/customAppbar.dart';
-import 'package:eshopplus_seller/commons/widgets/customTextContainer.dart';
-import 'package:eshopplus_seller/features/auth/blocs/authCubit.dart';
-import 'package:eshopplus_seller/main.dart';
+import 'package:value_market_seller/commons/widgets/customCircularProgressIndicator.dart';
+import 'package:value_market_seller/commons/widgets/customLabelContainer.dart';
+import 'package:value_market_seller/commons/widgets/customRoundedButton.dart';
+import 'package:value_market_seller/core/constants/themeConstants.dart';
+import 'package:value_market_seller/commons/blocs/settingsAndLanguagesCubit.dart';
+import 'package:value_market_seller/commons/blocs/storesCubit.dart';
+import 'package:value_market_seller/commons/blocs/userDetailsCubit.dart';
+import 'package:value_market_seller/commons/models/language.dart';
+import 'package:value_market_seller/commons/models/userDetails.dart';
+import 'package:value_market_seller/commons/widgets/customAppbar.dart';
+import 'package:value_market_seller/commons/widgets/customTextContainer.dart';
+import 'package:value_market_seller/features/auth/blocs/authCubit.dart';
+import 'package:value_market_seller/main.dart';
 
-import 'package:eshopplus_seller/utils/designConfig.dart';
-import 'package:eshopplus_seller/core/localization/labelKeys.dart';
+import 'package:value_market_seller/utils/designConfig.dart';
+import 'package:value_market_seller/core/localization/labelKeys.dart';
 
 import 'package:flutter/material.dart';
 

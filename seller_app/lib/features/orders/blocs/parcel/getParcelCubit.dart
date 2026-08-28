@@ -1,6 +1,6 @@
-import 'package:eshopplus_seller/features/orders/models/parcel.dart';
-import 'package:eshopplus_seller/features/orders/repositories/orderRepository.dart';
-import 'package:eshopplus_seller/core/api/apiEndPoints.dart';
+import 'package:value_market_seller/features/orders/models/parcel.dart';
+import 'package:value_market_seller/features/orders/repositories/orderRepository.dart';
+import 'package:value_market_seller/core/api/apiEndPoints.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class ParcelState {}

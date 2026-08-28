@@ -1,8 +1,8 @@
-import 'package:eshopplus_seller/utils/utils.dart';
+import 'package:value_market_seller/utils/utils.dart';
 import 'package:flutter/material.dart';
 
 Color borderColor = Utils.getColorFromHexValue('#28252529')!;
-Color primaryColor = Utils.getColorFromHexValue('#B52046')!;
+Color primaryColor = Utils.getColorFromHexValue('#333f49')!;
 Color secondaryColor = Utils.getColorFromHexValue('#201A1A')!;
 Color errorColor = Utils.getColorFromHexValue('#ee1c2f')!;
 Color successStatusColor = Utils.getColorFromHexValue('#0DAE4A')!;

@@ -1,7 +1,7 @@
-import 'package:eshopplus_seller/core/api/apiEndPoints.dart';
-import 'package:eshopplus_seller/core/configs/appConfig.dart';
-import 'package:eshopplus_seller/features/profile/salesReport/models/salesReport.dart';
-import 'package:eshopplus_seller/features/profile/salesReport/repositories/salesRepository.dart';
+import 'package:value_market_seller/core/api/apiEndPoints.dart';
+import 'package:value_market_seller/core/configs/appConfig.dart';
+import 'package:value_market_seller/features/profile/salesReport/models/salesReport.dart';
+import 'package:value_market_seller/features/profile/salesReport/repositories/salesRepository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class SalesListState {}

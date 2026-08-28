@@ -1,7 +1,7 @@
-import 'package:eshopplus_seller/commons/models/store.dart';
-import 'package:eshopplus_seller/core/constants/themeConstants.dart';
-import 'package:eshopplus_seller/core/theme/colors.dart';
-import 'package:eshopplus_seller/utils/utils.dart';
+import 'package:value_market_seller/commons/models/store.dart';
+import 'package:value_market_seller/core/constants/themeConstants.dart';
+import 'package:value_market_seller/core/theme/colors.dart';
+import 'package:value_market_seller/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 

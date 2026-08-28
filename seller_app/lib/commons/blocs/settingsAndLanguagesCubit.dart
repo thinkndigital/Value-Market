@@ -1,11 +1,11 @@
-import 'package:eshopplus_seller/commons/repositories/settingsRepository.dart';
-import 'package:eshopplus_seller/core/configs/appConfig.dart';
-import 'package:eshopplus_seller/core/constants/appConstants.dart';
-import 'package:eshopplus_seller/core/localization/defaultLanguageTranslatedValues.dart';
-import 'package:eshopplus_seller/features/auth/repositories/authRepository.dart';
-import 'package:eshopplus_seller/main.dart';
-import 'package:eshopplus_seller/commons/models/language.dart';
-import 'package:eshopplus_seller/commons/models/settings.dart';
+import 'package:value_market_seller/commons/repositories/settingsRepository.dart';
+import 'package:value_market_seller/core/configs/appConfig.dart';
+import 'package:value_market_seller/core/constants/appConstants.dart';
+import 'package:value_market_seller/core/localization/defaultLanguageTranslatedValues.dart';
+import 'package:value_market_seller/features/auth/repositories/authRepository.dart';
+import 'package:value_market_seller/main.dart';
+import 'package:value_market_seller/commons/models/language.dart';
+import 'package:value_market_seller/commons/models/settings.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

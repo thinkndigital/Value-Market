@@ -1,7 +1,7 @@
-import 'package:eshopplus_seller/features/profile/faq/models/faq.dart';
-import 'package:eshopplus_seller/features/profile/faq/repositories/faqRepository.dart';
-import 'package:eshopplus_seller/core/api/apiEndPoints.dart';
-import 'package:eshopplus_seller/core/localization/labelKeys.dart';
+import 'package:value_market_seller/features/profile/faq/models/faq.dart';
+import 'package:value_market_seller/features/profile/faq/repositories/faqRepository.dart';
+import 'package:value_market_seller/core/api/apiEndPoints.dart';
+import 'package:value_market_seller/core/localization/labelKeys.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class FAQState {}

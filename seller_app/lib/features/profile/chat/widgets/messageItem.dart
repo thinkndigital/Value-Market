@@ -1,9 +1,9 @@
-import 'package:eshopplus_seller/features/auth/repositories/authRepository.dart';
-import 'package:eshopplus_seller/features/profile/chat/blocs/downloadFileCubit.dart';
-import 'package:eshopplus_seller/features/profile/chat/models/chatMessage.dart';
-import 'package:eshopplus_seller/commons/widgets/customImageWidget.dart';
-import 'package:eshopplus_seller/utils/designConfig.dart';
-import 'package:eshopplus_seller/utils/utils.dart';
+import 'package:value_market_seller/features/auth/repositories/authRepository.dart';
+import 'package:value_market_seller/features/profile/chat/blocs/downloadFileCubit.dart';
+import 'package:value_market_seller/features/profile/chat/models/chatMessage.dart';
+import 'package:value_market_seller/commons/widgets/customImageWidget.dart';
+import 'package:value_market_seller/utils/designConfig.dart';
+import 'package:value_market_seller/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:open_filex/open_filex.dart';

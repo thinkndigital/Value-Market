@@ -1,5 +1,5 @@
-import 'package:eshopplus_seller/commons/models/product.dart';
-import 'package:eshopplus_seller/commons/repositories/productRepository.dart';
+import 'package:value_market_seller/commons/models/product.dart';
+import 'package:value_market_seller/commons/repositories/productRepository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class ManageStockState {}

@@ -1,8 +1,8 @@
-import 'package:eshopplus_seller/core/api/apiEndPoints.dart';
-import 'package:eshopplus_seller/core/api/apiService.dart';
-import 'package:eshopplus_seller/features/home/blocs/mostSellingCategory.dart';
-import 'package:eshopplus_seller/features/home/blocs/overviewDataCubit.dart';
-import 'package:eshopplus_seller/utils/utils.dart';
+import 'package:value_market_seller/core/api/apiEndPoints.dart';
+import 'package:value_market_seller/core/api/apiService.dart';
+import 'package:value_market_seller/features/home/blocs/mostSellingCategory.dart';
+import 'package:value_market_seller/features/home/blocs/overviewDataCubit.dart';
+import 'package:value_market_seller/utils/utils.dart';
 
 class SalesRepository {
   Future getSales(Map<String, dynamic> params) async {

@@ -1,4 +1,4 @@
-import 'package:eshopplus_seller/commons/models/userDetails.dart';
+import 'package:value_market_seller/commons/models/userDetails.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../repositories/authRepository.dart';

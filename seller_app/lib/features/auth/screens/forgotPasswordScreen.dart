@@ -1,11 +1,11 @@
-import 'package:eshopplus_seller/features/auth/blocs/resetPasswordCubit.dart';
-import 'package:eshopplus_seller/core/api/apiEndPoints.dart';
-import 'package:eshopplus_seller/core/configs/appConfig.dart';
-import 'package:eshopplus_seller/core/localization/labelKeys.dart';
-import 'package:eshopplus_seller/features/auth/widgets/loginContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/customCircularProgressIndicator.dart';
+import 'package:value_market_seller/features/auth/blocs/resetPasswordCubit.dart';
+import 'package:value_market_seller/core/api/apiEndPoints.dart';
+import 'package:value_market_seller/core/configs/appConfig.dart';
+import 'package:value_market_seller/core/localization/labelKeys.dart';
+import 'package:value_market_seller/features/auth/widgets/loginContainer.dart';
+import 'package:value_market_seller/commons/widgets/customCircularProgressIndicator.dart';
 
-import 'package:eshopplus_seller/utils/inputValidators.dart';
+import 'package:value_market_seller/utils/inputValidators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

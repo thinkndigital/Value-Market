@@ -1,6 +1,6 @@
-import 'package:eshopplus_seller/commons/models/productVariant.dart';
-import 'package:eshopplus_seller/commons/models/productMinMaxPrice.dart';
-import 'package:eshopplus_seller/core/constants/appConstants.dart';
+import 'package:value_market_seller/commons/models/productVariant.dart';
+import 'package:value_market_seller/commons/models/productMinMaxPrice.dart';
+import 'package:value_market_seller/core/constants/appConstants.dart';
 
 import 'attribute.dart';
 

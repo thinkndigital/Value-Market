@@ -1,6 +1,6 @@
-import 'package:eshopplus_seller/features/auth/widgets/loginContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/customTextFieldContainer.dart';
-import 'package:eshopplus_seller/core/localization/labelKeys.dart';
+import 'package:value_market_seller/features/auth/widgets/loginContainer.dart';
+import 'package:value_market_seller/commons/widgets/customTextFieldContainer.dart';
+import 'package:value_market_seller/core/localization/labelKeys.dart';
 import 'package:flutter/material.dart';
 
 import '../../../commons/widgets/showHidePasswordButton.dart';

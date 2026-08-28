@@ -1,18 +1,18 @@
-import 'package:eshopplus_seller/commons/widgets/safeAreaWithBottomPadding.dart';
-import 'package:eshopplus_seller/core/constants/themeConstants.dart';
-import 'package:eshopplus_seller/core/routes/routes.dart';
-import 'package:eshopplus_seller/features/profile/chat/blocs/getContactsCubit.dart';
-import 'package:eshopplus_seller/commons/models/userDetails.dart';
-import 'package:eshopplus_seller/commons/widgets/customAppbar.dart';
-import 'package:eshopplus_seller/commons/widgets/customCircularProgressIndicator.dart';
-import 'package:eshopplus_seller/commons/widgets/customDefaultContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/customSearchContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/customTextContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/errorScreen.dart';
+import 'package:value_market_seller/commons/widgets/safeAreaWithBottomPadding.dart';
+import 'package:value_market_seller/core/constants/themeConstants.dart';
+import 'package:value_market_seller/core/routes/routes.dart';
+import 'package:value_market_seller/features/profile/chat/blocs/getContactsCubit.dart';
+import 'package:value_market_seller/commons/models/userDetails.dart';
+import 'package:value_market_seller/commons/widgets/customAppbar.dart';
+import 'package:value_market_seller/commons/widgets/customCircularProgressIndicator.dart';
+import 'package:value_market_seller/commons/widgets/customDefaultContainer.dart';
+import 'package:value_market_seller/commons/widgets/customSearchContainer.dart';
+import 'package:value_market_seller/commons/widgets/customTextContainer.dart';
+import 'package:value_market_seller/commons/widgets/errorScreen.dart';
 
-import 'package:eshopplus_seller/utils/designConfig.dart';
-import 'package:eshopplus_seller/core/localization/labelKeys.dart';
-import 'package:eshopplus_seller/utils/utils.dart';
+import 'package:value_market_seller/utils/designConfig.dart';
+import 'package:value_market_seller/core/localization/labelKeys.dart';
+import 'package:value_market_seller/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

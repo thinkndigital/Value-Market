@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
-import 'package:eshopplus_seller/core/configs/appConfig.dart';
-import 'package:eshopplus_seller/features/orders/models/parcel.dart';
-import 'package:eshopplus_seller/core/api/apiEndPoints.dart';
-import 'package:eshopplus_seller/core/api/apiService.dart';
+import 'package:value_market_seller/core/configs/appConfig.dart';
+import 'package:value_market_seller/features/orders/models/parcel.dart';
+import 'package:value_market_seller/core/api/apiEndPoints.dart';
+import 'package:value_market_seller/core/api/apiService.dart';
 
-import 'package:eshopplus_seller/utils/utils.dart';
+import 'package:value_market_seller/utils/utils.dart';
 
 class OrderRepository {
   Future getOrders(Map<String, dynamic> params) async {

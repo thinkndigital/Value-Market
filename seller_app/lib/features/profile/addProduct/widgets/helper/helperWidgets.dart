@@ -1,5 +1,5 @@
-import 'package:eshopplus_seller/core/constants/appConstants.dart';
-import 'package:eshopplus_seller/core/localization/labelKeys.dart';
+import 'package:value_market_seller/core/constants/appConstants.dart';
+import 'package:value_market_seller/core/localization/labelKeys.dart';
 import 'package:flutter/material.dart';
 
 

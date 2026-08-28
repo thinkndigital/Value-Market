@@ -1,4 +1,4 @@
-import 'package:eshopplus_seller/features/auth/repositories/authRepository.dart';
+import 'package:value_market_seller/features/auth/repositories/authRepository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class DeleteAccountState {}

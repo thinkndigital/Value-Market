@@ -1,7 +1,7 @@
-import 'package:eshopplus_seller/commons/blocs/settingsAndLanguagesCubit.dart';
-import 'package:eshopplus_seller/commons/widgets/customImageWidget.dart';
-import 'package:eshopplus_seller/commons/widgets/customTextContainer.dart';
-import 'package:eshopplus_seller/core/constants/themeConstants.dart';
+import 'package:value_market_seller/commons/blocs/settingsAndLanguagesCubit.dart';
+import 'package:value_market_seller/commons/widgets/customImageWidget.dart';
+import 'package:value_market_seller/commons/widgets/customTextContainer.dart';
+import 'package:value_market_seller/core/constants/themeConstants.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

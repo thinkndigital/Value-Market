@@ -1,4 +1,4 @@
-import 'package:eshopplus_seller/features/profile/faq/repositories/faqRepository.dart';
+import 'package:value_market_seller/features/profile/faq/repositories/faqRepository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class DeleteFAQState {}

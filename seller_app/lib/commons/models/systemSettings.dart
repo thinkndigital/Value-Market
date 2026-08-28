@@ -1,4 +1,4 @@
-import 'package:eshopplus_seller/core/configs/appConfig.dart';
+import 'package:value_market_seller/core/configs/appConfig.dart';
 
 class SystemSettings {
   final String? appName;

@@ -1,21 +1,21 @@
 import 'package:dio/dio.dart' as api;
-import 'package:eshopplus_seller/core/configs/appConfig.dart';
-import 'package:eshopplus_seller/core/constants/appConstants.dart';
-import 'package:eshopplus_seller/features/profile/addProduct/blocs/categoryListCubit.dart';
-import 'package:eshopplus_seller/commons/blocs/zoneListCubit.dart';
-import 'package:eshopplus_seller/features/profile/addSellerStore/blocs/addStoreCubit.dart';
-import 'package:eshopplus_seller/commons/blocs/allStoreCubit.dart';
-import 'package:eshopplus_seller/commons/blocs/userDetailsCubit.dart';
-import 'package:eshopplus_seller/commons/models/userDetails.dart';
-import 'package:eshopplus_seller/commons/repositories/storeRepository.dart';
-import 'package:eshopplus_seller/features/auth/widgets/SignupPage2.dart';
-import 'package:eshopplus_seller/commons/widgets/customAppbar.dart';
-import 'package:eshopplus_seller/commons/widgets/customBottomButtonContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/customCircularProgressIndicator.dart';
-import 'package:eshopplus_seller/commons/widgets/customRoundedButton.dart';
+import 'package:value_market_seller/core/configs/appConfig.dart';
+import 'package:value_market_seller/core/constants/appConstants.dart';
+import 'package:value_market_seller/features/profile/addProduct/blocs/categoryListCubit.dart';
+import 'package:value_market_seller/commons/blocs/zoneListCubit.dart';
+import 'package:value_market_seller/features/profile/addSellerStore/blocs/addStoreCubit.dart';
+import 'package:value_market_seller/commons/blocs/allStoreCubit.dart';
+import 'package:value_market_seller/commons/blocs/userDetailsCubit.dart';
+import 'package:value_market_seller/commons/models/userDetails.dart';
+import 'package:value_market_seller/commons/repositories/storeRepository.dart';
+import 'package:value_market_seller/features/auth/widgets/SignupPage2.dart';
+import 'package:value_market_seller/commons/widgets/customAppbar.dart';
+import 'package:value_market_seller/commons/widgets/customBottomButtonContainer.dart';
+import 'package:value_market_seller/commons/widgets/customCircularProgressIndicator.dart';
+import 'package:value_market_seller/commons/widgets/customRoundedButton.dart';
 
-import 'package:eshopplus_seller/core/localization/labelKeys.dart';
-import 'package:eshopplus_seller/utils/utils.dart';
+import 'package:value_market_seller/core/localization/labelKeys.dart';
+import 'package:value_market_seller/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

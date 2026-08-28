@@ -1,9 +1,9 @@
-import 'package:eshopplus_seller/commons/models/userDetails.dart';
-import 'package:eshopplus_seller/core/api/apiEndPoints.dart';
-import 'package:eshopplus_seller/core/api/apiService.dart';
-import 'package:eshopplus_seller/core/constants/hiveConstants.dart';
-import 'package:eshopplus_seller/core/localization/labelKeys.dart';
-import 'package:eshopplus_seller/utils/utils.dart';
+import 'package:value_market_seller/commons/models/userDetails.dart';
+import 'package:value_market_seller/core/api/apiEndPoints.dart';
+import 'package:value_market_seller/core/api/apiService.dart';
+import 'package:value_market_seller/core/constants/hiveConstants.dart';
+import 'package:value_market_seller/core/localization/labelKeys.dart';
+import 'package:value_market_seller/utils/utils.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 

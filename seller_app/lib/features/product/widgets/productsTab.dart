@@ -1,9 +1,9 @@
-import 'package:eshopplus_seller/commons/blocs/productCubit.dart';
-import 'package:eshopplus_seller/commons/blocs/storesCubit.dart';
-import 'package:eshopplus_seller/features/product/widgets/listProductsContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/customCircularProgressIndicator.dart';
-import 'package:eshopplus_seller/commons/widgets/errorScreen.dart';
-import 'package:eshopplus_seller/core/localization/labelKeys.dart';
+import 'package:value_market_seller/commons/blocs/productCubit.dart';
+import 'package:value_market_seller/commons/blocs/storesCubit.dart';
+import 'package:value_market_seller/features/product/widgets/listProductsContainer.dart';
+import 'package:value_market_seller/commons/widgets/customCircularProgressIndicator.dart';
+import 'package:value_market_seller/commons/widgets/errorScreen.dart';
+import 'package:value_market_seller/core/localization/labelKeys.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

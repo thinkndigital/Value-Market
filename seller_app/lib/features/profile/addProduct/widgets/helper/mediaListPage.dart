@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:eshopplus_seller/commons/repositories/productRepository.dart';
-import 'package:eshopplus_seller/commons/widgets/customImageWidget.dart';
-import 'package:eshopplus_seller/commons/widgets/errorScreen.dart';
-import 'package:eshopplus_seller/commons/widgets/filterContainerForBottomSheet.dart';
-import 'package:eshopplus_seller/features/profile/addProduct/models/media.dart';
+import 'package:value_market_seller/commons/repositories/productRepository.dart';
+import 'package:value_market_seller/commons/widgets/customImageWidget.dart';
+import 'package:value_market_seller/commons/widgets/errorScreen.dart';
+import 'package:value_market_seller/commons/widgets/filterContainerForBottomSheet.dart';
+import 'package:value_market_seller/features/profile/addProduct/models/media.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

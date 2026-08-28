@@ -1,4 +1,4 @@
-import 'package:eshopplus_seller/features/profile/chat/models/chatMessage.dart';
+import 'package:value_market_seller/features/profile/chat/models/chatMessage.dart';
 
 import 'permissions.dart';
 

@@ -1,7 +1,7 @@
-import 'package:eshopplus_seller/commons/widgets/customTextContainer.dart';
-import 'package:eshopplus_seller/core/constants/themeConstants.dart';
+import 'package:value_market_seller/commons/widgets/customTextContainer.dart';
+import 'package:value_market_seller/core/constants/themeConstants.dart';
 
-import 'package:eshopplus_seller/utils/utils.dart';
+import 'package:value_market_seller/utils/utils.dart';
 import 'package:flutter/material.dart';
 
 class CustomTabbar extends StatefulWidget {

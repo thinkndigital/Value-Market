@@ -1,12 +1,12 @@
-import 'package:eshopplus_seller/commons/models/product.dart';
-import 'package:eshopplus_seller/commons/widgets/customDropDownContainer.dart';
-import 'package:eshopplus_seller/core/constants/appConstants.dart';
+import 'package:value_market_seller/commons/models/product.dart';
+import 'package:value_market_seller/commons/widgets/customDropDownContainer.dart';
+import 'package:value_market_seller/core/constants/appConstants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/routes/routes.dart';
 import '../blocs/mediaListCubit.dart';
 import '../../../../commons/blocs/settingsAndLanguagesCubit.dart';
-import 'package:eshopplus_seller/core/constants/themeConstants.dart';
+import 'package:value_market_seller/core/constants/themeConstants.dart';
 import '../../../../utils/designConfig.dart';
 import '../../../../core/localization/labelKeys.dart';
 import '../../../../utils/utils.dart';

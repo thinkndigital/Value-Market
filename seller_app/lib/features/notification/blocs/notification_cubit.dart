@@ -1,5 +1,5 @@
-import 'package:eshopplus_seller/features/notification/models/notification.dart';
-import 'package:eshopplus_seller/features/notification/repositories/notificationRepository.dart';
+import 'package:value_market_seller/features/notification/models/notification.dart';
+import 'package:value_market_seller/features/notification/repositories/notificationRepository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class NotificationState {}

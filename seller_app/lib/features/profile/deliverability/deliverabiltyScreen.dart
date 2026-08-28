@@ -1,13 +1,13 @@
-import 'package:eshopplus_seller/commons/blocs/productCubit.dart';
-import 'package:eshopplus_seller/commons/blocs/settingsAndLanguagesCubit.dart';
-import 'package:eshopplus_seller/commons/widgets/safeAreaWithBottomPadding.dart';
+import 'package:value_market_seller/commons/blocs/productCubit.dart';
+import 'package:value_market_seller/commons/blocs/settingsAndLanguagesCubit.dart';
+import 'package:value_market_seller/commons/widgets/safeAreaWithBottomPadding.dart';
 
-import 'package:eshopplus_seller/features/profile/deliverability/productListScreen.dart';
-import 'package:eshopplus_seller/commons/widgets/customAppbar.dart';
-import 'package:eshopplus_seller/commons/widgets/customTabbar.dart';
-import 'package:eshopplus_seller/utils/designConfig.dart';
-import 'package:eshopplus_seller/core/localization/labelKeys.dart';
-import 'package:eshopplus_seller/utils/utils.dart';
+import 'package:value_market_seller/features/profile/deliverability/productListScreen.dart';
+import 'package:value_market_seller/commons/widgets/customAppbar.dart';
+import 'package:value_market_seller/commons/widgets/customTabbar.dart';
+import 'package:value_market_seller/utils/designConfig.dart';
+import 'package:value_market_seller/core/localization/labelKeys.dart';
+import 'package:value_market_seller/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';

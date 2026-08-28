@@ -1,5 +1,5 @@
-import 'package:eshopplus_seller/features/profile/chat/models/chatMessage.dart';
-import 'package:eshopplus_seller/features/profile/chat/repositories/chatRepository.dart';
+import 'package:value_market_seller/features/profile/chat/models/chatMessage.dart';
+import 'package:value_market_seller/features/profile/chat/repositories/chatRepository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class SendMessageState {}

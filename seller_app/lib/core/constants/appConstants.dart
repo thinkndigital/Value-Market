@@ -1,4 +1,4 @@
-import 'package:eshopplus_seller/core/localization/labelKeys.dart';
+import 'package:value_market_seller/core/localization/labelKeys.dart';
 import 'package:intl/intl.dart';
 
 const String englishLangCode = 'en';

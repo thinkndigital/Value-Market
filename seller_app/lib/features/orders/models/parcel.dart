@@ -1,6 +1,6 @@
-import 'package:eshopplus_seller/features/orders/models/deliveryBoy.dart';
-import 'package:eshopplus_seller/features/orders/models/order.dart';
-import 'package:eshopplus_seller/commons/models/userDetails.dart';
+import 'package:value_market_seller/features/orders/models/deliveryBoy.dart';
+import 'package:value_market_seller/features/orders/models/order.dart';
+import 'package:value_market_seller/commons/models/userDetails.dart';
 
 class Parcel {
   int? id;

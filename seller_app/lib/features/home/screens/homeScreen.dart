@@ -1,21 +1,21 @@
 import 'dart:io';
 
-import 'package:eshopplus_seller/features/home/blocs/topSellingProductCubit.dart';
-import 'package:eshopplus_seller/features/profile/addProduct/blocs/categoryListCubit.dart';
-import 'package:eshopplus_seller/features/profile/chat/blocs/getContactsCubit.dart';
-import 'package:eshopplus_seller/features/home/blocs/getTotalDataCubit.dart';
-import 'package:eshopplus_seller/features/home/blocs/mostSellingCategory.dart';
-import 'package:eshopplus_seller/features/home/blocs/overviewDataCubit.dart';
-import 'package:eshopplus_seller/commons/blocs/settingsAndLanguagesCubit.dart';
-import 'package:eshopplus_seller/features/home/widgets/homeAppBar.dart';
-import 'package:eshopplus_seller/features/home/widgets/counterSection.dart';
-import 'package:eshopplus_seller/features/home/widgets/messagesSection.dart';
-import 'package:eshopplus_seller/features/home/widgets/mostSellingCategorySection.dart';
-import 'package:eshopplus_seller/features/home/widgets/overviewStaticticsSection.dart';
-import 'package:eshopplus_seller/features/home/widgets/topSellingProductSection.dart';
-import 'package:eshopplus_seller/utils/designConfig.dart';
-import 'package:eshopplus_seller/core/localization/labelKeys.dart';
-import 'package:eshopplus_seller/utils/utils.dart';
+import 'package:value_market_seller/features/home/blocs/topSellingProductCubit.dart';
+import 'package:value_market_seller/features/profile/addProduct/blocs/categoryListCubit.dart';
+import 'package:value_market_seller/features/profile/chat/blocs/getContactsCubit.dart';
+import 'package:value_market_seller/features/home/blocs/getTotalDataCubit.dart';
+import 'package:value_market_seller/features/home/blocs/mostSellingCategory.dart';
+import 'package:value_market_seller/features/home/blocs/overviewDataCubit.dart';
+import 'package:value_market_seller/commons/blocs/settingsAndLanguagesCubit.dart';
+import 'package:value_market_seller/features/home/widgets/homeAppBar.dart';
+import 'package:value_market_seller/features/home/widgets/counterSection.dart';
+import 'package:value_market_seller/features/home/widgets/messagesSection.dart';
+import 'package:value_market_seller/features/home/widgets/mostSellingCategorySection.dart';
+import 'package:value_market_seller/features/home/widgets/overviewStaticticsSection.dart';
+import 'package:value_market_seller/features/home/widgets/topSellingProductSection.dart';
+import 'package:value_market_seller/utils/designConfig.dart';
+import 'package:value_market_seller/core/localization/labelKeys.dart';
+import 'package:value_market_seller/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

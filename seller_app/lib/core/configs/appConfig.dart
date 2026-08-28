@@ -2,10 +2,10 @@ const String baseUrl = "https://eshop-pro.eshopweb.store"; //live url
 
 const String databaseUrl = "$baseUrl/seller_api/";
 
-const appName = 'eShopPlus Seller';
+const appName = 'Value Market Seller';
 
 //Your package name
-const String androidPackageName = 'com.wrteam.eshop.seller';
+const String androidPackageName = 'com.valuemarket.seller';
 
 const bool isDemoApp = true;
 

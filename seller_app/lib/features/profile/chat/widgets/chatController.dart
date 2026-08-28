@@ -1,5 +1,5 @@
-import 'package:eshopplus_seller/main.dart';
-import 'package:eshopplus_seller/core/routes/routes.dart';
+import 'package:value_market_seller/main.dart';
+import 'package:value_market_seller/core/routes/routes.dart';
 import 'package:get/get.dart';
 
 class ChatController extends GetxController {

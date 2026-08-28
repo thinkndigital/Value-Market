@@ -1,28 +1,28 @@
 import 'package:dio/dio.dart';
-import 'package:eshopplus_seller/commons/blocs/productCubit.dart';
-import 'package:eshopplus_seller/commons/blocs/settingsAndLanguagesCubit.dart';
-import 'package:eshopplus_seller/commons/models/language.dart';
-import 'package:eshopplus_seller/commons/models/product.dart';
-import 'package:eshopplus_seller/commons/models/productVariant.dart';
-import 'package:eshopplus_seller/commons/widgets/customCircularProgressIndicator.dart';
-import 'package:eshopplus_seller/commons/widgets/customImageWidget.dart';
-import 'package:eshopplus_seller/commons/widgets/customTextButton.dart';
-import 'package:eshopplus_seller/commons/widgets/customTextContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/errorScreen.dart';
-import 'package:eshopplus_seller/core/constants/appConstants.dart';
-import 'package:eshopplus_seller/core/constants/themeConstants.dart';
-import 'package:eshopplus_seller/features/profile/addProduct/models/brand.dart';
-import 'package:eshopplus_seller/features/profile/addProduct/models/category.dart';
-import 'package:eshopplus_seller/features/profile/addProduct/models/country.dart';
-import 'package:eshopplus_seller/features/profile/addProduct/widgets/aiPromptField.dart';
-import 'package:eshopplus_seller/utils/inputValidators.dart';
-import 'package:eshopplus_seller/utils/utils.dart';
+import 'package:value_market_seller/commons/blocs/productCubit.dart';
+import 'package:value_market_seller/commons/blocs/settingsAndLanguagesCubit.dart';
+import 'package:value_market_seller/commons/models/language.dart';
+import 'package:value_market_seller/commons/models/product.dart';
+import 'package:value_market_seller/commons/models/productVariant.dart';
+import 'package:value_market_seller/commons/widgets/customCircularProgressIndicator.dart';
+import 'package:value_market_seller/commons/widgets/customImageWidget.dart';
+import 'package:value_market_seller/commons/widgets/customTextButton.dart';
+import 'package:value_market_seller/commons/widgets/customTextContainer.dart';
+import 'package:value_market_seller/commons/widgets/errorScreen.dart';
+import 'package:value_market_seller/core/constants/appConstants.dart';
+import 'package:value_market_seller/core/constants/themeConstants.dart';
+import 'package:value_market_seller/features/profile/addProduct/models/brand.dart';
+import 'package:value_market_seller/features/profile/addProduct/models/category.dart';
+import 'package:value_market_seller/features/profile/addProduct/models/country.dart';
+import 'package:value_market_seller/features/profile/addProduct/widgets/aiPromptField.dart';
+import 'package:value_market_seller/utils/inputValidators.dart';
+import 'package:value_market_seller/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:eshopplus_seller/commons/widgets/customDropDownContainer.dart';
+import 'package:value_market_seller/commons/widgets/customDropDownContainer.dart';
 
-import 'package:eshopplus_seller/core/localization/labelKeys.dart';
+import 'package:value_market_seller/core/localization/labelKeys.dart';
 import 'package:get/get.dart' hide MultipartFile;
 
 import '../blocs/brandListCubit.dart';
@@ -31,7 +31,7 @@ import '../blocs/countryListCubit.dart';
 import '../blocs/getProductByTypeCubit.dart';
 import '../../../../commons/blocs/storesCubit.dart';
 
-import 'package:eshopplus_seller/core/api/apiEndPoints.dart';
+import 'package:value_market_seller/core/api/apiEndPoints.dart';
 import '../../../../../utils/designConfig.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../commons/widgets/customTextFieldContainer.dart';

@@ -1,13 +1,13 @@
-import 'package:eshopplus_seller/commons/models/product.dart';
-import 'package:eshopplus_seller/core/constants/appConstants.dart';
+import 'package:value_market_seller/commons/models/product.dart';
+import 'package:value_market_seller/core/constants/appConstants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../blocs/attributeListCubit.dart';
 import '../../../../commons/blocs/settingsAndLanguagesCubit.dart';
 import '../../../../commons/blocs/storesCubit.dart';
-import 'package:eshopplus_seller/core/api/apiEndPoints.dart';
-import 'package:eshopplus_seller/core/constants/themeConstants.dart';
+import 'package:value_market_seller/core/api/apiEndPoints.dart';
+import 'package:value_market_seller/core/constants/themeConstants.dart';
 import '../../../../core/localization/labelKeys.dart';
 import '../screens/addProductScreen.dart';
 import 'attributeTab.dart';

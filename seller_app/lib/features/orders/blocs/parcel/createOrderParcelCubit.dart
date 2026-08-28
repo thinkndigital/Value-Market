@@ -1,5 +1,5 @@
-import 'package:eshopplus_seller/features/orders/models/parcel.dart';
-import 'package:eshopplus_seller/features/orders/repositories/orderRepository.dart';
+import 'package:value_market_seller/features/orders/models/parcel.dart';
+import 'package:value_market_seller/features/orders/repositories/orderRepository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class CreateOrderParcelState {}

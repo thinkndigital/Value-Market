@@ -1,4 +1,4 @@
-import 'package:eshopplus_seller/core/configs/appConfig.dart';
+import 'package:value_market_seller/core/configs/appConfig.dart';
 
 Map<String, String> defaultLanguageTranslatedValues = {
   "skip": "Skip",

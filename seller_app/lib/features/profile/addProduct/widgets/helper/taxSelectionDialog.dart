@@ -1,5 +1,5 @@
-import 'package:eshopplus_seller/commons/widgets/customTextContainer.dart';
-import 'package:eshopplus_seller/features/profile/addProduct/models/tax.dart';
+import 'package:value_market_seller/commons/widgets/customTextContainer.dart';
+import 'package:value_market_seller/features/profile/addProduct/models/tax.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../core/localization/labelKeys.dart';

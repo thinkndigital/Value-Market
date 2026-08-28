@@ -1,8 +1,8 @@
-import 'package:eshopplus_seller/core/api/apiEndPoints.dart';
-import 'package:eshopplus_seller/core/api/apiService.dart';
-import 'package:eshopplus_seller/core/configs/appConfig.dart';
-import 'package:eshopplus_seller/core/constants/appConstants.dart';
-import 'package:eshopplus_seller/utils/utils.dart';
+import 'package:value_market_seller/core/api/apiEndPoints.dart';
+import 'package:value_market_seller/core/api/apiService.dart';
+import 'package:value_market_seller/core/configs/appConfig.dart';
+import 'package:value_market_seller/core/constants/appConstants.dart';
+import 'package:value_market_seller/utils/utils.dart';
 
 import '../models/transaction.dart';
 

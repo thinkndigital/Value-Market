@@ -1,23 +1,23 @@
-import 'package:eshopplus_seller/commons/widgets/filterContainerForBottomSheet.dart';
-import 'package:eshopplus_seller/commons/widgets/safeAreaWithBottomPadding.dart';
-import 'package:eshopplus_seller/core/constants/themeConstants.dart';
-import 'package:eshopplus_seller/core/routes/routes.dart';
-import 'package:eshopplus_seller/core/theme/colors.dart';
-import 'package:eshopplus_seller/features/product/blocs/getProductRatingCubit.dart';
-import 'package:eshopplus_seller/commons/models/product.dart';
-import 'package:eshopplus_seller/features/product/models/productRating.dart';
+import 'package:value_market_seller/commons/widgets/filterContainerForBottomSheet.dart';
+import 'package:value_market_seller/commons/widgets/safeAreaWithBottomPadding.dart';
+import 'package:value_market_seller/core/constants/themeConstants.dart';
+import 'package:value_market_seller/core/routes/routes.dart';
+import 'package:value_market_seller/core/theme/colors.dart';
+import 'package:value_market_seller/features/product/blocs/getProductRatingCubit.dart';
+import 'package:value_market_seller/commons/models/product.dart';
+import 'package:value_market_seller/features/product/models/productRating.dart';
 
-import 'package:eshopplus_seller/commons/widgets/customCircularProgressIndicator.dart';
-import 'package:eshopplus_seller/commons/widgets/customDefaultContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/customImageWidget.dart';
-import 'package:eshopplus_seller/commons/widgets/customTextButton.dart';
-import 'package:eshopplus_seller/commons/widgets/customTextContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/errorScreen.dart';
-import 'package:eshopplus_seller/core/api/apiEndPoints.dart';
+import 'package:value_market_seller/commons/widgets/customCircularProgressIndicator.dart';
+import 'package:value_market_seller/commons/widgets/customDefaultContainer.dart';
+import 'package:value_market_seller/commons/widgets/customImageWidget.dart';
+import 'package:value_market_seller/commons/widgets/customTextButton.dart';
+import 'package:value_market_seller/commons/widgets/customTextContainer.dart';
+import 'package:value_market_seller/commons/widgets/errorScreen.dart';
+import 'package:value_market_seller/core/api/apiEndPoints.dart';
 
-import 'package:eshopplus_seller/utils/designConfig.dart';
-import 'package:eshopplus_seller/core/localization/labelKeys.dart';
-import 'package:eshopplus_seller/utils/utils.dart';
+import 'package:value_market_seller/utils/designConfig.dart';
+import 'package:value_market_seller/core/localization/labelKeys.dart';
+import 'package:value_market_seller/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

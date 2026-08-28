@@ -1,25 +1,25 @@
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:eshopplus_seller/commons/blocs/settingsAndLanguagesCubit.dart';
-import 'package:eshopplus_seller/commons/models/language.dart';
-import 'package:eshopplus_seller/commons/widgets/customLabelContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/customModalBottomSheet.dart';
-import 'package:eshopplus_seller/commons/widgets/customRoundedButton.dart';
-import 'package:eshopplus_seller/commons/widgets/dottedLineRectPainter.dart';
-import 'package:eshopplus_seller/core/api/apiService.dart';
-import 'package:eshopplus_seller/core/theme/colors.dart';
-import 'package:eshopplus_seller/features/auth/repositories/authRepository.dart';
-import 'package:eshopplus_seller/main.dart';
-import 'package:eshopplus_seller/features/orders/models/order.dart';
-import 'package:eshopplus_seller/core/constants/appConstants.dart';
-import 'package:eshopplus_seller/core/constants/themeConstants.dart';
-import 'package:eshopplus_seller/core/localization/labelKeys.dart';
-import 'package:eshopplus_seller/utils/designConfig.dart';
+import 'package:value_market_seller/commons/blocs/settingsAndLanguagesCubit.dart';
+import 'package:value_market_seller/commons/models/language.dart';
+import 'package:value_market_seller/commons/widgets/customLabelContainer.dart';
+import 'package:value_market_seller/commons/widgets/customModalBottomSheet.dart';
+import 'package:value_market_seller/commons/widgets/customRoundedButton.dart';
+import 'package:value_market_seller/commons/widgets/dottedLineRectPainter.dart';
+import 'package:value_market_seller/core/api/apiService.dart';
+import 'package:value_market_seller/core/theme/colors.dart';
+import 'package:value_market_seller/features/auth/repositories/authRepository.dart';
+import 'package:value_market_seller/main.dart';
+import 'package:value_market_seller/features/orders/models/order.dart';
+import 'package:value_market_seller/core/constants/appConstants.dart';
+import 'package:value_market_seller/core/constants/themeConstants.dart';
+import 'package:value_market_seller/core/localization/labelKeys.dart';
+import 'package:value_market_seller/utils/designConfig.dart';
 import 'package:external_path/external_path.dart';
-import 'package:eshopplus_seller/commons/models/systemSettings.dart';
+import 'package:value_market_seller/commons/models/systemSettings.dart';
 
-import 'package:eshopplus_seller/commons/widgets/customTextContainer.dart';
+import 'package:value_market_seller/commons/widgets/customTextContainer.dart';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';

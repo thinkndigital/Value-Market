@@ -1,21 +1,21 @@
-import 'package:eshopplus_seller/commons/widgets/customAppbar.dart';
-import 'package:eshopplus_seller/commons/widgets/customBottomButtonContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/customCircularProgressIndicator.dart';
-import 'package:eshopplus_seller/commons/widgets/customDefaultContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/customRoundedButton.dart';
-import 'package:eshopplus_seller/core/constants/appConstants.dart';
-import 'package:eshopplus_seller/core/localization/labelKeys.dart';
-import 'package:eshopplus_seller/commons/blocs/settingsAndLanguagesCubit.dart';
-import 'package:eshopplus_seller/commons/models/language.dart';
-import 'package:eshopplus_seller/commons/widgets/customTextFieldContainer.dart';
-import 'package:eshopplus_seller/core/routes/routes.dart';
-import 'package:eshopplus_seller/features/profile/addProduct/blocs/mediaListCubit.dart';
-import 'package:eshopplus_seller/features/profile/addProduct/blocs/addBrandCubit.dart';
-import 'package:eshopplus_seller/utils/designConfig.dart';
-import 'package:eshopplus_seller/utils/utils.dart';
+import 'package:value_market_seller/commons/widgets/customAppbar.dart';
+import 'package:value_market_seller/commons/widgets/customBottomButtonContainer.dart';
+import 'package:value_market_seller/commons/widgets/customCircularProgressIndicator.dart';
+import 'package:value_market_seller/commons/widgets/customDefaultContainer.dart';
+import 'package:value_market_seller/commons/widgets/customRoundedButton.dart';
+import 'package:value_market_seller/core/constants/appConstants.dart';
+import 'package:value_market_seller/core/localization/labelKeys.dart';
+import 'package:value_market_seller/commons/blocs/settingsAndLanguagesCubit.dart';
+import 'package:value_market_seller/commons/models/language.dart';
+import 'package:value_market_seller/commons/widgets/customTextFieldContainer.dart';
+import 'package:value_market_seller/core/routes/routes.dart';
+import 'package:value_market_seller/features/profile/addProduct/blocs/mediaListCubit.dart';
+import 'package:value_market_seller/features/profile/addProduct/blocs/addBrandCubit.dart';
+import 'package:value_market_seller/utils/designConfig.dart';
+import 'package:value_market_seller/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:eshopplus_seller/commons/blocs/storesCubit.dart';
+import 'package:value_market_seller/commons/blocs/storesCubit.dart';
 
 class AddBrandScreen extends StatefulWidget {
   const AddBrandScreen({Key? key}) : super(key: key);

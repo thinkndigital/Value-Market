@@ -1,4 +1,4 @@
-import 'package:eshopplus_seller/commons/models/productVariant.dart';
+import 'package:value_market_seller/commons/models/productVariant.dart';
 
 import '../../../../commons/models/product.dart';
 

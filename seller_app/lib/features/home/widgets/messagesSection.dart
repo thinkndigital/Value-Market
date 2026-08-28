@@ -1,18 +1,18 @@
-import 'package:eshopplus_seller/commons/widgets/customDefaultContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/customTextButton.dart';
-import 'package:eshopplus_seller/core/api/apiEndPoints.dart';
-import 'package:eshopplus_seller/core/routes/routes.dart';
-import 'package:eshopplus_seller/features/auth/repositories/authRepository.dart';
-import 'package:eshopplus_seller/features/profile/chat/blocs/getContactsCubit.dart';
-import 'package:eshopplus_seller/features/profile/chat/blocs/getMessageCubit.dart';
-import 'package:eshopplus_seller/features/profile/chat/models/chatMessage.dart';
-import 'package:eshopplus_seller/commons/models/userDetails.dart';
-import 'package:eshopplus_seller/features/profile/chat/repositories/chatRepository.dart';
+import 'package:value_market_seller/commons/widgets/customDefaultContainer.dart';
+import 'package:value_market_seller/commons/widgets/customTextButton.dart';
+import 'package:value_market_seller/core/api/apiEndPoints.dart';
+import 'package:value_market_seller/core/routes/routes.dart';
+import 'package:value_market_seller/features/auth/repositories/authRepository.dart';
+import 'package:value_market_seller/features/profile/chat/blocs/getContactsCubit.dart';
+import 'package:value_market_seller/features/profile/chat/blocs/getMessageCubit.dart';
+import 'package:value_market_seller/features/profile/chat/models/chatMessage.dart';
+import 'package:value_market_seller/commons/models/userDetails.dart';
+import 'package:value_market_seller/features/profile/chat/repositories/chatRepository.dart';
 
-import 'package:eshopplus_seller/commons/widgets/customTextContainer.dart';
-import 'package:eshopplus_seller/utils/designConfig.dart';
-import 'package:eshopplus_seller/core/localization/labelKeys.dart';
-import 'package:eshopplus_seller/utils/utils.dart';
+import 'package:value_market_seller/commons/widgets/customTextContainer.dart';
+import 'package:value_market_seller/utils/designConfig.dart';
+import 'package:value_market_seller/core/localization/labelKeys.dart';
+import 'package:value_market_seller/utils/utils.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'package:eshopplus_seller/commons/blocs/storesCubit.dart';
-import 'package:eshopplus_seller/core/api/apiEndPoints.dart';
+import 'package:value_market_seller/commons/blocs/storesCubit.dart';
+import 'package:value_market_seller/core/api/apiEndPoints.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../core/theme/colors.dart';

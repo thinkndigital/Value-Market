@@ -1,14 +1,14 @@
-import 'package:eshopplus_seller/commons/widgets/safeAreaWithBottomPadding.dart';
-import 'package:eshopplus_seller/core/routes/routes.dart';
-import 'package:eshopplus_seller/commons/widgets/circleButton.dart';
-import 'package:eshopplus_seller/commons/widgets/customImageWidget.dart';
-import 'package:eshopplus_seller/commons/widgets/customTextContainer.dart';
+import 'package:value_market_seller/commons/widgets/safeAreaWithBottomPadding.dart';
+import 'package:value_market_seller/core/routes/routes.dart';
+import 'package:value_market_seller/commons/widgets/circleButton.dart';
+import 'package:value_market_seller/commons/widgets/customImageWidget.dart';
+import 'package:value_market_seller/commons/widgets/customTextContainer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../commons/blocs/storesCubit.dart';
 import '../../../commons/models/store.dart';
-import 'package:eshopplus_seller/core/constants/themeConstants.dart';
+import 'package:value_market_seller/core/constants/themeConstants.dart';
 import '../../../utils/designConfig.dart';
 import '../../../core/localization/labelKeys.dart';
 import '../../../utils/utils.dart';

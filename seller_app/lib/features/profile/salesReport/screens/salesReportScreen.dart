@@ -1,23 +1,23 @@
 import 'dart:async';
 
-import 'package:eshopplus_seller/commons/blocs/storesCubit.dart';
+import 'package:value_market_seller/commons/blocs/storesCubit.dart';
 
-import 'package:eshopplus_seller/commons/widgets/customAppbar.dart';
-import 'package:eshopplus_seller/commons/widgets/customBottomButtonContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/customRoundedButton.dart';
-import 'package:eshopplus_seller/commons/widgets/customTextContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/customTextFieldContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/errorScreen.dart';
-import 'package:eshopplus_seller/commons/widgets/primaryContainerWithBackground.dart';
-import 'package:eshopplus_seller/core/api/apiEndPoints.dart';
-import 'package:eshopplus_seller/core/constants/appConstants.dart';
-import 'package:eshopplus_seller/core/constants/themeConstants.dart';
-import 'package:eshopplus_seller/features/profile/salesReport/blocs/salesListCubit.dart';
-import 'package:eshopplus_seller/features/profile/salesReport/models/salesReport.dart';
-import 'package:eshopplus_seller/features/profile/salesReport/widgets/salesInfoContainer.dart';
+import 'package:value_market_seller/commons/widgets/customAppbar.dart';
+import 'package:value_market_seller/commons/widgets/customBottomButtonContainer.dart';
+import 'package:value_market_seller/commons/widgets/customRoundedButton.dart';
+import 'package:value_market_seller/commons/widgets/customTextContainer.dart';
+import 'package:value_market_seller/commons/widgets/customTextFieldContainer.dart';
+import 'package:value_market_seller/commons/widgets/errorScreen.dart';
+import 'package:value_market_seller/commons/widgets/primaryContainerWithBackground.dart';
+import 'package:value_market_seller/core/api/apiEndPoints.dart';
+import 'package:value_market_seller/core/constants/appConstants.dart';
+import 'package:value_market_seller/core/constants/themeConstants.dart';
+import 'package:value_market_seller/features/profile/salesReport/blocs/salesListCubit.dart';
+import 'package:value_market_seller/features/profile/salesReport/models/salesReport.dart';
+import 'package:value_market_seller/features/profile/salesReport/widgets/salesInfoContainer.dart';
 
-import 'package:eshopplus_seller/utils/designConfig.dart';
-import 'package:eshopplus_seller/core/localization/labelKeys.dart';
+import 'package:value_market_seller/utils/designConfig.dart';
+import 'package:value_market_seller/core/localization/labelKeys.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../utils/utils.dart';

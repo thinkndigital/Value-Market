@@ -1,5 +1,5 @@
-import 'package:eshopplus_seller/features/profile/wallet/models/transaction.dart';
-import 'package:eshopplus_seller/features/profile/wallet/repositories/transactionRepository.dart';
+import 'package:value_market_seller/features/profile/wallet/models/transaction.dart';
+import 'package:value_market_seller/features/profile/wallet/repositories/transactionRepository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class SendWithdrawalRequestState {}

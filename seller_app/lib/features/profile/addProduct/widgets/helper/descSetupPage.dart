@@ -1,7 +1,7 @@
-import 'package:eshopplus_seller/commons/widgets/customBottomButtonContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/customRoundedButton.dart';
-import 'package:eshopplus_seller/commons/widgets/customTextContainer.dart';
-import 'package:eshopplus_seller/core/api/apiService.dart';
+import 'package:value_market_seller/commons/widgets/customBottomButtonContainer.dart';
+import 'package:value_market_seller/commons/widgets/customRoundedButton.dart';
+import 'package:value_market_seller/commons/widgets/customTextContainer.dart';
+import 'package:value_market_seller/core/api/apiService.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rich_editor/rich_editor.dart';

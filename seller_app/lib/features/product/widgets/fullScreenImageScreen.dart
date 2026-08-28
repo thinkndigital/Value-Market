@@ -1,11 +1,11 @@
-import 'package:eshopplus_seller/core/constants/themeConstants.dart';
-import 'package:eshopplus_seller/features/product/models/productRating.dart';
-import 'package:eshopplus_seller/features/product/widgets/ratingContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/customDefaultContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/customImageWidget.dart';
-import 'package:eshopplus_seller/commons/widgets/customTextContainer.dart';
+import 'package:value_market_seller/core/constants/themeConstants.dart';
+import 'package:value_market_seller/features/product/models/productRating.dart';
+import 'package:value_market_seller/features/product/widgets/ratingContainer.dart';
+import 'package:value_market_seller/commons/widgets/customDefaultContainer.dart';
+import 'package:value_market_seller/commons/widgets/customImageWidget.dart';
+import 'package:value_market_seller/commons/widgets/customTextContainer.dart';
 
-import 'package:eshopplus_seller/utils/utils.dart';
+import 'package:value_market_seller/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';

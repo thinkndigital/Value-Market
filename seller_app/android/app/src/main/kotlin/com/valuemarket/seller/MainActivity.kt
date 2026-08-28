@@ -1,4 +1,4 @@
-package com.wrteam.eshop.seller
+package com.valuemarket.seller
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -1,5 +1,5 @@
-import 'package:eshopplus_seller/commons/models/store.dart';
-import 'package:eshopplus_seller/commons/repositories/storeRepository.dart';
+import 'package:value_market_seller/commons/models/store.dart';
+import 'package:value_market_seller/commons/repositories/storeRepository.dart';
 
 import 'package:flutter/material.dart';
 

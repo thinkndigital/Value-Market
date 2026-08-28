@@ -1,6 +1,6 @@
-import 'package:eshopplus_seller/core/api/apiEndPoints.dart';
-import 'package:eshopplus_seller/core/api/apiService.dart';
-import 'package:eshopplus_seller/utils/utils.dart';
+import 'package:value_market_seller/core/api/apiEndPoints.dart';
+import 'package:value_market_seller/core/api/apiService.dart';
+import 'package:value_market_seller/utils/utils.dart';
 
 class AttributeRepository {
   Future getAttributeListProcess(Map<String, String?> parameter) async {

@@ -1,12 +1,12 @@
-import 'package:eshopplus_seller/commons/blocs/settingsAndLanguagesCubit.dart';
-import 'package:eshopplus_seller/commons/widgets/customDropDownContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/customTextContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/customTextFieldContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/filterContainerForBottomSheet.dart';
-import 'package:eshopplus_seller/core/constants/themeConstants.dart';
+import 'package:value_market_seller/commons/blocs/settingsAndLanguagesCubit.dart';
+import 'package:value_market_seller/commons/widgets/customDropDownContainer.dart';
+import 'package:value_market_seller/commons/widgets/customTextContainer.dart';
+import 'package:value_market_seller/commons/widgets/customTextFieldContainer.dart';
+import 'package:value_market_seller/commons/widgets/filterContainerForBottomSheet.dart';
+import 'package:value_market_seller/core/constants/themeConstants.dart';
 
-import 'package:eshopplus_seller/utils/designConfig.dart';
-import 'package:eshopplus_seller/core/localization/labelKeys.dart';
+import 'package:value_market_seller/utils/designConfig.dart';
+import 'package:value_market_seller/core/localization/labelKeys.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

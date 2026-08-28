@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:eshopplus_seller/commons/widgets/circleButton.dart';
-import 'package:eshopplus_seller/core/constants/themeConstants.dart';
+import 'package:value_market_seller/commons/widgets/circleButton.dart';
+import 'package:value_market_seller/core/constants/themeConstants.dart';
 import 'package:flutter/material.dart';
 
 class CustomModalBotomSheet extends StatelessWidget {

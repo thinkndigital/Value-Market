@@ -1,19 +1,19 @@
-import 'package:eshopplus_seller/commons/blocs/productCubit.dart';
-import 'package:eshopplus_seller/commons/blocs/settingsAndLanguagesCubit.dart';
-import 'package:eshopplus_seller/core/constants/appConstants.dart';
-import 'package:eshopplus_seller/core/constants/themeConstants.dart';
+import 'package:value_market_seller/commons/blocs/productCubit.dart';
+import 'package:value_market_seller/commons/blocs/settingsAndLanguagesCubit.dart';
+import 'package:value_market_seller/core/constants/appConstants.dart';
+import 'package:value_market_seller/core/constants/themeConstants.dart';
 
-import 'package:eshopplus_seller/features/mainScreen.dart';
-import 'package:eshopplus_seller/features/product/widgets/productsTab.dart';
-import 'package:eshopplus_seller/features/product/widgets/sortProductBottomsheet.dart';
-import 'package:eshopplus_seller/features/profile/stockManagement/screens/stockManagementScreen.dart';
-import 'package:eshopplus_seller/commons/widgets/customLabelContainer.dart';
-import 'package:eshopplus_seller/commons/widgets/customTabbar.dart';
-import 'package:eshopplus_seller/commons/widgets/customTextContainer.dart';
+import 'package:value_market_seller/features/mainScreen.dart';
+import 'package:value_market_seller/features/product/widgets/productsTab.dart';
+import 'package:value_market_seller/features/product/widgets/sortProductBottomsheet.dart';
+import 'package:value_market_seller/features/profile/stockManagement/screens/stockManagementScreen.dart';
+import 'package:value_market_seller/commons/widgets/customLabelContainer.dart';
+import 'package:value_market_seller/commons/widgets/customTabbar.dart';
+import 'package:value_market_seller/commons/widgets/customTextContainer.dart';
 
-import 'package:eshopplus_seller/utils/designConfig.dart';
-import 'package:eshopplus_seller/core/localization/labelKeys.dart';
-import 'package:eshopplus_seller/utils/utils.dart';
+import 'package:value_market_seller/utils/designConfig.dart';
+import 'package:value_market_seller/core/localization/labelKeys.dart';
+import 'package:value_market_seller/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';

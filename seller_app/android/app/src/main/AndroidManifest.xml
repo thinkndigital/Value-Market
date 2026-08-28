@@ -27,7 +27,7 @@
     </intent>
     </queries>
     <application
-        android:label="eShopPlus Seller"
+        android:label="Value Market Seller"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
          <!-- [START fcm_default_icon] -->
