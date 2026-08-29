@@ -28,9 +28,9 @@ opposite of both, confirmed with the user before any implementation work):
 
 | Status | Count |
 |---|---|
-| IMPLEMENTED (incl. FIXED this session) | 55 |
-| PARTIALLY_IMPLEMENTED | 9 |
-| MISSING | 8 |
+| IMPLEMENTED (incl. FIXED this session) | 57 |
+| PARTIALLY_IMPLEMENTED | 8 |
+| MISSING | 7 |
 | BROKEN → FIXED | 2 |
 | NOT_APPLICABLE | 8 |
 | **Total items audited** | **82** |
@@ -174,9 +174,10 @@ opposite of both, confirmed with the user before any implementation work):
 
 | Feature | Status | Evidence | Files | Action |
 |---|---|---|---|---|
-| Shiprocket shipping method | PARTIALLY_IMPLEMENTED | `ShiprocketService.php` exists and is referenced from `ParcelService`, `DeliveryService`, `OrderService`, `Seller\PosController`, `Admin\PickupLocationController` — a real integration exists. Depth (auth token handling, shipment creation, tracking, error/retry handling, credential storage safety) needs a dedicated audit pass before calling it complete. | `app/Services/ShiprocketService.php` | Deep-audit + harden (P1) — see `docs/SHIPROCKET_INTEGRATION.md` |
+| Shiprocket shipping method | IMPLEMENTED (hardened this session) | Deep audit + fixes, see `docs/SHIPROCKET_INTEGRATION.md`. Real bugs found and fixed: (1) `Shiprocket::curl()` re-authenticated against `/auth/login` on *every* API call with no caching — now cached via `Cache` (~9-day TTL, matching Shiprocket's ~10-day token validity), with 401-triggered one-shot re-auth-and-retry; (2) both the auth call and every API call had **no HTTP timeout** (`CURLOPT_TIMEOUT => 0` / unset) — a slow Shiprocket could hang the cart/checkout deliverability-check path until PHP's own execution-time limit broke checkout; now bounded (default 15s/8s, `config('services.shiprocket.*')`); (3) `Admin\OrderController::create_shiprocket_order()` hardcoded `tracking_id` to `''` (the seller-panel equivalent already stored it correctly) — a genuine "shipment accepted, tracking discarded" bug for every admin-panel-created Shiprocket order, now fixed to match the seller flow; (4) `Seller\OrderController::edit_orders()` passed the raw `shipping_method` settings array (email/password/webhook_token included) into a seller-facing Blade view — not an active leak (the view never echoed those keys) but one template edit away from becoming one; stripped before reaching the view. Credential storage (`Setting` row, matching Razorpay/Stripe/Paystack convention) and the local-zones-primary/Shiprocket-fallback rate model were both already correct. Proven in `tests/Feature/ShiprocketApiHardeningTest.php` (token caching, 401 retry, timeout enforcement, against a local fake server since no live Shiprocket account is reachable here). | `app/Libraries/Shiprocket.php`, `app/Http/Controllers/Admin/OrderController.php`, `app/Http/Controllers/Seller/OrderController.php`, `config/services.php` | None — remaining gaps are external-config-blocked or new-scope, see doc's "Known limitations" |
 | Shiprocket integration | See above | — | — | — |
-| Shiprocket documentation/integration usage | **MISSING** | No `docs/SHIPROCKET_INTEGRATION.md` existed before this audit. | — | Create (P1) |
+| Shiprocket documentation/integration usage | IMPLEMENTED | `docs/SHIPROCKET_INTEGRATION.md` created this session — architecture, credential/config reference, auth/shipment/tracking flow as actually implemented, webhook details, testing instructions, production checklist, and known limitations (admin-panel Shiprocket-order UI doesn't exist, webhook token shape unverified against a live account, no scheduled reconciliation polling). | `docs/SHIPROCKET_INTEGRATION.md` | None |
+| Shiprocket order/shipment status webhook | FIXED (audit-discovered — not its own official changelog line, folded into the "Shiprocket shipping method" row above in the summary counts; documented separately here and as Fix log item 4 for evidence) | `Webhook::spr_webhook()` — route registered, admin Settings already collected and required a `webhook_token`, that token was already correctly hidden from the mobile-app settings API response — but the handler's body was **completely empty**, and the route was `GET` (Shiprocket delivers webhooks as `POST`, so a real call would 405 before reaching it). Exactly the "security control collected but never verified" pattern found and fixed in the Razorpay/Paystack/Stripe webhooks this session, just with the check missing entirely. **FIXED**: route changed to POST; handler now verifies the token via `hash_equals()` (header `X-Api-Key`, falling back to a `token` body field — which shape a live account actually sends could not be verified without one, see doc), rejects forged/missing tokens with zero side effects, and on success updates `OrderTracking` and cascades a cancellation to `Parcel`/`OrderItems`. | `app/Http/Controllers/Admin/Webhook.php::spr_webhook()`, `routes/web.php`, `tests/Feature/ShiprocketWebhookSecurityTest.php` | None |
 | Blog feature | IMPLEMENTED | Full admin CRUD (`BlogController`: create/edit/delete/status, categories, this session fixed the missing `update_blog_category` view) + public blog routes. | `app/Http/Controllers/Admin/BlogController.php` | Verify frontend listing/detail/pagination/SEO metadata specifically (P2 spot-check) |
 | Bug fixes / Performance improvements | NOT_APPLICABLE | See item 24. | — | None |
 
@@ -226,6 +227,23 @@ opposite of both, confirmed with the user before any implementation work):
    one PHP process; missing `break` statements causing Stripe event fallthrough double-processing; and the
    root cause of a recurring test-flakiness pattern (`SettingService::getSettings()`'s uninvalidated
    process-static cache) that had already required workarounds in two earlier test files this session.
+4. **`Admin\Webhook::spr_webhook()` (Shiprocket order/shipment status webhook)** — the route existed
+   (registered GET; Shiprocket delivers webhooks as POST, so a real call would 405 before reaching it), the
+   admin Settings screen already required and stored a `webhook_token` specifically for this, and that token
+   was already hidden from the mobile-app settings API response — but the handler body was **completely
+   empty**: no verification, no processing, nothing. Same "security control collected but never checked"
+   pattern as item 3, just with the check missing entirely rather than present-but-bypassed. **FIXED** (this
+   commit) — route changed to POST; handler now verifies the token via `hash_equals()` (header `X-Api-Key`,
+   falling back to a `token` body field), rejects a forged/missing token with zero side effects, and on
+   success updates `OrderTracking` and cascades a cancellation to `Parcel`/`OrderItems`, mirroring
+   `ShiprocketService::cancelShiprocketOrder()`'s existing cascade. Also fixed in the same pass:
+   `Shiprocket::curl()` re-authenticating against `/auth/login` on every single API call (now cached, ~9-day
+   TTL, with 401-triggered one-shot re-auth-and-retry); no HTTP timeout on any Shiprocket call (could hang
+   the cart/checkout deliverability path until PHP's own execution-time limit broke checkout — now bounded);
+   `Admin\OrderController::create_shiprocket_order()` discarding `tracking_id` (hardcoded `''`, unlike the
+   already-correct seller-panel equivalent); and `Seller\OrderController::edit_orders()` passing the raw
+   Shiprocket credentials blob into a seller-facing Blade view. Full detail in
+   `docs/SHIPROCKET_INTEGRATION.md`.
 
 ## Implementation priority (P0 → P2, per user-approved plan)
 
@@ -240,7 +258,8 @@ opposite of both, confirmed with the user before any implementation work):
 - Email order invoices (v1.0.3).
 - Hide empty stores/categories (v1.1.1).
 - Bulk upload hardening — transactions/chunking (v1.0.9).
-- Shiprocket depth audit + hardening + docs (v1.1.0).
+- ~~Shiprocket depth audit + hardening + docs (v1.1.0)~~ — **done**, see Fix log item 4 and
+  `docs/SHIPROCKET_INTEGRATION.md`.
 - Affiliate: product-level referral link generation, payout/withdrawal flow (v1.0.7).
 - PWA support (v1.0.3).
 

@@ -42,4 +42,18 @@ return [
         'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
         'redirect' => env('FACEBOOK_REDIRECT_URI'),
     ],
+
+    // Shiprocket credentials themselves are NOT read from here - they live in the `shipping_method`
+    // Setting row (admin/pages/forms/shipping_settings.blade.php), matching this app's existing convention
+    // for gateway credentials (Razorpay/Stripe/Paystack). These are only the operational knobs that don't
+    // belong in the database: the API base URL (overridable in tests so a real network call is never made)
+    // and the timeouts/token TTL that app/Libraries/Shiprocket.php uses to avoid hanging requests and to
+    // avoid re-authenticating against Shiprocket's /auth/login on every single API call.
+    'shiprocket' => [
+        'base_url' => env('SHIPROCKET_BASE_URL', 'https://apiv2.shiprocket.in/v1/external/'),
+        'timeout' => (int) env('SHIPROCKET_TIMEOUT', 15),
+        'connect_timeout' => (int) env('SHIPROCKET_CONNECT_TIMEOUT', 8),
+        // Shiprocket bearer tokens are valid ~10 days; cached for 9 to stay safely inside that window.
+        'token_ttl_minutes' => (int) env('SHIPROCKET_TOKEN_TTL_MINUTES', 9 * 24 * 60),
+    ],
 ];

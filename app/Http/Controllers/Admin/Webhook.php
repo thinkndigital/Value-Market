@@ -9,6 +9,9 @@ use App\Libraries\Phonepe;
 use App\Libraries\Razorpay;
 use App\Models\Order;
 use App\Models\OrderItems;
+use App\Models\OrderTracking;
+use App\Models\Parcel;
+use App\Models\Parcelitem;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -1009,7 +1012,121 @@ class Webhook extends Controller
         }
     }
 
+    /**
+     * Shiprocket order/shipment status webhook.
+     *
+     * Before this fix: the route existed (registered as GET - Shiprocket delivers webhooks as POST, so a
+     * real call would have 405'd before reaching here), the handler existed, and the admin Settings screen
+     * (SettingController::storeShippingSettings()) already required and stored a `webhook_token` alongside
+     * the Shiprocket email/password - but this method's body was completely empty. The token was collected,
+     * validated as required, hidden from the mobile-app settings API response
+     * (App\v1\ApiController::get_settings() explicitly unsets it before responding), but never actually
+     * checked anywhere: exactly the "security control collected but never verified" pattern found and fixed
+     * in the Razorpay/Paystack/Stripe webhooks this session, just with the webhook itself missing entirely
+     * rather than merely bypassed. Tracking updates only ever happened via the on-demand pull endpoint
+     * (update_shiprocket_order_status, called when an admin/seller manually clicks "Update Status").
+     *
+     * Shiprocket's webhook delivery authenticates each call by echoing back the "Secret Key"/token
+     * configured in the Shiprocket panel's webhook settings - sent as the `X-Api-Key` header on every call.
+     * Some Shiprocket panel configurations instead surface it as a `token` field in the JSON body, so both
+     * are checked (header first) and compared with hash_equals() to the token configured in this app's
+     * Settings, matching the timing-safe comparison used for the other gateway webhooks. Which shape a given
+     * Shiprocket account actually sends can only be confirmed against the live account (see
+     * docs/SHIPROCKET_INTEGRATION.md) - not something this audit's sandbox-less environment can verify.
+     */
     public function spr_webhook(Request $request)
     {
+        $raw_body = $request->getContent();
+        $settings = app(SettingService::class)->getSettings('shipping_method', true);
+        $settings = json_decode($settings, true);
+        $configured_token = (string) ($settings['webhook_token'] ?? '');
+
+        $supplied_token = (string) $request->header('X-Api-Key', '');
+        $payload = json_decode($raw_body, true);
+        $payload = is_array($payload) ? $payload : [];
+        if ($supplied_token === '') {
+            $supplied_token = (string) ($payload['token'] ?? '');
+        }
+
+        if ($configured_token === '' || $supplied_token === '' || !hash_equals($configured_token, $supplied_token)) {
+            // Never log the token values themselves (configured or supplied) - only that verification
+            // failed, same discipline as the other webhook handlers in this file.
+            Log::alert('Shiprocket Webhook | Rejected: missing or invalid token');
+            return response()->json(['error' => true, 'message' => 'Invalid token'], 400);
+        }
+
+        try {
+            // Shiprocket's own order id is what we stored as `shiprocket_order_id` on create (see
+            // OrderController::create_shiprocket_order()) - it is unambiguous, unlike our channel/tracking
+            // id, which is a composite string. Fall back to matching by AWB if the order id isn't present
+            // or doesn't match (some Shiprocket webhook events are AWB-centric, e.g. courier reassignment).
+            $shiprocket_order_id = isset($payload['order_id']) ? (string) $payload['order_id'] : '';
+            $awb_code = $payload['awb'] ?? $payload['awb_code'] ?? null;
+            $current_status = $payload['current_status'] ?? $payload['shipment_status'] ?? $payload['status'] ?? null;
+
+            $order_tracking = collect();
+            if ($shiprocket_order_id !== '') {
+                $order_tracking = fetchDetails(OrderTracking::class, ['shiprocket_order_id' => $shiprocket_order_id]);
+            }
+            if ($order_tracking->isEmpty() && !empty($awb_code)) {
+                $order_tracking = fetchDetails(OrderTracking::class, ['awb_code' => $awb_code]);
+            }
+
+            if ($order_tracking->isEmpty()) {
+                // A verified webhook for a shipment we have no local record of (e.g. a test ping from the
+                // Shiprocket panel, or an order created directly in Shiprocket outside this app) - not an
+                // error worth alerting on, but nothing to update either.
+                Log::info('Shiprocket Webhook | No matching OrderTracking for order_id=' . $shiprocket_order_id . ' awb=' . ($awb_code ?? ''));
+                return response()->json(['error' => false, 'message' => 'No matching order - ignored']);
+            }
+
+            $parcel_id = $order_tracking[0]->parcel_id;
+
+            $update = [];
+            if (!empty($awb_code)) {
+                $update['awb_code'] = $awb_code;
+            }
+
+            $normalized_status = $current_status !== null ? strtolower(str_replace(' ', '_', (string) $current_status)) : null;
+            $is_cancelled = $normalized_status !== null && in_array($normalized_status, ['cancelled', 'canceled', 'cancellation_requested']);
+
+            if ($current_status !== null) {
+                $update['others'] = (string) $current_status;
+            }
+            if ($is_cancelled) {
+                $update['is_canceled'] = 1;
+            }
+
+            if (!empty($update)) {
+                if ($shiprocket_order_id !== '') {
+                    updateDetails($update, ['shiprocket_order_id' => $shiprocket_order_id], OrderTracking::class);
+                } else {
+                    updateDetails($update, ['awb_code' => $awb_code], OrderTracking::class);
+                }
+            }
+
+            // Mirror ShiprocketService::cancelShiprocketOrder()'s cascade: a cancellation reported by
+            // Shiprocket must be reflected on the local parcel/order items too, not just the tracking row,
+            // or the seller/admin order views would keep showing an order Shiprocket has actually dropped.
+            if ($is_cancelled && !empty($parcel_id)) {
+                if (app(OrderService::class)->updateOrder(['status' => 'cancelled'], ['id' => $parcel_id], true, "parcels", false, 0, Parcel::class)) {
+                    app(OrderService::class)->updateOrder(['active_status' => 'cancelled'], ['id' => $parcel_id], false, "parcels", false, 0, Parcel::class);
+                    $parcel_item_details = fetchDetails(Parcelitem::class, ['parcel_id' => $parcel_id]);
+                    foreach ($parcel_item_details as $item) {
+                        app(OrderService::class)->updateOrder(['status' => 'cancelled'], ['id' => $item->order_item_id], true, "order_items", false, 0, OrderItems::class);
+                        app(OrderService::class)->updateOrder(['active_status' => 'cancelled'], ['id' => $item->order_item_id], false, "order_items", false, 0, OrderItems::class);
+                    }
+                }
+            }
+
+            Log::info('Shiprocket Webhook | Processed order_id=' . $shiprocket_order_id . ' status=' . ($current_status ?? 'n/a'));
+            return response()->json(['error' => false, 'message' => 'Webhook processed']);
+        } catch (\Throwable $e) {
+            // A malformed/unexpected payload from Shiprocket must never surface as a 500 that Shiprocket
+            // would keep retrying forever, and must never break anything for the customer/seller - it's an
+            // inbound notification, not something in the checkout path.
+            Log::error('Shiprocket Webhook | Unhandled error: ' . $e->getMessage());
+            return response()->json(['error' => true, 'message' => 'Webhook processing error']);
+        }
     }
 }

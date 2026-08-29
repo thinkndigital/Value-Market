@@ -664,6 +664,14 @@ class OrderController extends Controller
 
             $shipping_method = app(SettingService::class)->getSettings('shipping_method', true);
             $shipping_method = json_decode($shipping_method, true);
+            // Defense in depth (docs/SHIPROCKET_INTEGRATION.md): this array is currently never echoed by
+            // the seller edit_orders view, but it carries the Shiprocket account email/password/webhook
+            // token, and the view has no way to know that. Strip credentials the same way
+            // App\v1\ApiController already does before sending `shipping_method` anywhere seller-facing, so
+            // a future template change (or a debug @json() dump) can't accidentally leak them to a seller.
+            if (is_array($shipping_method)) {
+                unset($shipping_method['email'], $shipping_method['password'], $shipping_method['webhook_token']);
+            }
             $currencyDetails = fetchDetails(Currency::class, ['is_default' => 1], 'symbol');
             $currency = !$currencyDetails->isEmpty() ? $currencyDetails[0]->symbol : '';
             $mobile_data = fetchDetails(Address::class, ['id' => $order_detls[0]->address_id], 'mobile');

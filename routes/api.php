@@ -21,7 +21,9 @@ Route::post('test-email', [ApiController::class, 'test_email']);
 
 Route::post('register_user', [ApiController::class, 'register_user']);
 Route::post('login', [ApiController::class, 'login']);
-Route::post('test_shiprocket', [ApiController::class, 'test_shiprocket']);
+// Removed during this session's Shiprocket audit: routed to App\v1\ApiController::test_shiprocket(), which
+// does not exist on that controller (nowhere in the codebase) - any call would have 500'd with "Call to
+// undefined method". Not a security issue (no data exposed), just dead, broken debug scaffolding.
 Route::post('sign_up', [ApiController::class, 'sign_up']);
 Route::post('verify_user', [ApiController::class, 'verify_user']);
 Route::post('verify_otp', [ApiController::class, 'verify_otp']);

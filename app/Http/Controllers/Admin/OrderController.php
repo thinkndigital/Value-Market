@@ -1474,6 +1474,17 @@ class OrderController extends Controller
             $courier_company_id = $get_currier_id['courier_company_id'];
             $order_tracking_data = [
                 'order_id' => $request['order_id'],
+                // Bug found in this session's Shiprocket audit: this was hardcoded to '' here (while the
+                // seller-panel equivalent of this same method, Seller\OrderController::create_shiprocket_order(),
+                // already correctly stores it) - meaning update_shiprocket_order_status() could never find an
+                // admin-created Shiprocket order by tracking_id, silently breaking status sync for every order
+                // shipped from the admin panel. $response['channel_order_id'] is Shiprocket echoing back the
+                // order_id we sent it, so it's always present on a successful create.
+                'tracking_id' => $response['channel_order_id'] ?? '',
+                // Not sent by the current admin UI (only the seller panel's create-Shiprocket-order form
+                // submits parcel_id today - see docs/SHIPROCKET_INTEGRATION.md "Known limitations"), but
+                // stored whenever a caller does provide it rather than silently discarding it.
+                'parcel_id' => $request['parcel_id'] ?? null,
                 'order_item_id' => $order_item_ids,
                 'shiprocket_order_id' => $response['order_id'],
                 'shipment_id' => $response['shipment_id'],
@@ -1490,7 +1501,6 @@ class OrderController extends Controller
                 'label_url' => '',
                 'invoice_url' => '',
                 'is_canceled' => 0,
-                'tracking_id' => '',
                 'url' => ''
             ];
             OrderTracking::create($order_tracking_data);

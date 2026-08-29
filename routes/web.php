@@ -211,7 +211,10 @@ Route::middleware(['CheckInstallation'])->group(function () {
     Route::post('admin/webhook/paystack_webhook', [Webhook::class, 'paystack_webhook'])->name('admin.paystack_webhook');
     Route::post('admin/webhook/stripe_webhook', [Webhook::class, 'stripe_webhook'])->name('admin.stripe_webhook');
     Route::post('admin/webhook/phonepe_webhook', [Webhook::class, 'phonepe_webhook'])->name('admin.phonepe_webhook');
-    Route::get('admin/webhook/spr_webhook', [Webhook::class, 'spr_webhook'])->name('admin.spr_webhook');
+    // Shiprocket delivers this webhook as a POST with a JSON body (see Webhook::spr_webhook() for the
+    // token-verification + tracking-sync logic that used to be entirely missing here) - was registered as
+    // GET, same bug class as the three payment gateways above; a real call would have 405'd.
+    Route::post('admin/webhook/spr_webhook', [Webhook::class, 'spr_webhook'])->name('admin.spr_webhook');
 });
 // Phase 2 (docs/PHASE_2_IDOR_AUDIT.md, Tasks 8-9): this used to duplicate
 // admin_routes.php:541's route (identical name, URI, and method), registered outside any auth group. Since
