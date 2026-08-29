@@ -28,8 +28,8 @@ opposite of both, confirmed with the user before any implementation work):
 
 | Status | Count |
 |---|---|
-| IMPLEMENTED (incl. FIXED/BROKEN→FIXED this session) | 64 |
-| PARTIALLY_IMPLEMENTED | 6 |
+| IMPLEMENTED (incl. FIXED/BROKEN→FIXED this session) | 65 |
+| PARTIALLY_IMPLEMENTED | 5 |
 | MISSING | 12 |
 | NOT_APPLICABLE | 18 |
 | NEEDS VERIFICATION (flagged for a manual spot-check, not a code-level gap) | 3 |
@@ -130,7 +130,7 @@ double-counted here.)
 | Tooltips in Admin Panel | **MISSING** (near-total) | Only 1 admin form file has any tooltip markup found; not a systematic UX layer. | — | Implement selectively on complex fields (P2) |
 | Tooltips in Seller Panel | **MISSING** | Same finding. | — | Implement selectively (P2) |
 | Payment gateway input validation | PARTIALLY_IMPLEMENTED | No dedicated gateway classes found; credentials are stored as generic `Setting` rows and read directly by `OrderService`/`CartController`/`PromoCodeService`/`WalletService` — validation exists at the request-input level (Laravel `Validator`) but gateway-*credential* format validation (e.g. key shape) was not found. | `app/Http/Controllers/Admin/SettingController.php` | Add credential-format validation on save (P1, security-adjacent) |
-| Payment gateway sanitization | PARTIALLY_IMPLEMENTED | Standard Laravel escaping applies (no raw HTML echo of gateway responses found), but no explicit sanitization layer for gateway *callback* payloads specifically was found — flagged for the payment-callback security pass (see item 12). | — | Audit callback handlers (P0, security) |
+| Payment gateway sanitization | **IMPLEMENTED (fixed this session)** | The real gap here was never HTML-escaping (gateway responses are never echoed as HTML) — it was that callback/webhook payloads were processed with no cryptographic verification at all, so a forged POST from anyone could trigger the same side effects a real gateway callback would. Fixed as part of the payment-webhook security pass (see Fix log item 3): real HMAC/SDK signature verification now rejects any unsigned or forged payload before it can touch the database, which is the correct "sanitization" control for a callback endpoint. | `app/Http/Controllers/Admin/Webhook.php`, `tests/Feature/PaymentWebhookSecurityTest.php` | None |
 | General bug fixes/performance improvements | NOT_APPLICABLE | Not independently auditable. | — | None |
 
 ## v1.0.9
@@ -268,8 +268,9 @@ double-counted here.)
 ## Implementation priority (P0 → P2, per user-approved plan)
 
 **P0 (security, do first):**
-- Fix the language-file-upload RCE (`savelabel()` × 2) — replace with real JSON parsing/validation.
-- Payment gateway callback/webhook security audit (item 12).
+- ~~Fix the language-file-upload RCE (`savelabel()` × 2)~~ — **done**, see Fix log item 2.
+- ~~Payment gateway callback/webhook security audit (item 12)~~ — **done**, see Fix log item 3 and the
+  "Payment gateway sanitization" row above.
 
 **P1 (changelog features with real user/business impact):**
 - ~~Interactive address map with lat/lng (v1.1.2 — explicitly required)~~ — **done**, Leaflet/OpenStreetMap
