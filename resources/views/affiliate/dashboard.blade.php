@@ -92,6 +92,32 @@
                                 </div>
                             </div>
                         </div>
+
+                        <hr class="my-4">
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ labels('admin_labels.generate_a_product_link', 'Generate a Product Link') }}</label>
+                            <div class="position-relative">
+                                <input type="text" class="form-control" id="product_search_input"
+                                    placeholder="{{ labels('admin_labels.search_a_product', 'Search a product…') }}"
+                                    autocomplete="off">
+                                <div id="product_search_results" class="list-group position-absolute w-100"
+                                    style="z-index: 1000; max-height: 240px; overflow-y: auto; display: none;">
+                                </div>
+                            </div>
+                            <input type="hidden" id="selected_product_id">
+                            <div id="selected_product_preview" class="mt-2" style="display: none;">
+                                <span class="badge bg-light text-dark border p-2" id="selected_product_name"></span>
+                                <button class="btn btn-sm btn-primary ms-2" type="button" id="generate_product_link_btn">
+                                    {{ labels('admin_labels.generate_link', 'Generate Link') }}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label">{{ labels('admin_labels.your_product_links', 'Your Product Links') }}</label>
+                            <div id="product_links_list"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="copyright mt-4">
@@ -118,6 +144,108 @@
                 });
             });
         }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                iziToast.success({ title: 'Copied', message: 'Link copied to clipboard', position: 'topRight' });
+            });
+        }
+
+        var csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        var searchTimeout = null;
+
+        document.getElementById('product_search_input').addEventListener('input', function() {
+            var query = this.value.trim();
+            var resultsBox = document.getElementById('product_search_results');
+            clearTimeout(searchTimeout);
+
+            if (query.length < 2) {
+                resultsBox.style.display = 'none';
+                return;
+            }
+
+            searchTimeout = setTimeout(function() {
+                fetch('{{ route('affiliate.products.search') }}?search=' + encodeURIComponent(query))
+                    .then(res => res.json())
+                    .then(res => {
+                        resultsBox.innerHTML = '';
+                        if (res.error || !res.data.length) {
+                            resultsBox.style.display = 'none';
+                            return;
+                        }
+                        res.data.forEach(function(product) {
+                            var item = document.createElement('a');
+                            item.href = '#';
+                            item.className = 'list-group-item list-group-item-action';
+                            item.textContent = product.name;
+                            item.onclick = function(e) {
+                                e.preventDefault();
+                                document.getElementById('selected_product_id').value = product.id;
+                                document.getElementById('selected_product_name').textContent = product.name;
+                                document.getElementById('selected_product_preview').style.display = 'block';
+                                document.getElementById('product_search_input').value = product.name;
+                                resultsBox.style.display = 'none';
+                            };
+                            resultsBox.appendChild(item);
+                        });
+                        resultsBox.style.display = 'block';
+                    });
+            }, 300);
+        });
+
+        document.getElementById('generate_product_link_btn').addEventListener('click', function() {
+            var productId = document.getElementById('selected_product_id').value;
+            if (!productId) {
+                return;
+            }
+
+            fetch('{{ route('affiliate.links.store') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ target_type: 'product', target_id: productId }),
+                })
+                .then(res => res.json())
+                .then(res => {
+                    if (res.error) {
+                        iziToast.error({ title: 'Error', message: res.message, position: 'topRight' });
+                        return;
+                    }
+                    iziToast.success({ title: 'Success', message: res.message, position: 'topRight' });
+                    document.getElementById('product_search_input').value = '';
+                    document.getElementById('selected_product_preview').style.display = 'none';
+                    loadProductLinks();
+                });
+        });
+
+        function loadProductLinks() {
+            fetch('{{ route('affiliate.links.list') }}')
+                .then(res => res.json())
+                .then(res => {
+                    var container = document.getElementById('product_links_list');
+                    var productLinks = (res.data || []).filter(l => l.target_type === 'product');
+
+                    if (!productLinks.length) {
+                        container.innerHTML = '<p class="text-muted small mb-0">{{ labels('admin_labels.no_product_links_yet', 'No product links generated yet.') }}</p>';
+                        return;
+                    }
+
+                    var baseUrl = '{{ url('/r') }}/';
+                    container.innerHTML = productLinks.map(function(link) {
+                        var url = baseUrl + link.code;
+                        return '<div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">' +
+                            '<span class="small text-truncate me-2">' + url + '</span>' +
+                            '<button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard(\'' + url + '\')">' +
+                            '{{ labels('admin_labels.copy', 'Copy') }}</button>' +
+                            '</div>';
+                    }).join('');
+                });
+        }
+
+        loadProductLinks();
     </script>
 </body>
 

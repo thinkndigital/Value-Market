@@ -182,6 +182,11 @@ Route::middleware(['CheckInstallation'])->group(function () {
         Route::post('affiliate/links', [AffiliateController::class, 'store'])->name('affiliate.links.store');
         Route::get('affiliate/dashboard', [AffiliateController::class, 'dashboard'])->name('affiliate.dashboard');
 
+        // Changelog v1.0.7 ("Generate unique product referral links"): a minimal product search for the
+        // affiliate portal's own link-generation widget - this repo has no customer-facing web storefront
+        // to browse products from otherwise.
+        Route::get('affiliate/products/search', [AffiliateController::class, 'searchProducts'])->name('affiliate.products.search');
+
         // Changelog v1.0.7 ("Admin can process affiliate payouts"): affiliate-facing withdrawal
         // self-service, mirroring Seller\PaymentRequestController's pattern.
         Route::post('affiliate/withdrawal', [AffiliateController::class, 'requestWithdrawal'])->name('affiliate.withdrawal.request')->middleware(['demo_restriction']);

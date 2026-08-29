@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\AffiliateLink;
 use App\Models\PaymentRequest;
+use App\Models\Product;
 use App\Models\User;
 use App\Services\AffiliateService;
+use App\Services\MediaService;
 use App\Services\WalletService;
 use App\Traits\HandlesValidation;
 use Illuminate\Http\Request;
@@ -46,6 +48,32 @@ class AffiliateController extends Controller
         }
 
         return response()->json(['error' => false, 'message' => labels('affiliate.link_created', 'Affiliate Link Created Successfully'), 'data' => $link]);
+    }
+
+    /**
+     * docs/CHANGELOG_FEATURE_AUDIT.md (v1.0.7, "Generate unique product referral links"): the backend for
+     * this already fully existed (AffiliateService::createLink() already accepts target_type='product' and
+     * store() above already routes it through) - what was missing was purely a way for an affiliate to find
+     * a product id to generate a link for, since this repo has no customer-facing web storefront to browse
+     * from. A minimal name-search endpoint for the affiliate portal's own "Generate a product link" widget.
+     */
+    public function searchProducts(Request $request)
+    {
+        $search = trim((string) $request->input('search', ''));
+
+        $products = Product::where('status', 1)
+            ->when($search !== '', fn($query) => $query->where('name->en', 'like', '%' . $search . '%'))
+            ->orderByDesc('id')
+            ->limit(20)
+            ->get(['id', 'name', 'image']);
+
+        $data = $products->map(fn($product) => [
+            'id' => $product->id,
+            'name' => json_decode($product->name, true)['en'] ?? '',
+            'image' => app(MediaService::class)->getMediaImageUrl($product->image),
+        ]);
+
+        return response()->json(['error' => false, 'data' => $data]);
     }
 
     /**

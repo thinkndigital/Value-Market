@@ -28,8 +28,8 @@ opposite of both, confirmed with the user before any implementation work):
 
 | Status | Count |
 |---|---|
-| IMPLEMENTED (incl. FIXED/BROKEN→FIXED this session) | 60 |
-| PARTIALLY_IMPLEMENTED | 8 |
+| IMPLEMENTED (incl. FIXED/BROKEN→FIXED this session) | 61 |
+| PARTIALLY_IMPLEMENTED | 7 |
 | MISSING | 15 |
 | NOT_APPLICABLE | 17 |
 | NEEDS VERIFICATION (flagged for a manual spot-check, not a code-level gap) | 3 |
@@ -113,7 +113,7 @@ double-counted here.)
 | Affiliate dashboard | IMPLEMENTED | `AffiliateController::dashboard()` (self-service, built this session) shows link, clicks, conversions, approved/pending commission. | `app/Http/Controllers/AffiliateController.php::dashboard()` | None |
 | Affiliate earnings | IMPLEMENTED | Same dashboard shows approved/pending commission totals from real `ReferralConversion` data. | Same | None |
 | Affiliate charts/metrics | **MISSING** | Dashboard shows numeric stat cards, not charts/trend graphs. | — | Implement (P2) |
-| Generate unique product referral links | PARTIALLY_IMPLEMENTED | `AffiliateLink` supports `target_type: platform/store/category/product` with a unique `code` — the model supports product-level links, but the self-service dashboard built this session only auto-creates a **platform**-level link; there is no UI for an affiliate to generate a product-specific link. | `app/Models/AffiliateLink.php`, `app/Services/AffiliateService.php::createLink()` | Add product-link generation UI (P1) |
+| Generate unique product referral links | **IMPLEMENTED (fixed this session)** | The backend already fully supported this — `AffiliateService::createLink()`/`AffiliateController::store()` already accept `target_type=product`. What was genuinely missing was purely the UI: any way for an affiliate to find a product id to generate a link for, since this repo has no customer-facing web storefront to browse from. Added `AffiliateController::searchProducts()` (a minimal active-products name search) and a "Generate a Product Link" widget on the affiliate dashboard (search → select → generate → copy), plus a live list of the affiliate's own product links. | `app/Http/Controllers/AffiliateController.php`, `resources/views/affiliate/dashboard.blade.php`, `tests/Feature/AffiliateProductLinkTest.php` (4 tests) | None |
 | Share referral links | IMPLEMENTED | Dashboard has a copy-to-clipboard share button for the generated link. | `resources/views/affiliate/dashboard.blade.php` | None |
 | Commission settlement | PARTIALLY_IMPLEMENTED | Commission approval is **automatic** (order-lifecycle-driven via `approveConversionsForOrder()`/`reverseConversionsForOrder()`) — there is no manual admin "Settle Commission" action distinct from the automatic flow. The real eShop Plus demo shows a manual settle button; this codebase's automatic-only design is arguably *safer* (no manual-override IDOR/fraud surface) but doesn't match the changelog literally. | `app/Services/AffiliateService.php` | Add manual admin settlement view/action for edge cases (P1) |
 | Commission becomes eligible after successful delivery AND return window | IMPLEMENTED | `approveConversionsForOrder()`/`reverseConversionsForOrder()` are called from the order lifecycle (delivery confirmation triggers approval; a return within the window triggers reversal) — confirmed via code comment referencing exactly this rule. | `app/Services/AffiliateService.php:158-198` | Verify wiring at every order-status transition point (P0 spot-check) |
@@ -284,8 +284,9 @@ double-counted here.)
   stability" row above. Chunking for very large files remains a P2 follow-up.
 - ~~Shiprocket depth audit + hardening + docs (v1.1.0)~~ — **done**, see Fix log item 4 and
   `docs/SHIPROCKET_INTEGRATION.md`.
-- Affiliate: product-level referral link generation (v1.0.7). ~~Payout/withdrawal flow~~ — **done**, see the
-  "Admin can process affiliate payouts" row above.
+- ~~Affiliate: product-level referral link generation (v1.0.7)~~ — **done**, see the "Generate unique
+  product referral links" row above. ~~Payout/withdrawal flow~~ — **done**, see the "Admin can process
+  affiliate payouts" row above.
 - ~~PWA support (v1.0.3)~~ — reclassified **NOT_APPLICABLE**: dead manifest/service-worker scaffolding
   exists but is rendered by no route anywhere; no live customer web storefront exists in this repo for a
   PWA to attach to (see that row's evidence above).
