@@ -9,6 +9,7 @@ use App\Models\Zipcode;
 use App\Models\Zone;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use League\Csv\Reader;
 use App\Services\TranslationService;
@@ -349,7 +350,7 @@ class AreaController extends Controller
             return response()->json(['error' => 'true', 'message' => labels('admin_labels.invalid_file_format', 'Invalid File Format')]);
         }
         $locationType = $request->location_type;
-        $csv = $_FILES['upload_file']['tmp_name'];
+        $csv = $uploadFile->getRealPath();
         $temp = 0;
         $temp1 = 0;
         $handle = fopen($csv, "r");
@@ -389,17 +390,24 @@ class AreaController extends Controller
             }
             fclose($handle);
             $handle = fopen($csv, "r");
-            while (($row = fgetcsv($handle, 10000, ",")) != FALSE) {
-                if ($temp1 !== 0) {
-                    $data = [
-                        'zipcode' => $row[0],
-                        'city_id' => $row[1],
-                        'minimum_free_delivery_order_amount' => $row[2],
-                        'delivery_charges' => $row[3],
-                    ];
-                    Zipcode::create($data);
-                }
-                $temp1++;
+            try {
+                DB::transaction(function () use ($handle, &$temp1) {
+                    while (($row = fgetcsv($handle, 10000, ",")) != FALSE) {
+                        if ($temp1 !== 0) {
+                            $data = [
+                                'zipcode' => $row[0],
+                                'city_id' => $row[1],
+                                'minimum_free_delivery_order_amount' => $row[2],
+                                'delivery_charges' => $row[3],
+                            ];
+                            Zipcode::create($data);
+                        }
+                        $temp1++;
+                    }
+                });
+            } catch (\Throwable $e) {
+                fclose($handle);
+                return response()->json(['error' => 'true', 'message' => $e->getMessage()]);
             }
             fclose($handle);
             return response()->json(['error' => 'false', 'message' => labels('admin_labels.zipcode_uploaded_successfully', 'Zipcode uploaded successfully')]);
@@ -425,26 +433,36 @@ class AreaController extends Controller
             }
             fclose($handle);
             $handle = fopen($csv, "r");
-            while (($row = fgetcsv($handle, 10000, ",")) !== FALSE) {
-                if ($temp1 !== 0) {
-                    $cityName = trim($row[0]);
-                    $cityName = stripslashes($cityName);
+            DB::beginTransaction();
+            try {
+                while (($row = fgetcsv($handle, 10000, ",")) !== FALSE) {
+                    if ($temp1 !== 0) {
+                        $cityName = trim($row[0]);
+                        $cityName = stripslashes($cityName);
 
-                    $decodedCityName = json_decode($cityName, true);
+                        $decodedCityName = json_decode($cityName, true);
 
-                    if (json_last_error() !== JSON_ERROR_NONE) {
-                        return response()->json(['error' => 'true', 'message' => "Invalid JSON format in city name at row {$temp1}"]);
+                        if (json_last_error() !== JSON_ERROR_NONE) {
+                            DB::rollBack();
+                            fclose($handle);
+                            return response()->json(['error' => 'true', 'message' => "Invalid JSON format in city name at row {$temp1}"]);
+                        }
+
+                        $data = [
+                            'name' => json_encode($decodedCityName, JSON_UNESCAPED_UNICODE),
+                            'minimum_free_delivery_order_amount' => $row[1] ?? null,
+                            'delivery_charges' => $row[2] ?? null,
+                        ];
+
+                        City::create($data);
                     }
-
-                    $data = [
-                        'name' => json_encode($decodedCityName, JSON_UNESCAPED_UNICODE),
-                        'minimum_free_delivery_order_amount' => $row[1] ?? null,
-                        'delivery_charges' => $row[2] ?? null,
-                    ];
-
-                    City::create($data);
+                    $temp1++;
                 }
-                $temp1++;
+                DB::commit();
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                fclose($handle);
+                return response()->json(['error' => 'true', 'message' => $e->getMessage()]);
             }
             fclose($handle);
             return response()->json(['error' => 'false', 'message' => labels('admin_labels.city_uploaded_successfully', 'City uploaded successfully!')]);
@@ -494,36 +512,44 @@ class AreaController extends Controller
                 if (!empty($errors)) {
                     return response()->json(['errors' => $errors], 422);
                 }
-                foreach ($zoneRows as $name => $groups) {
-                    $zipcodeIds = collect($groups['zipcode_group'])->pluck('serviceable_zipcode_id')->implode(',');
-                    $cityIds = collect($groups['city_group'])->pluck('serviceable_city_id')->implode(',');
+                DB::beginTransaction();
+                try {
+                    foreach ($zoneRows as $name => $groups) {
+                        $zipcodeIds = collect($groups['zipcode_group'])->pluck('serviceable_zipcode_id')->implode(',');
+                        $cityIds = collect($groups['city_group'])->pluck('serviceable_city_id')->implode(',');
 
-                    $existingZone = Zone::where('serviceable_zipcode_ids', $zipcodeIds)
-                        ->where('serviceable_city_ids', $cityIds)
-                        ->first();
+                        $existingZone = Zone::where('serviceable_zipcode_ids', $zipcodeIds)
+                            ->where('serviceable_city_ids', $cityIds)
+                            ->first();
 
-                    if ($existingZone) {
-                        return response()->json([
-                            'error' => true,
-                            'message' => 'A zone with the same serviceable cities and zipcodes already exists as ' . app(TranslationService::class)->getDynamicTranslation(Zone::class, 'name', $existingZone->id, $languageCode),
-                        ]);
-                    }
+                        if ($existingZone) {
+                            DB::rollBack();
+                            return response()->json([
+                                'error' => true,
+                                'message' => 'A zone with the same serviceable cities and zipcodes already exists as ' . app(TranslationService::class)->getDynamicTranslation(Zone::class, 'name', $existingZone->id, $languageCode),
+                            ]);
+                        }
 
-                    $data = [
-                        'name' => $name,
-                        'serviceable_zipcode_ids' => $zipcodeIds,
-                        'serviceable_city_ids' => $cityIds,
-                        'status' => 1,
-                    ];
-                    Zone::create($data);
-                    foreach ($groups['zipcode_group'] as $zipcode) {
-                        Zipcode::where('id', $zipcode['serviceable_zipcode_id'])
-                            ->update(['delivery_charges' => $zipcode['zipcode_delivery_charge']]);
+                        $data = [
+                            'name' => $name,
+                            'serviceable_zipcode_ids' => $zipcodeIds,
+                            'serviceable_city_ids' => $cityIds,
+                            'status' => 1,
+                        ];
+                        Zone::create($data);
+                        foreach ($groups['zipcode_group'] as $zipcode) {
+                            Zipcode::where('id', $zipcode['serviceable_zipcode_id'])
+                                ->update(['delivery_charges' => $zipcode['zipcode_delivery_charge']]);
+                        }
+                        foreach ($groups['city_group'] as $city) {
+                            City::where('id', $city['serviceable_city_id'])
+                                ->update(['delivery_charges' => $city['city_delivery_charge']]);
+                        }
                     }
-                    foreach ($groups['city_group'] as $city) {
-                        City::where('id', $city['serviceable_city_id'])
-                            ->update(['delivery_charges' => $city['city_delivery_charge']]);
-                    }
+                    DB::commit();
+                } catch (\Throwable $e) {
+                    DB::rollBack();
+                    return response()->json(['error' => 'true', 'message' => $e->getMessage()]);
                 }
 
                 return response()->json(['error' => 'false', 'message' => labels('admin_labels.zones_uploaded_successfully', 'Zones uploaded successfully!')]);
@@ -567,33 +593,45 @@ class AreaController extends Controller
             }
             fclose($handle);
             $handle = fopen($csv, "r");
-            while (($row = fgetcsv($handle, 10000, ",")) != FALSE) {
-                if ($temp1 != 0) {
-                    $zipcodeId = $row[0];
-                    $zipcode = fetchDetails(Zipcode::class, ['id' => $zipcodeId], '*');
-                    if (!$zipcode->isEmpty()) {
-                        if (!empty($row[1])) {
-                            $data['zipcode'] = $row[1];
-                            $data['city_id'] = $row[2];
-                            $data['minimum_free_delivery_order_amount'] = $row[3];
-                            $data['delivery_charges'] = $row[4];
-                            $existing_zipcode = Zipcode::where(['city_id' => $row[1], 'zipcode' => $row[0]])->exists();
-                            $data['zipcode'] = $row[1];
-                            if ($existing_zipcode) {
-                                return response()->json(['error' => 'true', 'message' => "Zipcode '{$data['zipcode']}' already exists. Please provide another zipcode."]);
+            DB::beginTransaction();
+            try {
+                while (($row = fgetcsv($handle, 10000, ",")) != FALSE) {
+                    if ($temp1 != 0) {
+                        $zipcodeId = $row[0];
+                        $zipcode = fetchDetails(Zipcode::class, ['id' => $zipcodeId], '*');
+                        if (!$zipcode->isEmpty()) {
+                            if (!empty($row[1])) {
+                                $data['zipcode'] = $row[1];
+                                $data['city_id'] = $row[2];
+                                $data['minimum_free_delivery_order_amount'] = $row[3];
+                                $data['delivery_charges'] = $row[4];
+                                $existing_zipcode = Zipcode::where(['city_id' => $row[1], 'zipcode' => $row[0]])->exists();
+                                $data['zipcode'] = $row[1];
+                                if ($existing_zipcode) {
+                                    DB::rollBack();
+                                    fclose($handle);
+                                    return response()->json(['error' => 'true', 'message' => "Zipcode '{$data['zipcode']}' already exists. Please provide another zipcode."]);
+                                }
+                            } else {
+                                $data['zipcode'] = $zipcode[0]['zipcode'];
+                                $data['city_id'] = $zipcode[0]['city_id'];
+                                $data['minimum_free_delivery_order_amount'] = $zipcode[0]['minimum_free_delivery_order_amount'];
+                                $data['delivery_charges'] = $zipcode[0]['delivery_charges'];
                             }
+                            Zipcode::where('id', $zipcodeId)->update($data);
                         } else {
-                            $data['zipcode'] = $zipcode[0]['zipcode'];
-                            $data['city_id'] = $zipcode[0]['city_id'];
-                            $data['minimum_free_delivery_order_amount'] = $zipcode[0]['minimum_free_delivery_order_amount'];
-                            $data['delivery_charges'] = $zipcode[0]['delivery_charges'];
+                            DB::rollBack();
+                            fclose($handle);
+                            return response()->json(['error' => 'true', 'message' => 'Zipcode id: ' . $zipcodeId . ' not exist!']);
                         }
-                        Zipcode::where('id', $zipcodeId)->update($data);
-                    } else {
-                        return response()->json(['error' => 'true', 'message' => 'Zipcode id: ' . $zipcodeId . ' not exist!']);
                     }
+                    $temp1++;
                 }
-                $temp1++;
+                DB::commit();
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                fclose($handle);
+                return response()->json(['error' => 'true', 'message' => $e->getMessage()]);
             }
             fclose($handle);
             return response()->json([
@@ -633,32 +671,42 @@ class AreaController extends Controller
             }
             fclose($handle);
             $handle = fopen($csv, "r");
-            while (($row = fgetcsv($handle, 10000, ",")) !== FALSE) {
-                if ($temp1 !== 0) {
-                    $cityId = $row[0];
-                    $city = fetchDetails(City::class, ['id' => $cityId], '*');
+            DB::beginTransaction();
+            try {
+                while (($row = fgetcsv($handle, 10000, ",")) !== FALSE) {
+                    if ($temp1 !== 0) {
+                        $cityId = $row[0];
+                        $city = fetchDetails(City::class, ['id' => $cityId], '*');
 
-                    if (!$city->isEmpty()) {
-                        $data = [];
-                        if (!empty($row[1])) {
-                            $cityName = trim($row[1]);
-                            $cityName = stripslashes($cityName);
+                        if (!$city->isEmpty()) {
+                            $data = [];
+                            if (!empty($row[1])) {
+                                $cityName = trim($row[1]);
+                                $cityName = stripslashes($cityName);
 
-                            $decodedCityName = json_decode($cityName, true);
+                                $decodedCityName = json_decode($cityName, true);
 
-                            if (json_last_error() !== JSON_ERROR_NONE) {
-                                return response()->json(['error' => 'true', 'message' => "Invalid JSON format in name at row {$temp1}"]);
+                                if (json_last_error() !== JSON_ERROR_NONE) {
+                                    DB::rollBack();
+                                    fclose($handle);
+                                    return response()->json(['error' => 'true', 'message' => "Invalid JSON format in name at row {$temp1}"]);
+                                }
+
+                                $data['name'] = json_encode($decodedCityName, JSON_UNESCAPED_UNICODE);
                             }
+                            $data['minimum_free_delivery_order_amount'] = !empty($row[2]) ? $row[2] : '';
+                            $data['delivery_charges'] = !empty($row[3]) ? $row[3] : '';
 
-                            $data['name'] = json_encode($decodedCityName, JSON_UNESCAPED_UNICODE);
+                            City::where('id', $cityId)->update($data);
                         }
-                        $data['minimum_free_delivery_order_amount'] = !empty($row[2]) ? $row[2] : '';
-                        $data['delivery_charges'] = !empty($row[3]) ? $row[3] : '';
-
-                        City::where('id', $cityId)->update($data);
                     }
+                    $temp1++;
                 }
-                $temp1++;
+                DB::commit();
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                fclose($handle);
+                return response()->json(['error' => 'true', 'message' => $e->getMessage()]);
             }
             fclose($handle);
             return response()->json([
@@ -683,78 +731,87 @@ class AreaController extends Controller
                 $zipcodeGroup = [];
                 $cityGroup = [];
 
-                foreach ($records as $index => $row) {
-                    // Validate each row
-                    $rowValidator = Validator::make($row, [
-                        'id' => 'required|integer|exists:zones,id',
-                        'name' => 'nullable|string',
-                        'serviceable_zipcode_id' => 'required|integer',
-                        'zipcode_delivery_charge' => 'required|numeric',
-                        'serviceable_city_id' => 'required|integer',
-                        'city_delivery_charge' => 'required|numeric',
-                    ]);
+                DB::beginTransaction();
+                try {
+                    foreach ($records as $index => $row) {
+                        // Validate each row
+                        $rowValidator = Validator::make($row, [
+                            'id' => 'required|integer|exists:zones,id',
+                            'name' => 'nullable|string',
+                            'serviceable_zipcode_id' => 'required|integer',
+                            'zipcode_delivery_charge' => 'required|numeric',
+                            'serviceable_city_id' => 'required|integer',
+                            'city_delivery_charge' => 'required|numeric',
+                        ]);
 
-                    if ($rowValidator->fails()) {
-                        $errors[] = [
-                            'row' => $index + 1,
-                            'errors' => $rowValidator->errors()->all(),
+                        if ($rowValidator->fails()) {
+                            $errors[] = [
+                                'row' => $index + 1,
+                                'errors' => $rowValidator->errors()->all(),
+                            ];
+                            continue;
+                        }
+                        $zoneData = Zone::find($row['id']);
+
+                        if (!$zoneData) {
+                            $errors[] = [
+                                'row' => $index + 1,
+                                'errors' => ['Zone with ID ' . $row['id'] . ' not found.'],
+                            ];
+                            continue;
+                        }
+                        if (!empty($row['name'])) {
+                            $zoneData->name = $row['name'];
+                        }
+                        $zipcodeGroup[] = [
+                            'serviceable_zipcode_id' => $row['serviceable_zipcode_id'],
+                            'zipcode_delivery_charge' => $row['zipcode_delivery_charge'],
                         ];
-                        continue;
-                    }
-                    $zoneData = Zone::find($row['id']);
 
-                    if (!$zoneData) {
-                        $errors[] = [
-                            'row' => $index + 1,
-                            'errors' => ['Zone with ID ' . $row['id'] . ' not found.'],
+                        $cityGroup[] = [
+                            'serviceable_city_id' => $row['serviceable_city_id'],
+                            'city_delivery_charge' => $row['city_delivery_charge'],
                         ];
-                        continue;
+                        Zipcode::where('id', $row['serviceable_zipcode_id'])
+                            ->update(['delivery_charges' => $row['zipcode_delivery_charge']]);
+                        City::where('id', $row['serviceable_city_id'])
+                            ->update(['delivery_charges' => $row['city_delivery_charge']]);
                     }
-                    if (!empty($row['name'])) {
-                        $zoneData->name = $row['name'];
+                    if (!empty($errors)) {
+                        DB::rollBack();
+                        return response()->json(['errors' => $errors], 422);
                     }
-                    $zipcodeGroup[] = [
-                        'serviceable_zipcode_id' => $row['serviceable_zipcode_id'],
-                        'zipcode_delivery_charge' => $row['zipcode_delivery_charge'],
-                    ];
+                    $serviceableZipcodeIds = collect($zipcodeGroup)->pluck('serviceable_zipcode_id')->implode(',');
+                    $serviceableCityIds = collect($cityGroup)->pluck('serviceable_city_id')->implode(',');
+                    if ($zoneData->serviceable_zipcode_ids == $serviceableZipcodeIds && $zoneData->serviceable_city_ids == $serviceableCityIds) {
+                        $zoneData->update([
+                            'name' => $zoneData->name,
+                            'serviceable_zipcode_ids' => $serviceableZipcodeIds,
+                            'serviceable_city_ids' => $serviceableCityIds,
+                        ]);
+                    } else {
+                        $existingZone = Zone::where('serviceable_zipcode_ids', $serviceableZipcodeIds)
+                            ->where('serviceable_city_ids', $serviceableCityIds)
+                            ->where('id', '!=', $zoneData->id)
+                            ->first();
 
-                    $cityGroup[] = [
-                        'serviceable_city_id' => $row['serviceable_city_id'],
-                        'city_delivery_charge' => $row['city_delivery_charge'],
-                    ];
-                    Zipcode::where('id', $row['serviceable_zipcode_id'])
-                        ->update(['delivery_charges' => $row['zipcode_delivery_charge']]);
-                    City::where('id', $row['serviceable_city_id'])
-                        ->update(['delivery_charges' => $row['city_delivery_charge']]);
-                }
-                if (!empty($errors)) {
-                    return response()->json(['errors' => $errors], 422);
-                }
-                $serviceableZipcodeIds = collect($zipcodeGroup)->pluck('serviceable_zipcode_id')->implode(',');
-                $serviceableCityIds = collect($cityGroup)->pluck('serviceable_city_id')->implode(',');
-                if ($zoneData->serviceable_zipcode_ids == $serviceableZipcodeIds && $zoneData->serviceable_city_ids == $serviceableCityIds) {
-                    $zoneData->update([
-                        'name' => $zoneData->name,
-                        'serviceable_zipcode_ids' => $serviceableZipcodeIds,
-                        'serviceable_city_ids' => $serviceableCityIds,
-                    ]);
-                } else {
-                    $existingZone = Zone::where('serviceable_zipcode_ids', $serviceableZipcodeIds)
-                        ->where('serviceable_city_ids', $serviceableCityIds)
-                        ->where('id', '!=', $zoneData->id)
-                        ->first();
-
-                    if ($existingZone) {
-                        return response()->json([
-                            'error' => true,
-                            'message' => 'A zone with the same serviceable cities and zipcodes already exists as ' . app(TranslationService::class)->getDynamicTranslation(Zone::class, 'name', $existingZone->id, $languageCode),
+                        if ($existingZone) {
+                            DB::rollBack();
+                            return response()->json([
+                                'error' => true,
+                                'message' => 'A zone with the same serviceable cities and zipcodes already exists as ' . app(TranslationService::class)->getDynamicTranslation(Zone::class, 'name', $existingZone->id, $languageCode),
+                            ]);
+                        }
+                        $zoneData->update([
+                            'name' => !empty($row['name']) ? $row['name'] : $zoneData->name,
+                            'serviceable_zipcode_ids' => $serviceableZipcodeIds,
+                            'serviceable_city_ids' => $serviceableCityIds,
                         ]);
                     }
-                    $zoneData->update([
-                        'name' => !empty($row['name']) ? $row['name'] : $zoneData->name,
-                        'serviceable_zipcode_ids' => $serviceableZipcodeIds,
-                        'serviceable_city_ids' => $serviceableCityIds,
-                    ]);
+                    DB::commit();
+                } catch (\Throwable $e) {
+                    DB::rollBack();
+                    return response()->json(['error' => 'true', 'message' => $e->getMessage()]);
                 }
                 return response()->json([
                     'error' => 'false',

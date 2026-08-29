@@ -7,6 +7,7 @@ use App\Models\Language;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
 use App\Services\TranslationService;
 use App\Traits\HandlesValidation;
 use App\Services\StoreService;
@@ -230,7 +231,7 @@ class BrandController extends Controller
             return response()->json(['error' => 'true', 'message' => labels('admin_labels.invalid_file_format', 'Invalid File Format')]);
         }
 
-        $csv = $_FILES['upload_file']['tmp_name'];
+        $csv = $uploadFile->getRealPath();
         $temp = 0;
         $temp1 = 0;
         $handle = fopen($csv, "r");
@@ -272,24 +273,31 @@ class BrandController extends Controller
             fclose($handle);
             $handle = fopen($csv, "r");
 
-            while (($row = fgetcsv($handle, 10000, ",")) !== FALSE) {
-                if ($temp1 !== 0) {
-                    $brandName = trim($row[0]);
-                    $brandName = stripslashes($brandName);
+            try {
+                DB::transaction(function () use ($handle, &$temp1) {
+                    while (($row = fgetcsv($handle, 10000, ",")) !== FALSE) {
+                        if ($temp1 !== 0) {
+                            $brandName = trim($row[0]);
+                            $brandName = stripslashes($brandName);
 
-                    $decodedBrandName = json_decode($brandName, true);
+                            $decodedBrandName = json_decode($brandName, true);
 
-                    $data = [
-                        'name' => json_encode($decodedBrandName, JSON_UNESCAPED_UNICODE),
-                        'slug' => generateSlug($decodedBrandName['en'] ?? '', 'brands'),
-                        'image' => $row[1],
-                        'status' => 1,
-                        'store_id' => $row[2],
-                    ];
+                            $data = [
+                                'name' => json_encode($decodedBrandName, JSON_UNESCAPED_UNICODE),
+                                'slug' => generateSlug($decodedBrandName['en'] ?? '', 'brands'),
+                                'image' => $row[1],
+                                'status' => 1,
+                                'store_id' => $row[2],
+                            ];
 
-                    Brand::create($data);
-                }
-                $temp1++;
+                            Brand::create($data);
+                        }
+                        $temp1++;
+                    }
+                });
+            } catch (\Throwable $e) {
+                fclose($handle);
+                return response()->json(['error' => 'true', 'message' => $e->getMessage()]);
             }
 
             fclose($handle);
@@ -308,37 +316,47 @@ class BrandController extends Controller
             }
             fclose($handle);
             $handle = fopen($csv, "r");
-            while (($row = fgetcsv($handle, 10000, ",")) !== FALSE) {
-                if ($temp1 !== 0) {
-                    $brandId = $row[0];
-                    $brands = fetchDetails(Brand::class, ['id' => $brandId], '*');
+            DB::beginTransaction();
+            try {
+                while (($row = fgetcsv($handle, 10000, ",")) !== FALSE) {
+                    if ($temp1 !== 0) {
+                        $brandId = $row[0];
+                        $brands = fetchDetails(Brand::class, ['id' => $brandId], '*');
 
-                    if (!$brands->isEmpty()) {
-                        $data = [];
-                        if (!empty($row[1])) {
-                            $brandName = trim($row[1]);
-                            $brandName = stripslashes($brandName);
+                        if (!$brands->isEmpty()) {
+                            $data = [];
+                            if (!empty($row[1])) {
+                                $brandName = trim($row[1]);
+                                $brandName = stripslashes($brandName);
 
-                            $decodedBrandName = json_decode($brandName, true);
+                                $decodedBrandName = json_decode($brandName, true);
 
-                            if (json_last_error() !== JSON_ERROR_NONE) {
-                                return response()->json(['error' => 'true', 'message' => "Invalid JSON format in name at row {$temp1}"]);
+                                if (json_last_error() !== JSON_ERROR_NONE) {
+                                    DB::rollBack();
+                                    fclose($handle);
+                                    return response()->json(['error' => 'true', 'message' => "Invalid JSON format in name at row {$temp1}"]);
+                                }
+
+                                $data['name'] = json_encode($decodedBrandName, JSON_UNESCAPED_UNICODE);
+
+                                if (isset($decodedBrandName['en']) && !empty($decodedBrandName['en'])) {
+                                    $data['slug'] = generateSlug($decodedBrandName['en'], 'brands');
+                                }
+                            } else {
+                                $data['name'] = $brands[0]['name'];
                             }
+                            $data['image'] = !empty($row[2]) ? $row[2] : $brands[0]['image'];
 
-                            $data['name'] = json_encode($decodedBrandName, JSON_UNESCAPED_UNICODE);
-
-                            if (isset($decodedBrandName['en']) && !empty($decodedBrandName['en'])) {
-                                $data['slug'] = generateSlug($decodedBrandName['en'], 'brands');
-                            }
-                        } else {
-                            $data['name'] = $brands[0]['name'];
+                            Brand::where('id', $brandId)->update($data);
                         }
-                        $data['image'] = !empty($row[2]) ? $row[2] : $brands[0]['image'];
-
-                        Brand::where('id', $brandId)->update($data);
                     }
+                    $temp1++;
                 }
-                $temp1++;
+                DB::commit();
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                fclose($handle);
+                return response()->json(['error' => 'true', 'message' => $e->getMessage()]);
             }
             fclose($handle);
             return response()->json(['error' => 'false', 'message' =>  labels('admin_labels.brand_updated_successfully', 'Brand Updated Successfully')]);

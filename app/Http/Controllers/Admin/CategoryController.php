@@ -1109,7 +1109,7 @@ class CategoryController extends Controller
             return response()->json(['error' => 'true', 'message' => 'Invalid File Format.']);
         }
 
-        $csv = $_FILES['upload_file']['tmp_name'];
+        $csv = $uploadedFile->getRealPath();
         $type = $request->type;
         $temp = 0;
         $temp1 = 0;
@@ -1228,65 +1228,79 @@ class CategoryController extends Controller
             $handle = fopen($csv, "r");
 
             // Second pass: update categories
-            while (($row = fgetcsv($handle, 10000, ",")) !== FALSE) {
-                if ($temp1 !== 0) {
-                    $categoryId = $row[0];
-                    $category = Category::find($categoryId);
+            DB::beginTransaction();
+            try {
+                while (($row = fgetcsv($handle, 10000, ",")) !== FALSE) {
+                    if ($temp1 !== 0) {
+                        $categoryId = $row[0];
+                        $category = Category::find($categoryId);
 
-                    if ($category) {
-                        $data = [];
+                        if ($category) {
+                            $data = [];
 
-                        if (!empty($row[1])) {
-                            $decodedName = json_decode(trim($row[1]), true);
-                            if (json_last_error() !== JSON_ERROR_NONE) {
-                                return response()->json(['error' => 'true', 'message' => 'Invalid JSON name at row ' . $temp1]);
-                            }
-
-                            $data['name'] = json_encode($decodedName, JSON_UNESCAPED_UNICODE);
-
-                            if (!empty($decodedName['en'])) {
-                                $existing = Category::where('id', '!=', $categoryId)
-                                    ->where('name->en', $decodedName['en'])
-                                    ->exists();
-
-                                if ($existing) {
-                                    return response()->json(['error' => 'true', 'message' => 'English name already used at row ' . $temp1]);
+                            if (!empty($row[1])) {
+                                $decodedName = json_decode(trim($row[1]), true);
+                                if (json_last_error() !== JSON_ERROR_NONE) {
+                                    DB::rollBack();
+                                    fclose($handle);
+                                    return response()->json(['error' => 'true', 'message' => 'Invalid JSON name at row ' . $temp1]);
                                 }
 
-                                $data['slug'] = generateSlug($decodedName['en'], 'categories');
-                            }
-                        }
+                                $data['name'] = json_encode($decodedName, JSON_UNESCAPED_UNICODE);
 
-                        if (!empty($row[2])) {
-                            $data['image'] = $row[2];
-                        }
+                                if (!empty($decodedName['en'])) {
+                                    $existing = Category::where('id', '!=', $categoryId)
+                                        ->where('name->en', $decodedName['en'])
+                                        ->exists();
 
-                        if (!empty($row[3])) {
-                            $parentId = $row[3];
-                            $storeId = $category->store_id;
+                                    if ($existing) {
+                                        DB::rollBack();
+                                        fclose($handle);
+                                        return response()->json(['error' => 'true', 'message' => 'English name already used at row ' . $temp1]);
+                                    }
 
-                            $parentCategory = Category::where('id', $parentId)
-                                ->where('store_id', $storeId)
-                                ->first();
-
-                            if (!$parentCategory) {
-                                return response()->json([
-                                    'error' => 'true',
-                                    'message' => 'Parent ID ' . $parentId . ' not found for Store ID ' . $storeId . ' at row ' . $temp1
-                                ]);
+                                    $data['slug'] = generateSlug($decodedName['en'], 'categories');
+                                }
                             }
 
-                            $data['parent_id'] = $parentId;
-                        }
+                            if (!empty($row[2])) {
+                                $data['image'] = $row[2];
+                            }
 
-                        if (!empty($row[4])) {
-                            $data['banner'] = $row[4];
-                        }
+                            if (!empty($row[3])) {
+                                $parentId = $row[3];
+                                $storeId = $category->store_id;
 
-                        $category->update($data);
+                                $parentCategory = Category::where('id', $parentId)
+                                    ->where('store_id', $storeId)
+                                    ->first();
+
+                                if (!$parentCategory) {
+                                    DB::rollBack();
+                                    fclose($handle);
+                                    return response()->json([
+                                        'error' => 'true',
+                                        'message' => 'Parent ID ' . $parentId . ' not found for Store ID ' . $storeId . ' at row ' . $temp1
+                                    ]);
+                                }
+
+                                $data['parent_id'] = $parentId;
+                            }
+
+                            if (!empty($row[4])) {
+                                $data['banner'] = $row[4];
+                            }
+
+                            $category->update($data);
+                        }
                     }
+                    $temp1++;
                 }
-                $temp1++;
+                DB::commit();
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                fclose($handle);
+                return response()->json(['error' => 'true', 'message' => $e->getMessage()]);
             }
 
             fclose($handle);

@@ -21,6 +21,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use App\Services\TranslationService;
 use App\Models\CustomField;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Services\FirebaseNotificationService;
 use App\Services\ProductService;
@@ -1066,7 +1067,7 @@ class ComboProductController extends Controller
             return response()->json(['error' => 'true', 'message' => labels('admin_labels.invalid_file_format', 'Invalid File Format')]);
         }
 
-        $csv = $_FILES['upload_file']['tmp_name'];
+        $csv = $uploaded_file->getRealPath();
         $temp = 0;
         $temp1 = 0;
         $handle = fopen($csv, "r");
@@ -1234,6 +1235,8 @@ class ComboProductController extends Controller
 
             fclose($handle);
             $handle = fopen($csv, "r");
+            try {
+                DB::transaction(function () use ($handle, &$temp1) {
             while (($row = fgetcsv($handle, 10000, ",")) != FALSE) //get row vales
             {
 
@@ -1284,6 +1287,11 @@ class ComboProductController extends Controller
                     $product = ComboProduct::create($data);
                 }
                 $temp1++;
+            }
+                });
+            } catch (\Throwable $e) {
+                fclose($handle);
+                return response()->json(['error' => 'true', 'message' => $e->getMessage()]);
             }
             fclose($handle);
             return response()->json([
@@ -1440,6 +1448,8 @@ class ComboProductController extends Controller
 
             fclose($handle);
             $handle = fopen($csv, "r");
+            try {
+                DB::transaction(function () use ($handle, &$temp1) {
             while (($row = fgetcsv($handle, 10000, ",")) != FALSE) //get row values
             {
 
@@ -1508,6 +1518,11 @@ class ComboProductController extends Controller
                 }
 
                 $temp1++;
+            }
+                });
+            } catch (\Throwable $e) {
+                fclose($handle);
+                return response()->json(['error' => 'true', 'message' => $e->getMessage()]);
             }
             fclose($handle);
             return response()->json([

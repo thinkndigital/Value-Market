@@ -1547,7 +1547,7 @@ class ProductController extends Controller
             return response()->json(['error' => 'true', 'message' => labels('admin_labels.invalid_file_format', 'Invalid File Format')]);
         }
 
-        $csv = $_FILES['upload_file']['tmp_name'];
+        $csv = $uploaded_file->getRealPath();
         $temp = 0;
         $temp1 = 0;
         $handle = fopen($csv, "r");
@@ -1681,6 +1681,8 @@ class ProductController extends Controller
 
             fclose($handle);
             $handle = fopen($csv, "r");
+            try {
+                DB::transaction(function () use ($handle, &$temp1, $permissions) {
             while (($row = fgetcsv($handle, 10000, ",")) != FALSE) //get row vales
             {
                 if ($temp1 != 0) {
@@ -1866,6 +1868,11 @@ class ProductController extends Controller
                 }
                 $temp1++;
             }
+                });
+            } catch (\Throwable $e) {
+                fclose($handle);
+                return response()->json(['error' => 'true', 'message' => $e->getMessage()]);
+            }
             fclose($handle);
             return response()->json(['error' => 'false', 'message' => labels('admin_labels.products_uploaded_successfully', 'Products uploaded successfully!')]);
         } else { // bulk_update
@@ -1954,6 +1961,8 @@ class ProductController extends Controller
 
             fclose($handle);
             $handle = fopen($csv, "r");
+            try {
+                DB::transaction(function () use ($handle, &$temp1) {
             while (($row = fgetcsv($handle, 10000, ",")) != FALSE) //get row values
             {
 
@@ -2215,6 +2224,11 @@ class ProductController extends Controller
                     }
                 }
                 $temp1++;
+            }
+                });
+            } catch (\Throwable $e) {
+                fclose($handle);
+                return response()->json(['error' => 'true', 'message' => $e->getMessage()]);
             }
             fclose($handle);
             return response()->json(['error' => 'false', 'message' => labels('admin_labels.products_updated_successfully', 'Products updated successfully!')]);

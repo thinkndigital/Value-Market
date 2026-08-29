@@ -28,8 +28,8 @@ opposite of both, confirmed with the user before any implementation work):
 
 | Status | Count |
 |---|---|
-| IMPLEMENTED (incl. FIXED/BROKEN→FIXED this session) | 59 |
-| PARTIALLY_IMPLEMENTED | 9 |
+| IMPLEMENTED (incl. FIXED/BROKEN→FIXED this session) | 60 |
+| PARTIALLY_IMPLEMENTED | 8 |
 | MISSING | 15 |
 | NOT_APPLICABLE | 17 |
 | NEEDS VERIFICATION (flagged for a manual spot-check, not a code-level gap) | 3 |
@@ -141,7 +141,7 @@ double-counted here.)
 | Setup completion tracking in admin dashboard | **IMPLEMENTED (fixed this session)** | Same feature/evidence as above — this is the same tracker, not a second one. | Same as above | None |
 | Live image preview for style-related image fields | IMPLEMENTED | Confirmed via this session's own work — every image-upload field (`media_link` widget) shows an immediate preview via the existing media-modal JS; style-selector fields (category slider style, featured section style) show static preview images next to the selector. | `public/assets/admin/custom/custom.js` (media modal), `resources/views/admin/pages/forms/category_sliders.blade.php` | None |
 | Country code storage in user/customer details | IMPLEMENTED | `country_code` column present on `users` (baseline identity/RBAC migration) and on the geography table. | `database/migrations/2025_01_01_000001_baseline_identity_rbac.php:59`, `2025_01_01_000007_baseline_geography.php:176` | Verify it's actually populated by registration/checkout flows, not just schema (P2 spot-check) |
-| Improved bulk upload reliability and stability for large imports | PARTIALLY_IMPLEMENTED | Bulk upload endpoints exist (see v1.0.3) but were not found wrapped in DB transactions or chunked processing — a large file could partially import on failure or exhaust memory. | `app/Http/Controllers/Admin/CategoryController.php::process_bulk_upload()` and siblings | Harden: transactions, chunking, per-row error collection (P1) |
+| Improved bulk upload reliability and stability for large imports | **IMPLEMENTED (fixed this session)** | Every insert/update loop in `process_bulk_upload()` across Admin/Seller `CategoryController`, `BrandController`, `AreaController`, `ProductController`, `ComboProductController`, and Admin/Seller `LanguageController` is now wrapped in `DB::transaction()`/`DB::beginTransaction()`+`commit()`/`rollBack()`, with every early-return error path inside a loop rolling back first — a bad row anywhere in a large file now leaves zero rows committed instead of "everything before the bad row." Fixing this also surfaced and fixed a real pre-existing bug: 7 of these same controllers read the uploaded CSV via the raw `$_FILES['upload_file']['tmp_name']` superglobal instead of `$request->file('upload_file')->getRealPath()` — harmless under a real PHP-FPM request but silently broken (an "Undefined array key" crash) under any in-process test harness, which is exactly why this had no real test coverage before. Chunking (streaming very large files in batches rather than one long transaction) and structured per-row error collection are still open — flagged as a smaller follow-up, not silently dropped. | `app/Http/Controllers/Admin/CategoryController.php`, `BrandController.php`, `AreaController.php`, `ProductController.php`, `ComboProductController.php`, `app/Http/Controllers/Admin/LanguageController.php`, `app/Http/Controllers/Seller/{ProductController,ComboProductController,LanguageController}.php`, `tests/Feature/BulkUploadAtomicityTest.php` (4 tests) | Chunking + structured per-row error collection for very large files (P2) |
 | Removed redundant fields from store creation | NOT_APPLICABLE | Historical cleanup; current store-creation form was audited fresh this session (Phase 3 area) and is not carrying obviously dead fields. | — | None |
 | Improved sidebar navigation and structure | IMPLEMENTED | This session did a full sidebar redesign (`x-admin.side-bar`) already. | `resources/views/components/admin/side-bar.blade.php` | None |
 | Bug fixes / Performance improvements | NOT_APPLICABLE | Not independently auditable (see item 24, performance audit, for a fresh pass). | — | None |
@@ -151,7 +151,7 @@ double-counted here.)
 | Feature | Status | Evidence | Files | Action |
 |---|---|---|---|---|
 | Queue integration | **IMPLEMENTED (fixed this session)** | Confirmed genuinely missing on first read (no `ShouldQueue` implementations anywhere, `app/Jobs` didn't exist, nothing dispatched to `QUEUE_CONNECTION`). Added `App\Jobs\SendOrderConfirmationEmailJob` (moves the invoice-PDF-generation + email-send that used to run inline in checkout) plus a Cloud-Run-compatible drain mechanism — `Admin\CronJobController::processQueue()`, a `verify_cron_secret`-protected HTTP endpoint running one bounded `queue:work --stop-when-empty` pass, reusing this app's existing Cloud Scheduler cron pattern instead of assuming a permanently-running worker process. Full design in `docs/QUEUE_ARCHITECTURE.md`. | `app/Jobs/SendOrderConfirmationEmailJob.php`, `app/Http/Controllers/Admin/CronJobController.php::processQueue()`, `app/Services/OrderService.php`, `docs/QUEUE_ARCHITECTURE.md`, `tests/Feature/QueueIntegrationTest.php` (7 tests) | None |
-| Faster order processing / Better UX during high traffic | **IMPLEMENTED (fixed this session)** | Direct consequence of the fix above — the slowest part of order placement (PDF generation + SMTP send) no longer blocks the checkout response; with `QUEUE_CONNECTION=database` it's genuinely deferred, with this app's local/test default (`sync`) it still runs inline but is now a reusable, independently-testable unit rather than inline code. Bulk-import queueing is tracked separately (see the "Improved bulk upload reliability" row above, still `PARTIALLY_IMPLEMENTED`). | `app/Jobs/SendOrderConfirmationEmailJob.php` | None |
+| Faster order processing / Better UX during high traffic | **IMPLEMENTED (fixed this session)** | Direct consequence of the fix above — the slowest part of order placement (PDF generation + SMTP send) no longer blocks the checkout response; with `QUEUE_CONNECTION=database` it's genuinely deferred, with this app's local/test default (`sync`) it still runs inline but is now a reusable, independently-testable unit rather than inline code. Bulk-import queueing itself is tracked separately (see the "Improved bulk upload reliability" row above — transactional atomicity is now fixed there; chunking/streaming large files into the queue remains a P2 follow-up). | `app/Jobs/SendOrderConfirmationEmailJob.php` | None |
 | System-wide bug fixes / Performance improvements | NOT_APPLICABLE | See item 24. | — | None |
 
 ## v1.0.11
@@ -280,7 +280,8 @@ double-counted here.)
 - ~~Email order invoices (v1.0.3)~~ — **done**, PDF attached directly (the dead admin-only link is gone).
 - ~~Hide empty stores/categories (v1.1.1)~~ — **done**, opt-in `onlyWithProducts` filter on the
   customer-facing store/category endpoints.
-- Bulk upload hardening — transactions/chunking (v1.0.9).
+- ~~Bulk upload hardening — transactions~~ — **done**, see the "Improved bulk upload reliability and
+  stability" row above. Chunking for very large files remains a P2 follow-up.
 - ~~Shiprocket depth audit + hardening + docs (v1.1.0)~~ — **done**, see Fix log item 4 and
   `docs/SHIPROCKET_INTEGRATION.md`.
 - Affiliate: product-level referral link generation (v1.0.7). ~~Payout/withdrawal flow~~ — **done**, see the

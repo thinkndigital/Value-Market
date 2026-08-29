@@ -325,48 +325,45 @@ class LanguageController extends Controller
         $model = $model_type[$type]['model'];
         $column_names = $model_type[$type]['column'];
 
-        while (($row = fgetcsv($csv)) !== false) {
-            if (count($headers) !== count($row)) {
-                $mismatchedRows[] = $row;
-                continue;
-            }
+        try {
+            DB::transaction(function () use ($csv, $headers, $model, $column_names, &$notFoundIds, &$mismatchedRows) {
+                while (($row = fgetcsv($csv)) !== false) {
+                    if (count($headers) !== count($row)) {
+                        $mismatchedRows[] = $row;
+                        continue;
+                    }
 
-            $rowData = array_combine($headers, $row);
-            $recordId = $rowData['id'] ?? null;
+                    $rowData = array_combine($headers, $row);
+                    $recordId = $rowData['id'] ?? null;
 
-            if (!$model::find($recordId)) {
-                $notFoundIds[] = $recordId;
-                continue;
-            }
+                    if (!$model::find($recordId)) {
+                        $notFoundIds[] = $recordId;
+                        continue;
+                    }
 
-            $data = [];
+                    $data = [];
 
-            // foreach ($column_names as $column) {
-            //     $jsonString = trim($rowData[$column] ?? '');
-            //     $jsonString = stripslashes($jsonString);
-            //     $decoded = json_decode($jsonString, true);
+                    foreach ($column_names as $column) {
+                        $jsonString = trim($rowData[$column] ?? '');
+                        $jsonString = stripslashes($jsonString);
+                        $decoded = json_decode($jsonString, true);
 
-            //     if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-            //         $data[$column] = json_encode($decoded, JSON_UNESCAPED_UNICODE);
-            //     }
-            // }
-            foreach ($column_names as $column) {
-                $jsonString = trim($rowData[$column] ?? '');
-                $jsonString = stripslashes($jsonString);
-                $decoded = json_decode($jsonString, true);
-
-                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                    $data[$column] = json_encode($decoded, JSON_UNESCAPED_UNICODE);
-                } else {
-                    // If it's not JSON, just store it as plain text
-                    $data[$column] = $jsonString;
+                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                            $data[$column] = json_encode($decoded, JSON_UNESCAPED_UNICODE);
+                        } else {
+                            // If it's not JSON, just store it as plain text
+                            $data[$column] = $jsonString;
+                        }
+                    }
+                    $model::updateOrCreate(
+                        ['id' => $recordId],
+                        $data
+                    );
                 }
-            }
-            // dd($data);
-            $model::updateOrCreate(
-                ['id' => $recordId],
-                $data
-            );
+            });
+        } catch (\Throwable $e) {
+            fclose($csv);
+            return response()->json(['error' => true, 'message' => $e->getMessage()]);
         }
 
         fclose($csv);
