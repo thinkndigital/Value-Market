@@ -36,6 +36,20 @@ class AffiliateService
         ]);
     }
 
+    /**
+     * Used by the affiliate portal's auto-listed product catalog - unlike createLink() (which deliberately
+     * allows an affiliate to mint any number of distinct-code links for the same target, e.g. for separate
+     * campaigns - see AffiliateProductLinkTest), a browsable catalog needs one stable, already-generated
+     * link per product so "copy" is a single click with nothing to configure first.
+     */
+    public function getOrCreateProductLink(int $userId, int $productId): AffiliateLink
+    {
+        return AffiliateLink::where('user_id', $userId)
+            ->where('target_type', AffiliateLink::TARGET_PRODUCT)
+            ->where('target_id', $productId)
+            ->first() ?? $this->createLink($userId, AffiliateLink::TARGET_PRODUCT, $productId);
+    }
+
     public function trackClick(string $code, ?string $ip = null, ?string $userAgent = null, ?string $referrer = null): ?AffiliateLink
     {
         $link = AffiliateLink::where('code', $code)->where('status', AffiliateLink::STATUS_ACTIVE)->first();

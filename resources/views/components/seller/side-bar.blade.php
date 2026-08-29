@@ -245,6 +245,15 @@
                         class="nav-link-text ms-1">{{ labels('admin_labels.return_requests', 'Return Requests') }}</span>
                 </a>
             </li>
+            <li class="sidebar-title "><i class='bx bx-link-alt'></i>
+                {{ labels('admin_labels.affiliate_program', 'Affiliate Program') }}
+            </li>
+            <li class="nav-item ">
+                <a class="nav-link {{ Request::is('seller/affiliate_program') ? 'active' : '' }}"
+                    href="{{ route('seller.affiliate_program.index') }}">
+                    <span class="nav-link-text ">{{ labels('admin_labels.affiliate_program', 'Affiliate Program') }}</span>
+                </a>
+            </li>
             <li class="sidebar-title "><i
                     class='bx bx-tachometer'></i></i>{{ labels('admin_labels.location_management', 'Location Management') }}
             </li>

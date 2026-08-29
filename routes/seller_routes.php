@@ -8,6 +8,7 @@ use App\Http\Controllers\Seller\PosShiftController;
 use App\Http\Controllers\Seller\PurchaseOrderController;
 use App\Http\Controllers\Seller\SupplierController;
 use App\Http\Controllers\Seller\ReturnRequestController;
+use App\Http\Controllers\Seller\AffiliateProgramController;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -516,6 +517,14 @@ Route::group(
         Route::get('seller/crm/customers/{customerUserId}/notes', [CrmController::class, 'listNotes'])->name('seller.crm.notes.list');
         Route::post('seller/crm/tags', [CrmController::class, 'tagCustomer'])->middleware(['demo_restriction'])->name('seller.crm.tags.store');
         Route::get('seller/crm/customers/{customerUserId}/lifetime_value', [CrmController::class, 'customerLifetimeValue'])->name('seller.crm.customers.lifetime_value');
+
+        // Seller-facing side of the Phase 7 affiliate engine (docs/PHASE_7_AFFILIATE_ENGINE.md) - opting
+        // individual products into the program with a seller-chosen rate, and the public/private catalog
+        // switch with its approve/reject flow (see the 2025_02_09_000000 migration's docblock).
+        Route::get('seller/affiliate_program', [AffiliateProgramController::class, 'index'])->name('seller.affiliate_program.index');
+        Route::post('seller/affiliate_program/products/toggle', [AffiliateProgramController::class, 'toggleProduct'])->name('seller.affiliate_program.products.toggle')->middleware(['demo_restriction']);
+        Route::post('seller/affiliate_program/visibility', [AffiliateProgramController::class, 'updateVisibility'])->name('seller.affiliate_program.visibility')->middleware(['demo_restriction']);
+        Route::post('seller/affiliate_program/requests/respond', [AffiliateProgramController::class, 'respondToRequest'])->name('seller.affiliate_program.requests.respond')->middleware(['demo_restriction']);
     }
 
 

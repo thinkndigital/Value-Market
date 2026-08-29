@@ -37,8 +37,10 @@ class MigrationBaselineTest extends TestCase
         // `journal_entries`, `journal_lines`. Plus 5 more from Phase 10
         // (docs/PHASE_10_PARTNERS_ASSETS_LIABILITIES.md): `partners`, `partner_transactions`, `assets`,
         // `depreciation_schedules`, `liabilities`. Plus 4 more from Phase 11 (docs/PHASE_11_CRM.md):
-        // `customer_notes`, `customer_tags`, `customer_tag_assignments`, `customer_segments`.
-        $this->assertSame(121, (int) $tables);
+        // `customer_notes`, `customer_tags`, `customer_tag_assignments`, `customer_segments`. Plus 1 more
+        // from the seller-managed affiliate program (2025_02_09_000000 migration, extending Phase 7):
+        // `store_affiliate_requests`.
+        $this->assertSame(122, (int) $tables);
     }
 
     /** @dataProvider myisamTables */

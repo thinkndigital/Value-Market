@@ -91,3 +91,39 @@ once the chart of accounts exists to post it against.
 tables (expected consequence of this phase's migration).
 
 Full suite: **223 passing** (210 before this phase), zero regressions.
+
+## 7. Addendum — seller-managed program (2025_02_09_000000 migration)
+
+Everything above shipped with only one way to create a `commission_rules` row: admin, via
+`Admin\CommissionRuleController`. A seller had no say in which of their own products earned affiliates a
+commission, or at what rate, and an affiliate's only way onto a product was to manually search for it and
+generate a link one at a time - there was no discoverable catalog.
+
+This addendum adds the seller-facing half, still on top of the same engine (no parallel commission system):
+
+- **Per-product opt-in, seller-chosen rate** (`Seller\AffiliateProgramController::toggleProduct()`) - upserts
+  a `commission_rules` row at `scope=product` for the seller's own product (ownership checked the same way
+  every other seller-panel controller in this app checks it: `Seller::where('user_id', Auth::id())`, never a
+  client-supplied seller id). Disabling flips `status` to inactive rather than deleting the row, so
+  re-enabling doesn't ask for the rate again - the same soft-toggle admin's own commission rules already use.
+- **Public vs. private catalog** (`seller_store.affiliate_visibility`, default `public`) - a private store's
+  products are invisible to the auto-listed catalog below until the seller approves a specific affiliate's
+  request (`store_affiliate_requests`, unique per store+affiliate so a repeat request updates the same row
+  instead of spamming new ones).
+- **Auto-listed, ready-to-copy catalog** (`AffiliateController::availableProducts()`) - replaces the old
+  "search a product, then generate a link" two-step flow for anything already commission-enabled: every
+  eligible product (public stores, plus private stores the affiliate is approved for) is listed with a link
+  already minted via the new `AffiliateService::getOrCreateProductLink()` (get-or-create, unlike
+  `createLink()`, which deliberately allows minting distinct-code links on demand for campaign tracking -
+  see `AffiliateProductLinkTest` - so that existing manual flow is untouched, not replaced).
+- Affiliate portal dashboard redesigned around this: wallet balance and withdrawal request/history (already
+  built in an earlier pass but never wired into the view) are now visible, alongside the new catalog, a
+  per-conversion commission history table, and a private-stores "request to join" widget.
+
+**Tests**: `SellerAffiliateProgramTest.php` (6 - ownership/IDOR on both the per-product toggle and the
+request-approval endpoint, page render) and `AffiliateAvailableProductsTest.php` (8 - public vs. private
+visibility gating, an approved affiliate unlocking a private store, a disabled product dropping out of the
+catalog, duplicate-request prevention). `MigrationBaselineTest.php`'s table count updated 121 → 122 for
+`store_affiliate_requests`.
+
+Full suite: **563 passing**, zero regressions.

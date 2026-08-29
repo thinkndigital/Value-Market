@@ -224,27 +224,37 @@
 
                     <hr class="my-3">
 
-                    <h6>{{ labels('admin_labels.generate_a_product_link', 'Generate a Product Link') }}</h6>
-                    <div class="position-relative">
-                        <input type="text" class="form-control" id="product_search_input"
-                            placeholder="{{ labels('admin_labels.search_a_product', 'Search a product…') }}"
-                            autocomplete="off">
-                        <div id="product_search_results" class="list-group position-absolute w-100"
-                            style="z-index: 1000; max-height: 240px; overflow-y: auto; display: none;">
-                        </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">{{ labels('admin_labels.available_products', 'Available Products') }}</h6>
+                        <span class="text-muted small">{{ labels('admin_labels.links_ready_to_copy', 'Links are already generated - just copy.') }}</span>
                     </div>
-                    <input type="hidden" id="selected_product_id">
-                    <div id="selected_product_preview" class="mt-2" style="display: none;">
-                        <span class="badge bg-light text-dark border p-2" id="selected_product_name"></span>
-                        <button class="btn btn-sm btn-primary ms-2" type="button" id="generate_product_link_btn">
-                            {{ labels('admin_labels.generate_link', 'Generate Link') }}
-                        </button>
+                    <input type="text" class="form-control form-control-sm mb-2" id="catalog_search_input"
+                        placeholder="{{ labels('admin_labels.search_products', 'Search products…') }}" autocomplete="off">
+                    <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
+                        <table class="affiliate-table">
+                            <thead>
+                                <tr>
+                                    <th>{{ labels('admin_labels.product', 'Product') }}</th>
+                                    <th>{{ labels('admin_labels.store', 'Store') }}</th>
+                                    <th>{{ labels('admin_labels.commission', 'Commission') }}</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="available_products_body">
+                                <tr>
+                                    <td colspan="4" class="text-muted small">{{ labels('admin_labels.loading', 'Loading…') }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
 
-                    <div class="mt-3">
-                        <label class="form-label small text-muted mb-1">{{ labels('admin_labels.your_product_links', 'Your Product Links') }}</label>
-                        <div id="product_links_list"></div>
-                    </div>
+                    <hr class="my-3">
+
+                    <h6>{{ labels('admin_labels.private_stores', 'Private Stores') }}</h6>
+                    <p class="small text-muted mb-2">
+                        {{ labels('admin_labels.private_stores_explainer', 'These sellers approve affiliates before their products show up above.') }}
+                    </p>
+                    <div id="private_stores_list"></div>
                 </div>
             </div>
 
@@ -341,95 +351,95 @@
         }
 
         var csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        var searchTimeout = null;
+        var catalogSearchTimeout = null;
 
-        document.getElementById('product_search_input').addEventListener('input', function() {
-            var query = this.value.trim();
-            var resultsBox = document.getElementById('product_search_results');
-            clearTimeout(searchTimeout);
+        function renderAvailableProducts(rows) {
+            var body = document.getElementById('available_products_body');
 
-            if (query.length < 2) {
-                resultsBox.style.display = 'none';
+            if (!rows.length) {
+                body.innerHTML = '<tr><td colspan="4" class="text-muted small">' +
+                    '{{ labels('admin_labels.no_products_available_yet', 'No products available yet - sellers add these from their own panel.') }}</td></tr>';
                 return;
             }
 
-            searchTimeout = setTimeout(function() {
-                fetch('{{ route('affiliate.products.search') }}?search=' + encodeURIComponent(query))
-                    .then(res => res.json())
-                    .then(res => {
-                        resultsBox.innerHTML = '';
-                        if (res.error || !res.data.length) {
-                            resultsBox.style.display = 'none';
-                            return;
-                        }
-                        res.data.forEach(function(product) {
-                            var item = document.createElement('a');
-                            item.href = '#';
-                            item.className = 'list-group-item list-group-item-action';
-                            item.textContent = product.name;
-                            item.onclick = function(e) {
-                                e.preventDefault();
-                                document.getElementById('selected_product_id').value = product.id;
-                                document.getElementById('selected_product_name').textContent = product.name;
-                                document.getElementById('selected_product_preview').style.display = 'block';
-                                document.getElementById('product_search_input').value = product.name;
-                                resultsBox.style.display = 'none';
-                            };
-                            resultsBox.appendChild(item);
-                        });
-                        resultsBox.style.display = 'block';
-                    });
+            body.innerHTML = rows.map(function(row) {
+                var rate = row.commission_rate_type === 'percentage'
+                    ? Number(row.commission_rate_value) + '%'
+                    : Number(row.commission_rate_value).toFixed(2);
+                return '<tr>' +
+                    '<td><img src="' + row.image + '" width="32" height="32" style="object-fit:cover;border-radius:4px;" class="me-2">' + row.name + '</td>' +
+                    '<td>' + (row.store_name || '') + '</td>' +
+                    '<td>' + rate + '</td>' +
+                    '<td><button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard(\'' + row.link_url + '\')">' +
+                    '{{ labels('admin_labels.copy', 'Copy') }}</button></td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        function loadAvailableProducts(search) {
+            var url = '{{ route('affiliate.available_products.list') }}';
+            if (search) {
+                url += '?search=' + encodeURIComponent(search);
+            }
+            fetch(url).then(res => res.json()).then(res => renderAvailableProducts(res.data || []));
+        }
+
+        document.getElementById('catalog_search_input').addEventListener('input', function() {
+            var query = this.value.trim();
+            clearTimeout(catalogSearchTimeout);
+            catalogSearchTimeout = setTimeout(function() {
+                loadAvailableProducts(query);
             }, 300);
         });
 
-        document.getElementById('generate_product_link_btn').addEventListener('click', function() {
-            var productId = document.getElementById('selected_product_id').value;
-            if (!productId) {
-                return;
-            }
+        var privateStoreStatusLabels = {
+            approved: { text: '{{ labels('admin_labels.approved', 'Approved') }}', cls: 'approved' },
+            pending: { text: '{{ labels('admin_labels.pending', 'Pending') }}', cls: 'pending' },
+            rejected: { text: '{{ labels('admin_labels.rejected', 'Rejected') }}', cls: 'rejected' },
+        };
 
-            fetch('{{ route('affiliate.links.store') }}', {
+        function requestStoreAccess(storeId, btn) {
+            btn.disabled = true;
+            fetch('{{ route('affiliate.stores.request') }}', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({ target_type: 'product', target_id: productId }),
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                    body: JSON.stringify({ store_id: storeId }),
                 })
                 .then(res => res.json())
                 .then(res => {
                     if (res.error) {
                         iziToast.error({ title: 'Error', message: res.message, position: 'topRight' });
+                        btn.disabled = false;
                         return;
                     }
                     iziToast.success({ title: 'Success', message: res.message, position: 'topRight' });
-                    document.getElementById('product_search_input').value = '';
-                    document.getElementById('selected_product_preview').style.display = 'none';
-                    loadProductLinks();
+                    loadPrivateStores();
                 });
-        });
+        }
 
-        function loadProductLinks() {
-            fetch('{{ route('affiliate.links.list') }}')
+        function loadPrivateStores() {
+            fetch('{{ route('affiliate.stores.list') }}')
                 .then(res => res.json())
                 .then(res => {
-                    var container = document.getElementById('product_links_list');
-                    var productLinks = (res.data || []).filter(l => l.target_type === 'product');
+                    var container = document.getElementById('private_stores_list');
+                    var stores = res.data || [];
 
-                    if (!productLinks.length) {
-                        container.innerHTML = '<p class="text-muted small mb-0">{{ labels('admin_labels.no_product_links_yet', 'No product links generated yet.') }}</p>';
+                    if (!stores.length) {
+                        container.innerHTML = '<p class="text-muted small mb-0">{{ labels('admin_labels.no_private_stores_yet', 'No private stores yet.') }}</p>';
                         return;
                     }
 
-                    var baseUrl = '{{ url('/r') }}/';
-                    container.innerHTML = productLinks.map(function(link) {
-                        var url = baseUrl + link.code;
+                    container.innerHTML = stores.map(function(store) {
+                        var action;
+                        if (!store.request_status) {
+                            action = '<button class="btn btn-sm btn-outline-primary" onclick="requestStoreAccess(' + store.store_id + ', this)">' +
+                                '{{ labels('admin_labels.request_to_join', 'Request to Join') }}</button>';
+                        } else {
+                            var status = privateStoreStatusLabels[store.request_status] || { text: store.request_status, cls: 'pending' };
+                            action = '<span class="status-badge ' + status.cls + '">' + status.text + '</span>';
+                        }
                         return '<div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">' +
-                            '<span class="small text-truncate me-2">' + url + '</span>' +
-                            '<button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard(\'' + url + '\')">' +
-                            '{{ labels('admin_labels.copy', 'Copy') }}</button>' +
-                            '</div>';
+                            '<span class="small">' + store.store_name + '</span>' + action + '</div>';
                     }).join('');
                 });
         }
@@ -537,7 +547,8 @@
                 });
         });
 
-        loadProductLinks();
+        loadAvailableProducts();
+        loadPrivateStores();
         loadConversionsHistory();
         loadWithdrawalHistory();
     </script>

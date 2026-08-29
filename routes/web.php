@@ -195,6 +195,12 @@ Route::middleware(['CheckInstallation'])->group(function () {
         // Per-conversion breakdown behind the dashboard's aggregate approved/pending totals - an affiliate
         // asking "which order paid me what" has had no way to see that beyond the two summary numbers.
         Route::get('affiliate/conversions', [AffiliateController::class, 'conversionsHistory'])->name('affiliate.conversions.list');
+
+        // Seller-managed product catalog (2025_02_09_000000 migration) - ready-to-copy links for every
+        // commission-enabled product, plus the private-store request/approval flow behind it.
+        Route::get('affiliate/available_products', [AffiliateController::class, 'availableProducts'])->name('affiliate.available_products.list');
+        Route::get('affiliate/stores', [AffiliateController::class, 'browsableStores'])->name('affiliate.stores.list');
+        Route::post('affiliate/stores/request', [AffiliateController::class, 'requestStoreAccess'])->name('affiliate.stores.request')->middleware(['demo_restriction']);
     });
 
     // Public - the link a visitor actually clicks, no account required to be tracked and redirected.

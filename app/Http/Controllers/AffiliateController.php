@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\AffiliateLink;
+use App\Models\CommissionRule;
 use App\Models\PaymentRequest;
 use App\Models\Product;
+use App\Models\SellerStore;
+use App\Models\StoreAffiliateRequest;
 use App\Models\User;
 use App\Services\AffiliateService;
 use App\Services\MediaService;
@@ -179,6 +182,113 @@ class AffiliateController extends Controller
             ->get(['order_id', 'order_total', 'commission_amount', 'status', 'created_at']);
 
         return response()->json(['error' => false, 'data' => $conversions]);
+    }
+
+    /**
+     * The affiliate portal's product catalog - what "Generate a Product Link" used to require a manual
+     * search-then-generate round trip for is now a ready-to-copy list: every commission-enabled product
+     * (2025_02_09_000000 migration) from a public store, plus any private store this affiliate has been
+     * approved for (browsableStores() below), each with a link already minted via
+     * AffiliateService::getOrCreateProductLink() so there is nothing left to configure before copying it.
+     */
+    public function availableProducts(Request $request)
+    {
+        $userId = Auth::id();
+        $search = trim((string) $request->input('search', ''));
+
+        $visibleStoreIds = SellerStore::where('affiliate_visibility', 'public')->pluck('store_id')
+            ->merge(
+                StoreAffiliateRequest::where('user_id', $userId)
+                    ->where('status', StoreAffiliateRequest::STATUS_APPROVED)
+                    ->pluck('store_id')
+            )
+            ->unique();
+
+        $rules = CommissionRule::where('scope', CommissionRule::SCOPE_PRODUCT)
+            ->where('status', CommissionRule::STATUS_ACTIVE)
+            ->get()
+            ->keyBy('scope_id');
+
+        $products = Product::whereIn('id', $rules->keys())
+            ->whereIn('store_id', $visibleStoreIds)
+            ->where('status', 1)
+            ->when($search !== '', fn($query) => $query->where('name->en', 'like', '%' . $search . '%'))
+            ->orderByDesc('id')
+            ->limit(100)
+            ->get(['id', 'name', 'image', 'store_id']);
+
+        $storeNames = SellerStore::whereIn('store_id', $products->pluck('store_id')->unique())
+            ->pluck('store_name', 'store_id');
+
+        $service = app(AffiliateService::class);
+        $data = $products->map(function ($product) use ($rules, $userId, $service, $storeNames) {
+            $rule = $rules->get($product->id);
+            $link = $service->getOrCreateProductLink($userId, $product->id);
+
+            return [
+                'id' => $product->id,
+                'name' => json_decode($product->name, true)['en'] ?? '',
+                'image' => app(MediaService::class)->getMediaImageUrl($product->image),
+                'store_name' => $storeNames->get($product->store_id),
+                'commission_rate_type' => $rule->rate_type,
+                'commission_rate_value' => $rule->rate_value,
+                'link_url' => route('affiliate.track', ['code' => $link->code]),
+            ];
+        });
+
+        return response()->json(['error' => false, 'data' => $data]);
+    }
+
+    /**
+     * Private stores (2025_02_09_000000 migration) plus this affiliate's own request status against each,
+     * for the portal's "request to join" widget.
+     */
+    public function browsableStores()
+    {
+        $userId = Auth::id();
+        $myRequests = StoreAffiliateRequest::where('user_id', $userId)->get()->keyBy('store_id');
+
+        $stores = SellerStore::where('affiliate_visibility', 'private')->get(['store_id', 'store_name']);
+
+        $data = $stores->map(fn($store) => [
+            'store_id' => $store->store_id,
+            'store_name' => $store->store_name,
+            'request_status' => optional($myRequests->get($store->store_id))->status,
+        ]);
+
+        return response()->json(['error' => false, 'data' => $data]);
+    }
+
+    public function requestStoreAccess(Request $request)
+    {
+        $validator = Validator::make($request->all(), ['store_id' => 'required|integer']);
+        if ($validator->fails()) {
+            return response()->json(['error' => true, 'message' => $validator->errors()->first()]);
+        }
+
+        $storeId = (int) $request->input('store_id');
+        $store = SellerStore::where('store_id', $storeId)->where('affiliate_visibility', 'private')->first();
+        if (!$store) {
+            return response()->json(['error' => true, 'message' => labels('affiliate.store_not_found', 'Store not found.')]);
+        }
+
+        $existing = StoreAffiliateRequest::where('store_id', $storeId)->where('user_id', Auth::id())->first();
+        if ($existing) {
+            // Approved/pending is left as-is (no duplicate spam); a previously rejected affiliate can ask
+            // again - the seller sees it as a fresh pending request.
+            if ($existing->status === StoreAffiliateRequest::STATUS_REJECTED) {
+                $existing->status = StoreAffiliateRequest::STATUS_PENDING;
+                $existing->save();
+            }
+        } else {
+            StoreAffiliateRequest::forceCreate([
+                'store_id' => $storeId,
+                'user_id' => Auth::id(),
+                'status' => StoreAffiliateRequest::STATUS_PENDING,
+            ]);
+        }
+
+        return response()->json(['error' => false, 'message' => labels('affiliate.request_sent', 'Request sent - you will be able to generate links for this store once approved.')]);
     }
 
     public function withdrawalHistory(Request $request)
