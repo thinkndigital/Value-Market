@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Services\StoreService;
 use App\Services\OrderService;
+use App\Services\SetupProgressService;
 class HomeController extends Controller
 {
 
@@ -250,7 +251,10 @@ class HomeController extends Controller
         }
 
         // dd($top_sellers);
-        return view('admin.pages.forms.home', compact('order_counter', 'id', 'store_id', 'user_counter', 'delivery_boy_counter', 'currency', 'top_sellers', 'total_products', 'total_store', 'total_seller', 'total_earnings', 'role_id', 'store_details', 'primary_colour', 'messengerColor', 'dark_mode', 'sales', 'orders_status_counts'));
+        // Changelog v1.0.9 ("Setup Progress Tracker" / "Setup completion tracking in admin dashboard").
+        $setup_progress = app(SetupProgressService::class)->getProgress();
+
+        return view('admin.pages.forms.home', compact('order_counter', 'id', 'store_id', 'user_counter', 'delivery_boy_counter', 'currency', 'top_sellers', 'total_products', 'total_store', 'total_seller', 'total_earnings', 'role_id', 'store_details', 'primary_colour', 'messengerColor', 'dark_mode', 'sales', 'orders_status_counts', 'setup_progress'));
     }
 
     /**

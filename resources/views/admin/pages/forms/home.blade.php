@@ -19,6 +19,41 @@
             </p>
         </div>
     </div>
+    @if (isset($setup_progress) && $setup_progress['percentage'] < 100)
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="mb-0">
+                            {{ labels('admin_labels.setup_progress', 'Store Setup Progress') }}
+                        </h5>
+                        <span>{{ $setup_progress['completed_steps'] }}/{{ $setup_progress['total_steps'] }}
+                            ({{ $setup_progress['percentage'] }}%)</span>
+                    </div>
+                    <div class="progress mb-3" style="height: 8px;">
+                        <div class="progress-bar bg-success" role="progressbar"
+                            style="width: {{ $setup_progress['percentage'] }}%;"
+                            aria-valuenow="{{ $setup_progress['percentage'] }}" aria-valuemin="0"
+                            aria-valuemax="100"></div>
+                    </div>
+                    <div class="row">
+                        @foreach ($setup_progress['steps'] as $step)
+                            <div class="col-md-4 mb-2">
+                                <span>
+                                    @if ($step['completed'])
+                                        <i class="fa fa-check-circle text-success"></i>
+                                    @else
+                                        <i class="fa fa-circle text-muted"></i>
+                                    @endif
+                                    {{ $step['label'] }}
+                                </span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
     <div class="col-md-12">
         <div class="row">
             <div class="col-md-12 col-xxl-4">

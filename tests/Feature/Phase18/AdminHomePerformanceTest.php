@@ -51,7 +51,15 @@ class AdminHomePerformanceTest extends TestCase
         // though this specific controller-only count goes up by 7. See
         // tests/Feature/Phase19/AdminHomeQueryProfilingTest.php for the render-phase assertion this test
         // could never see.
-        $this->assertLessThanOrEqual(23, $count, '/admin/home must not regress back toward its old 26-query baseline.');
+        //
+        // docs/CHANGELOG_FEATURE_AUDIT.md (v1.0.9, "Setup Progress Tracker") raised this threshold from 23
+        // to 31: SetupProgressService::getProgress() runs 7 cheap existence/setting checks (store, currency,
+        // payment gateway, delivery zone, language, policy pages - combined into 1 query, category/product/
+        // brand). This feature's own explicit requirement is "do not use fake percentages" - every step
+        // must reflect real, current configuration state, so these checks run on every load rather than
+        // being backed by a cache that could go stale. /admin/home is a low-traffic, admin-only page; the
+        // added queries are all simple ->exists()/->value() lookups, not N+1s or unbounded scans.
+        $this->assertLessThanOrEqual(31, $count, '/admin/home must not regress back toward its old 26-query baseline (now accounting for the Setup Progress Tracker\'s real-time checks).');
     }
 
     public function test_count_new_users_returns_identical_results_to_the_original_five_query_version(): void
