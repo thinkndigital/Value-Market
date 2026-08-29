@@ -30,8 +30,8 @@ opposite of both, confirmed with the user before any implementation work):
 |---|---|
 | IMPLEMENTED (incl. FIXED/BROKEN→FIXED this session) | 58 |
 | PARTIALLY_IMPLEMENTED | 9 |
-| MISSING | 17 |
-| NOT_APPLICABLE | 16 |
+| MISSING | 16 |
+| NOT_APPLICABLE | 17 |
 | NEEDS VERIFICATION (flagged for a manual spot-check, not a code-level gap) | 3 |
 | **Total items audited** | **103** |
 
@@ -61,7 +61,7 @@ double-counted here.)
 
 | Feature | Status | Evidence | Files | Action |
 |---|---|---|---|---|
-| PWA support | **MISSING** | No `manifest.json` (app manifest, distinct from Vite's asset manifest), no service worker registration, no install-prompt handling found anywhere in `resources/views` or `public/`. | — | Implement (P1) |
+| PWA support | **NOT_APPLICABLE** (corrected — see note) | This audit's earlier draft claimed no manifest/service-worker code existed at all; a closer read found dead scaffolding instead: `resources/views/components/layouts/app.blade.php` references `route('manifest')` (real route, `routes/web.php:66`, but returns `config('manifest')` — no `config/manifest.php` file exists, so it always returns `null`) and registers `navigator.serviceWorker.register("/sw.js")` — `public/sw.js` does not exist, so this would 404 in any browser that reached it. None of it matters in practice: **no route or controller anywhere renders this layout component** (grepped the full `routes/`/`app/Http/Controllers` tree), consistent with this repo's confirmed absence of any live customer-facing web storefront (`resources/js` has 2 files, no `Pages/` directory, despite React/Inertia/Stripe-JS/PayPal-JS/Razorpay-JS all being present in `package.json` — vestigial dependencies, not a real frontend; see the v1.1.2 address-map row for the same finding). Wiring a real manifest + service worker to a page nothing ever serves would be theater, not a feature — this becomes actionable the same day a real customer web storefront is built on top of this backend, not before. | `resources/views/components/layouts/app.blade.php`, `routes/web.php:66` | Documented follow-up, not implemented: build alongside any future customer web storefront |
 | Sitemap | IMPLEMENTED | `spatie/laravel-sitemap` package + `app/Console/Commands/GenerateSitemap.php` + `GET /sitemap` route that calls it on demand. Needs verification it covers products/categories/brands/stores and excludes admin/seller/auth routes (spot-checked in implementation pass). | `routes/web.php:27`, `app/Console/Commands/GenerateSitemap.php` | Verify coverage (P2) |
 | Two new product detail page styles | IMPLEMENTED | `web_product_details_style` setting, 2 options (`_1`/`_2`). | `resources/views/admin/pages/forms/stores.blade.php:488-490` | None |
 | Email order invoices | IMPLEMENTED (corrected — see note) | This audit's earlier draft missed that `OrderService::placeOrder()` **already** sent an order-confirmation email — a closer read found it, and found it was broken: the email linked to `/admin/orders/generat_invoice_PDF/{id}`, an admin-only route the customer receiving the email has no session for (the link was permanently dead for its actual audience). Also unguarded — an SMTP failure there threw uncaught, *after* the order had already committed, turning a real successful order into a 500 for the customer. Fixed: the PDF is now attached directly (no link/auth needed), via a new `MailService::sendMailWithAttachment()` (the `$attachment` param on the pre-existing `sendCustomMail()`/`sendDigitalProductMail()` was accepted but never once used by either). The whole block is now try/caught and skipped when the customer has no email or email isn't configured. | `app/Services/OrderService.php`, `app/Services/MailService.php` | None |
@@ -284,7 +284,9 @@ double-counted here.)
 - ~~Shiprocket depth audit + hardening + docs (v1.1.0)~~ — **done**, see Fix log item 4 and
   `docs/SHIPROCKET_INTEGRATION.md`.
 - Affiliate: product-level referral link generation, payout/withdrawal flow (v1.0.7).
-- PWA support (v1.0.3).
+- ~~PWA support (v1.0.3)~~ — reclassified **NOT_APPLICABLE**: dead manifest/service-worker scaffolding
+  exists but is rendered by no route anywhere; no live customer web storefront exists in this repo for a
+  PWA to attach to (see that row's evidence above).
 
 **P2 (smaller/UX/lower-impact features):**
 - Admin Preference Page + Single/Multi Store mode.
