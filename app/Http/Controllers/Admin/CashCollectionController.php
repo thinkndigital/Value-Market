@@ -82,7 +82,7 @@ class CashCollectionController extends Controller
             'rows' => [],
         ];
 
-        foreach ($$txnSearchRes as $row) {
+        foreach ($txnSearchRes as $row) {
             $tempRow = [
                 'id' => $row['id'],
                 'name' => $row['name'],
