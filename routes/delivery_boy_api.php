@@ -27,6 +27,7 @@ Route::get('get_zones', [ApiController::class, 'get_zones'])->name('delivery_boy
 
 Route::group(['middleware' => ['check_token', 'auth:sanctum']], function () {
     Route::get('get_delivery_boy_details', [ApiController::class, 'get_delivery_boy_details'])->middleware('language');
+    Route::put('toggle_availability', [ApiController::class, 'toggle_availability']);
     Route::get('get_orders', [ApiController::class, 'get_orders'])->middleware('language');
     Route::get('get_fund_transfers', [ApiController::class, 'get_fund_transfers']);
     Route::put('update_fcm', [ApiController::class, 'update_fcm']);

@@ -28,8 +28,8 @@ opposite of both, confirmed with the user before any implementation work):
 
 | Status | Count |
 |---|---|
-| IMPLEMENTED (incl. FIXED this session) | 54 |
-| PARTIALLY_IMPLEMENTED | 10 |
+| IMPLEMENTED (incl. FIXED this session) | 55 |
+| PARTIALLY_IMPLEMENTED | 9 |
 | MISSING | 8 |
 | BROKEN → FIXED | 2 |
 | NOT_APPLICABLE | 8 |
@@ -163,7 +163,7 @@ opposite of both, confirmed with the user before any implementation work):
 | Seller App can delete pending Categories | **MISSING** | Same dependency. | — | Same |
 | Sellers can deactivate empty stores | **MISSING** | No "deactivate if empty" logic found in `SellerStore` model or seller store controller — store status is a manual toggle with no product-count gate. | — | Implement (P2) |
 | Sellers can delete empty stores | **MISSING** | No delete-store endpoint with an empty-store guard found. | — | Implement (P2) |
-| Delivery Boy active/inactive availability toggle | PARTIALLY_IMPLEMENTED | `users.active` exists and is used as an admin-controlled activation flag (confirmed via `active=1` filters throughout `CashCollectionController` etc.), but no **self-service** toggle for the delivery boy to mark themselves online/offline was found in `Delivery_boy\v1\ApiController`. | `app/Http/Controllers/Delivery_boy/v1/ApiController.php` | Add self-service toggle (P2) |
+| Delivery Boy active/inactive availability toggle | IMPLEMENTED | New `users.is_available` column (migration `2025_02_17_000000`), deliberately separate from `active`/`status`/`active_status` (three already-overlapping legacy booleans on this table) rather than repurposing any of them. New self-service `PUT toggle_availability` endpoint on `Delivery_boy\v1\ApiController`, restricted to delivery-boy accounts, reported in `get_delivery_boy_details()`. **Not** wired into `DispatchService::rankAvailableDeliveryBoys()`'s existing eligibility filter in this pass — that filter reads one of the other overlapping columns, and changing live dispatch eligibility logic without a much deeper audit of what each column already means risks a real regression in order assignment; documented here as the natural next step rather than done silently. | `database/migrations/2025_02_17_000000_add_delivery_boy_availability_toggle.php`, `app/Http/Controllers/Delivery_boy/v1/ApiController.php`, `app/Models/User.php` | Follow-up (not this pass): wire `is_available` into `DispatchService`'s ranking query once the three legacy status columns' exact semantics are confirmed |
 | Optional alternate slider image for Web | **MISSING** | `category_sliders`/general slider models have a single `banner_image` column; no second/alternate-image column or fallback logic found. | `database/migrations/2025_01_01_000003_baseline_catalog.php` | Implement (P2) |
 | Language and System Settings APIs merged | PARTIALLY_IMPLEMENTED | Both exist as separate endpoints; merging them is an API-shape change with mobile-app-compatibility implications — flagged, not attempted without confirming no mobile client depends on the current split. | `app/Http/Controllers/App/v1/ApiController.php` | Defer — needs mobile-app coordination (P2, documented as blocked) |
 | Rider cash entries in Delivery Boy orders | IMPLEMENTED | `cash_received` column + `CashCollectionController` (bug-fixed this session) + delivery_boy Cash Collection page (built this session) together implement this. | `app/Http/Controllers/Admin/CashCollectionController.php`, `resources/views/delivery_boy/pages/tables/cash_collection.blade.php` | None |

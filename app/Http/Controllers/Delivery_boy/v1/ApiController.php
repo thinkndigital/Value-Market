@@ -323,6 +323,10 @@ Defined Methods:-
                 'created_on' => $user->created_on ?? '',
                 'last_login' => $user->last_login ?? '',
                 'active' => $user->active ?? '',
+                // Changelog v1.0.11 ("Delivery Boy active/inactive availability toggle") - distinct from
+                // 'active' above (admin account activation), this is the delivery boy's own self-service
+                // online/offline status, set via toggle_availability() below.
+                'is_available' => $user->is_available ?? 1,
                 'is_notification_on' => $user->is_notification_on ?? '',
                 'balance' => $user->balance ?? '',
                 'company' => $user->company ?? '',
@@ -362,6 +366,46 @@ Defined Methods:-
                 ]);
             }
         }
+    }
+
+    /**
+     * Changelog v1.0.11 ("Delivery Boy active/inactive availability toggle"): a delivery boy marking
+     * themselves online/offline, distinct from the admin-controlled 'active' account-enabled flag. Accepts
+     * an explicit desired state if given, otherwise flips the current one - either shape is a legitimate
+     * "toggle" UX depending on whether the app sends a switch's new value or just a tap event.
+     */
+    public function toggle_availability(Request $request)
+    {
+        if (!auth()->check()) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Please Login first.',
+                'language_message_key' => 'please_login_first',
+            ]);
+        }
+
+        $user = Auth::user();
+        if (!$user->isDeliveryBoy()) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Only delivery boys can toggle availability.',
+            ]);
+        }
+
+        $isAvailable = $request->filled('is_available')
+            ? (bool) $request->input('is_available')
+            : !$user->is_available;
+
+        $user->is_available = $isAvailable;
+        $user->save();
+
+        return response()->json([
+            'error' => false,
+            'message' => $isAvailable
+                ? 'You are now marked as available.'
+                : 'You are now marked as unavailable.',
+            'data' => ['is_available' => $isAvailable],
+        ]);
     }
 
     public function get_orders(Request $request)
