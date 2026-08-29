@@ -5128,6 +5128,16 @@ Defined Methods:-
         $ticket_id = $request->input('ticket_id');
         $message = $request->input('message', '');
 
+        // Security fix (found while implementing the changelog v1.0.11 "chat enabled after admin reply"
+        // gate below): user_type was trusted verbatim from client input and written straight into
+        // ticket_messages.user_type - any authenticated customer could pass user_type=admin and have their
+        // own message stored (and rendered) as an official admin reply, and it would also have unlocked the
+        // gate below for themselves. Only Admin\TicketController::sendMessage() (a real admin-authenticated
+        // route) may ever record a message as 'admin'.
+        if (strtolower((string) $user_type) === 'admin') {
+            $user_type = 'user';
+        }
+
         $user = fetchUsers($user_id);
         if (empty($user)) {
             return response()->json([
@@ -5145,6 +5155,19 @@ Defined Methods:-
             return response()->json([
                 'error' => true,
                 'message' => 'Ticket not found!',
+                'data' => [],
+            ]);
+        }
+
+        // Changelog v1.0.11 ("Support Ticket chat enabled after Admin reply"): confirmed genuinely missing
+        // - the customer's own chat send endpoint had no gate at all. The ticket's initial `description` is
+        // not a TicketMessage row, so a ticket with zero admin messages has had no admin attention yet;
+        // the customer must wait for that first reply before the conversation opens.
+        if (!TicketMessage::where('ticket_id', $ticket_id)->where('user_type', 'admin')->exists()) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Please wait for an admin to reply before sending further messages.',
+                'language_message_key' => 'waiting_for_admin_reply',
                 'data' => [],
             ]);
         }

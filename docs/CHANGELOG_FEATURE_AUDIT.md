@@ -28,8 +28,8 @@ opposite of both, confirmed with the user before any implementation work):
 
 | Status | Count |
 |---|---|
-| IMPLEMENTED (incl. FIXED/BROKEN→FIXED this session) | 63 |
-| PARTIALLY_IMPLEMENTED | 7 |
+| IMPLEMENTED (incl. FIXED/BROKEN→FIXED this session) | 64 |
+| PARTIALLY_IMPLEMENTED | 6 |
 | MISSING | 12 |
 | NOT_APPLICABLE | 18 |
 | NEEDS VERIFICATION (flagged for a manual spot-check, not a code-level gap) | 3 |
@@ -172,7 +172,7 @@ double-counted here.)
 | Optional alternate slider image for Web | **NOT_APPLICABLE** (reclassified — see note) | `category_sliders`/`offer_sliders` have a single `banner_image`, already served to the one real client this repo has — the mobile app (`App\v1\ApiController`, `getMediaImageUrl($section->banner_image)`). This changelog item is specifically a *Web*-alternate image; this repo has no customer-facing web storefront to consume a second image for (the same established finding behind PWA support's reclassification above). Adding an unused DB column and admin-form field with zero real consumer would be dead weight, not a feature — deferred until a web client exists to actually read it. | `app/Models/CategorySliders.php`, `app/Models/OfferSliders.php` | None (documented, not silently dropped) |
 | Language and System Settings APIs merged | PARTIALLY_IMPLEMENTED | Both exist as separate endpoints; merging them is an API-shape change with mobile-app-compatibility implications — flagged, not attempted without confirming no mobile client depends on the current split. | `app/Http/Controllers/App/v1/ApiController.php` | Defer — needs mobile-app coordination (P2, documented as blocked) |
 | Rider cash entries in Delivery Boy orders | IMPLEMENTED | `cash_received` column + `CashCollectionController` (bug-fixed this session) + delivery_boy Cash Collection page (built this session) together implement this. | `app/Http/Controllers/Admin/CashCollectionController.php`, `resources/views/delivery_boy/pages/tables/cash_collection.blade.php` | None |
-| Support Ticket chat enabled after Admin reply | PARTIALLY_IMPLEMENTED | `TicketController::sendMessage()`/`editTicketStatus()` exist and are extensive, but the specific "chat only unlocks after admin's first reply" gating rule was not confirmed in the code read so far. | `app/Http/Controllers/Admin/TicketController.php` | Verify/implement the specific gate (P2) |
+| Support Ticket chat enabled after Admin reply | **IMPLEMENTED (fixed this session)** | Confirmed genuinely missing: `App\v1\ApiController::send_message()` (the customer's own chat-send endpoint) had no gate at all — a customer could send unlimited follow-up messages the instant a ticket was created. Now blocks a non-admin send unless a `TicketMessage` with `user_type='admin'` already exists for that ticket (the ticket's initial `description` is not itself a message). Building this surfaced and fixed a second, independent bug in the same method: `user_type` was trusted verbatim from client input and written straight into `ticket_messages.user_type` — any customer could pass `user_type=admin` and have their own message stored/rendered as an official admin reply (and trivially self-unlock the new gate). Any client-claimed "admin" is now forced down to a real customer value first. | `app/Http/Controllers/App/v1/ApiController.php`, `tests/Feature/SupportTicketChatGateTest.php` (3 tests) | None |
 | Bug fixes / Performance improvements | NOT_APPLICABLE | See item 24. | — | None |
 
 ## v1.1.0
@@ -303,7 +303,8 @@ double-counted here.)
   toggle endpoint (not yet wired into dispatch eligibility — see that row's note above).
 - ~~Seller store deactivate/delete-when-empty~~ — **done**, see the "Sellers can deactivate/delete empty
   stores" rows above.
-- Support ticket chat-gate verification.
+- ~~Support ticket chat-gate verification~~ — **done**, see the "Support Ticket chat enabled after Admin
+  reply" row above (also fixed a real user_type spoofing bug found while implementing it).
 
 This document will be updated as each item is implemented, with the Status column changed to `IMPLEMENTED`
 or `FIXED` and Evidence pointing at the new code + tests.
