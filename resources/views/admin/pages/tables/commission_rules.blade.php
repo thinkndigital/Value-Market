@@ -182,9 +182,11 @@
         </div>
     </section>
 
-    @push('scripts')
-        <script>
-            // The Phase 7 commission-rule endpoints (admin.commission_rules.store/update) return
+    {{-- This layout has no @stack('scripts') for @push to target (confirmed: none of admin/seller/
+        delivery_boy's layouts define one) - inline scripts go directly in @section('content'), the same
+        place admin/pages/forms/home.blade.php's own inline <script> block already lives. --}}
+    <script>
+        // The Phase 7 commission-rule endpoints (admin.commission_rules.store/update) return
             // {error: true|false, message} on a plain 200 response rather than this app's shared
             // .submit_form handler's expected {error_message} shape, so this page submits with its own
             // small handler instead of relying on that generic (mismatched, for this pair of endpoints)
@@ -291,6 +293,5 @@
                     }
                 });
             });
-        </script>
-    @endpush
+    </script>
 @endsection

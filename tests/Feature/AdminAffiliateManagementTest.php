@@ -56,6 +56,12 @@ class AdminAffiliateManagementTest extends TestCase
         $response = $this->actingAs($admin)->get(route('admin.commission_rules.index'));
 
         $response->assertOk();
+        // Regression check: this page's submit handlers were originally wrapped in @push('scripts'), but
+        // none of this app's layouts (admin/seller/delivery_boy) define a matching @stack('scripts') -
+        // confirmed by grepping all three - so the pushed content was silently dropped and never reached
+        // the page at all. Asserting the handler function name actually appears in the rendered HTML is
+        // the only way to catch that class of bug; assertOk() alone does not.
+        $response->assertSee('commissionRulesResponseHandler', false);
     }
 
     public function test_creating_a_commission_rule_via_the_page_form_still_works(): void
