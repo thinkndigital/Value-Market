@@ -191,6 +191,10 @@ Route::middleware(['CheckInstallation'])->group(function () {
         // self-service, mirroring Seller\PaymentRequestController's pattern.
         Route::post('affiliate/withdrawal', [AffiliateController::class, 'requestWithdrawal'])->name('affiliate.withdrawal.request')->middleware(['demo_restriction']);
         Route::get('affiliate/withdrawal/history', [AffiliateController::class, 'withdrawalHistory'])->name('affiliate.withdrawal.history');
+
+        // Per-conversion breakdown behind the dashboard's aggregate approved/pending totals - an affiliate
+        // asking "which order paid me what" has had no way to see that beyond the two summary numbers.
+        Route::get('affiliate/conversions', [AffiliateController::class, 'conversionsHistory'])->name('affiliate.conversions.list');
     });
 
     // Public - the link a visitor actually clicks, no account required to be tracked and redirected.

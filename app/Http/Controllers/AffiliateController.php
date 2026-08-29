@@ -163,6 +163,24 @@ class AffiliateController extends Controller
         ]);
     }
 
+    /**
+     * Per-conversion breakdown behind dashboard()'s aggregate approved/pending sums - an affiliate has had
+     * no way to see which order earned them what beyond those two totals.
+     */
+    public function conversionsHistory()
+    {
+        $link = AffiliateLink::where('user_id', Auth::id())->first();
+        if (!$link) {
+            return response()->json(['error' => false, 'data' => []]);
+        }
+
+        $conversions = \App\Models\ReferralConversion::where('affiliate_link_id', $link->id)
+            ->orderByDesc('id')
+            ->get(['order_id', 'order_total', 'commission_amount', 'status', 'created_at']);
+
+        return response()->json(['error' => false, 'data' => $conversions]);
+    }
+
     public function withdrawalHistory(Request $request)
     {
         $requests = PaymentRequest::where('user_id', Auth::id())
