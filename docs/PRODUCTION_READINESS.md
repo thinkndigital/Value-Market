@@ -17,9 +17,9 @@ item, and most P2 items, each with real tests and a documented commit.
 | Metric | Count |
 |---|---|
 | Changelog items audited (v1.0.2 → v1.1.2) | 103 |
-| — IMPLEMENTED (including fixed/repaired this effort) | 65 |
+| — IMPLEMENTED (including fixed/repaired this effort) | 67 |
 | — PARTIALLY_IMPLEMENTED (documented gap, not blocking) | 5 |
-| — MISSING (documented, P2/UX-scope, not blocking — see below) | 12 |
+| — MISSING (documented, P2/UX-scope, not blocking — see below) | 10 |
 | — NOT_APPLICABLE (reclassified with evidence — no live consumer exists) | 18 |
 | — NEEDS VERIFICATION (flagged for a manual spot-check, not a code-level gap) | 3 |
 | P0 (security) items found | 2 |
@@ -96,7 +96,6 @@ None of the following block a production deploy — they are scope decisions, no
 | Item | Why it's open |
 |---|---|
 | Sellers can add categories during signup | Would touch the seller signup flow; not started this pass. |
-| Dynamic custom fields at store level | Larger schema/UI feature; not started this pass. |
 | Affiliate policies page, withdrawal limits, charts, shared-products list | Lower-impact UX/reporting additions on top of an already-functional affiliate engine. |
 | Admin Preference Page + Single/Multi Store mode | Flagged as a genuinely large architectural undertaking against this app's already deeply multi-store data model — deliberately deferred rather than attempted hastily. |
 | Tooltips (admin + seller panels) | Pure UX polish, zero functional risk. |
@@ -156,6 +155,17 @@ user before any implementation work, per their explicit confirmation:
   extension in the Docker image), nothing in the schema targets it.
 - **Deployment target:** Cloud Run `us-central1` (service `value-market-us`), not `me-central1` —
   `docs/CLOUD_RUN_DEPLOYMENT.md` reflects this.
+
+## Audit correction from the official vendor update package
+
+The user supplied the official eShop Plus v1.0.5→v1.0.6 update package (real `files.json` delta manifest,
+`query.sql`, full source tree) partway through this effort. Cross-checking it caught one real error in this
+audit's own earlier draft: "Store-level custom fields" was wrongly marked MISSING — it is fully implemented
+and wired end-to-end (`app/Models/CustomField.php`, `Admin\CustomFieldController`, and the shared
+`components.product.custom_fields` Blade component used by all four product-entry forms across admin and
+seller). Every other file the two codebases diverge on was confirmed to be Value-Market's own security/
+performance hardening layered on top (RBAC policies, IDOR fixes, upload validation, N+1 query fixes, crash
+guards) — not a dropped or regressed feature.
 
 ## Bottom line
 

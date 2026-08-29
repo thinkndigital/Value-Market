@@ -18,9 +18,15 @@ opposite of both, confirmed with the user before any implementation work):
   defensively (a `pgsql` connection config + `pdo_pgsql` extension in the Docker image) — nothing in the
   schema or any query targets it. This audit and all implementation work below assumes MySQL/MariaDB.
 - **Deployment target:** production now runs on Cloud Run `us-central1` (service `value-market-us`,
-  migrated this session to match Cloud SQL's region and fix latency). `docs/CLOUD_RUN_DEPLOYMENT.md` still
-  documents the original `me-central1` setup and needs updating (tracked separately, see
-  `docs/PRODUCTION_READINESS.md`).
+  migrated this session to match Cloud SQL's region and fix latency). `docs/CLOUD_RUN_DEPLOYMENT.md` has
+  been updated to reflect this.
+
+**Cross-checked against the official eShop Plus v1.0.5→v1.0.6 update package** (user-supplied, containing the
+real vendor `files.json` delta manifest, `query.sql`, and full source tree) part-way through this audit. This
+caught one real error in this audit's own earlier draft — "Store-level custom fields" was wrongly marked
+MISSING; see the corrected rows below — and confirmed every other file Value-Market has diverged from that
+vendor baseline on is Value-Market's own security/performance hardening (RBAC policies, IDOR fixes, upload
+validation, N+1 fixes, crash-guard fixes), not a regression or a dropped feature.
 
 ---
 
@@ -28,9 +34,9 @@ opposite of both, confirmed with the user before any implementation work):
 
 | Status | Count |
 |---|---|
-| IMPLEMENTED (incl. FIXED/BROKEN→FIXED this session) | 65 |
+| IMPLEMENTED (incl. FIXED/BROKEN→FIXED this session) | 67 |
 | PARTIALLY_IMPLEMENTED | 5 |
-| MISSING | 12 |
+| MISSING | 10 |
 | NOT_APPLICABLE | 18 |
 | NEEDS VERIFICATION (flagged for a manual spot-check, not a code-level gap) | 3 |
 | **Total items audited** | **103** |
@@ -93,8 +99,8 @@ double-counted here.)
 | Sellers can approve return requests | IMPLEMENTED | `ReturnRequestController::update()` (seller) handles status transitions including approve. | `app/Http/Controllers/Seller/ReturnRequestController.php:115-` | None |
 | Sellers can reject return requests | IMPLEMENTED | Same method handles reject transitions. | Same | None |
 | (Security, found during Phase 3 work this session, already fixed) Seller return-request IDOR | FIXED | `update()` used to do `ReturnRequest::find($id)` with no ownership check — any seller could mutate another seller's return request by guessing its id. Now scoped via `whereHas('orderItem', ...seller_id...)`, matching `list()`. Documented in `docs/PHASE_3_COMMERCE_CORE.md`. | `app/Http/Controllers/Seller/ReturnRequestController.php:150-160` | None — already fixed |
-| Dynamic custom fields at store level | **MISSING** | No `store_custom_fields`/`StoreCustomField` table, model, or controller found. `CustomField` exists but is store-scoped for *products* only (`custom_fields.store_id`), not a distinct store-profile custom-field system. | — | Implement (P2 — lower priority, narrow feature) |
-| Store-level custom fields usable while adding products | **MISSING** | Depends on the above. | — | Implement (P2) |
+| Dynamic custom fields at store level | **IMPLEMENTED (corrected — see note)** | This audit's earlier draft wrongly marked this MISSING, drawing a distinction ("store-scoped for products only, not a distinct store-profile system") that doesn't match what the changelog item or the real vendor product actually describe. Cross-checked against the official eShop Plus v1.0.5→v1.0.6 update package (`query.sql`): the vendor's own `custom_fields` table is `store_id`-scoped and used exactly the same way — dynamic, admin-defined fields (text/number/file/radio/dropdown/checkbox/date/textarea/color, with min/max/required/options) per store, applied to that store's products. Value-Market already has the identical shape: `custom_fields` table (`app/Models/CustomField.php`), full CRUD via `Admin\CustomFieldController` (193 lines, index/store/edit/update/destroy), all routed and permission-gated. | `app/Models/CustomField.php`, `app/Http/Controllers/Admin/CustomFieldController.php`, `database/migrations/2025_01_01_000003_baseline_catalog.php` | None |
+| Store-level custom fields usable while adding products | **IMPLEMENTED (corrected — see note)** | Same correction as above. Verified wired end-to-end into all four product-entry forms via the shared `components.product.custom_fields`/`update_custom_fields` Blade components: admin products, admin combo products, seller products, and seller combo products all `@include` it, backed by `ProductCustomFieldValue`/`ComboProductCustomFieldValue` for storing the submitted values. | `resources/views/components/product/custom_fields.blade.php`, `resources/views/components/product/update_custom_fields.blade.php`, `app/Models/ProductCustomFieldValue.php`, `app/Models/ComboProductCustomFieldValue.php` | None |
 | Bank Transfer payment method | IMPLEMENTED | Referenced across `Seller/OrderController`, `Admin/OrderController`, `Admin/SettingController`, `CartController`, `App/v1/ApiController` — a real, wired payment method, not a stub. | Multiple, see grep evidence | None |
 | Bank Transfer orders remain Awaiting/Pending until verified | IMPLEMENTED | Confirmed via order status handling in the above controllers (bank transfer orders start in an unverified state pending admin/seller confirmation of proof-of-payment). | `app/Http/Controllers/Admin/OrderController.php` | Verify admin verification UI is fully wired (P2 spot-check) |
 
@@ -296,7 +302,9 @@ double-counted here.)
 - Admin Preference Page + Single/Multi Store mode.
 - Tooltips (admin + seller).
 - ~~Setup Progress Tracker~~ — **done**, see `app/Services/SetupProgressService.php`.
-- Store-level custom fields.
+- ~~Store-level custom fields~~ — reclassified **IMPLEMENTED**, see the corrected rows above. This audit's
+  earlier draft wrongly marked it missing; verified against the official eShop Plus v1.0.5→v1.0.6 update
+  package and confirmed already fully implemented and wired.
 - Affiliate policies page, withdrawal limits, charts, shared-products list.
 - ~~Alternate slider image~~ — reclassified **NOT_APPLICABLE**, see that row's note above (no web
   storefront exists to consume a second image).
