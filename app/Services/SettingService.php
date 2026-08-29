@@ -40,7 +40,15 @@ class SettingService
 
         $key = $isJson ? 'json' : 'raw';
 
-        if (isset($cache[$type][$key])) {
+        // This cache is function-local static state, so nothing can invalidate it when a Setting row
+        // changes mid-process - harmless in normal PHP-FPM (a fresh process, and thus a fresh empty $cache,
+        // per request) but wrong for any persistent-process context. PHPUnit is one: many tests share a
+        // single process, so test B could read test A's stale cached value for the same $type even after
+        // creating its own fresh Setting row (hit repeatedly this session - PolicyPagesTest and
+        // PaymentWebhookSecurityTest/PaypalTransactionWebviewOwnershipTest colliding on 'payment_method').
+        // Bypassing the cache under tests keeps every test's Setting::forceCreate() immediately visible to
+        // itself, without changing production's real memoize-within-a-request behavior at all.
+        if (isset($cache[$type][$key]) && !app()->runningUnitTests()) {
             return $cache[$type][$key];
         }
 

@@ -181,12 +181,25 @@ class Webhook extends Controller
         $paystack = new Paystack;
         $credentials = app(SettingService::class)->getSettings('payment_method', true);
         $credentials = json_decode($credentials, true);
-        $paystack_key_id = $credentials['paystack_key_id'];
-        $secret_key = $credentials['paystack_secret_key'];
+        $paystack_key_id = $credentials['paystack_key_id'] ?? '';
+        $secret_key = $credentials['paystack_secret_key'] ?? '';
 
-        $request_body = file_get_contents('php://input');
+        $request_body = $request->getContent();
+        // $secret_key used to be fetched and then never referenced again - the webhook trusted whatever
+        // JSON was POSTed with no signature check at all, letting anyone forge a charge.success event
+        // (marking any order paid, or crediting any user's wallet via the wallet-refill-user-{id}-...
+        // order_id convention below) without ever paying. Paystack signs webhooks with HMAC-SHA512 of the
+        // raw body using the secret key, sent in the x-paystack-signature header - verify it before
+        // trusting anything in the payload.
+        $paystack_signature = $request->header('X-Paystack-Signature', '');
+        $expected_signature = $secret_key !== '' ? hash_hmac('sha512', $request_body, $secret_key) : '';
+        if ($secret_key === '' || $paystack_signature === '' || !hash_equals($expected_signature, $paystack_signature)) {
+            Log::alert('Paystack Webhook | Invalid Signature --> ' . $request_body);
+            return response()->json(['error' => true, 'message' => 'Invalid signature'], 400);
+        }
+
         $event = json_decode($request_body, true);
-        Log::alert("paystack webhook=>" . $request);
+        Log::alert("paystack webhook=>" . $request_body);
 
         $order_id = $event['data']['metadata']['order_id'];
         if (is_numeric($order_id)) {
@@ -356,11 +369,18 @@ class Webhook extends Controller
         $system_settings = app(SettingService::class)->getSettings('system_settings', true);
         $system_settings = json_decode($system_settings, true);
         $razorpay = new Razorpay;
-        $request = file_get_contents('php://input');
-        if ($request === false || empty($request)) {
-            $this->edie("Error in reading Post Data");
+        // file_get_contents('php://input') doesn't reflect the request body in every context (PHP test
+        // harnesses never populate it, and some SAPIs only let it be read once - if any earlier middleware
+        // touched it, it comes back empty here). $request->getContent() is the idiomatic, always-reliable
+        // way to get the raw body Symfony/Laravel already buffered.
+        $raw_body = $request->getContent();
+        if ($raw_body === '') {
+            Log::alert('Razorpay Webhook | Error in reading Post Data');
+            return response()->json(['error' => true, 'message' => 'Empty request body'], 400);
         }
-        $request = json_decode($request, true);
+        // Captured before $request is reassigned to the decoded array below.
+        $http_razorpay_signature_header = $request->header('X-Razorpay-Signature', '');
+        $request = json_decode($raw_body, true);
 
         $payment_method_settings = app(SettingService::class)->getSettings('payment_method', true);
         $payment_method_settings = json_decode($payment_method_settings, true);
@@ -368,10 +388,20 @@ class Webhook extends Controller
         $key_id = $payment_method_settings['razorpay_key_id'] ?? "";
         $secret_key = $payment_method_settings['razorpay_secret_key'] ?? "";
         $secret_hash = $payment_method_settings['razorpay_webhook_secret_key'] ?? "";
-        define('RAZORPAY_SECRET_KEY', $secret_hash);
         Log::alert('Razorpay IPN POST --> ' . var_export($request, true));
-        Log::alert('Razorpay IPN SERVER --> ' . var_export($_SERVER, true));
-        $http_razorpay_signature = isset($_SERVER['HTTP_X_RAZORPAY_SIGNATURE']) ? $_SERVER['HTTP_X_RAZORPAY_SIGNATURE'] : "";
+        $http_razorpay_signature = $http_razorpay_signature_header;
+        // A previous version of this check only verified the header was present, never that its value was
+        // actually a valid signature - any POST with any non-empty X-Razorpay-Signature header passed,
+        // meaning anyone could forge a payment.captured/order.paid event (marking any order paid, or
+        // crediting any user's wallet via the wallet-refill-user-{id}-... order_id convention below) without
+        // ever paying. The webhook secret must actually be used to verify the signature before the payload
+        // is trusted - computed over the raw request body, since re-encoding the decoded array would not
+        // reproduce the exact bytes Razorpay signed.
+        $expected_signature = $secret_hash !== '' ? hash_hmac('sha256', $raw_body, $secret_hash) : '';
+        if ($secret_hash === '' || $http_razorpay_signature === '' || !hash_equals($expected_signature, $http_razorpay_signature)) {
+            Log::alert('razorpay Webhook | Invalid Server Signature  --> ' . var_export($request['event'] ?? null, true));
+            return response()->json(['error' => true, 'message' => 'Invalid signature'], 400);
+        }
         $txn_id = (isset($request['payload']['payment']['entity']['id'])) ? $request['payload']['payment']['entity']['id'] : "";
         if (!empty($request['payload']['payment']['entity']['id'])) {
             if (!empty($txn_id)) {
@@ -529,7 +559,12 @@ class Webhook extends Controller
             } elseif ($request['event'] == "refund.processed") {
                 //Refund Successfully
                 $transaction = fetchDetails(Transaction::class, ['txn_id' => $request['payload']['refund']['entity']['payment_id']]);
-                if (empty($transaction)) {
+                // fetchDetails() always returns a Collection object, so empty() here was always false - an
+                // empty if-body that did nothing, then an unconditional $transaction[0] access that would
+                // throw on a refund for a payment_id with no matching local transaction.
+                if ($transaction->isEmpty()) {
+                    Log::alert('Razorpay Webhook | Refund for unknown transaction --> ' . var_export($request['payload']['refund']['entity']['payment_id'] ?? null, true));
+                    return response()->json(['error' => true, 'message' => 'Transaction not found'], 400);
                 }
                 app(OrderService::class)->process_refund($transaction[0]['id'], $transaction[0]['status']);
                 $response['error'] = false;
@@ -771,24 +806,27 @@ class Webhook extends Controller
         $credentials = json_decode(app(SettingService::class)->getSettings('payment_method', true), true);
 
         // Retrieve the request body and Stripe signature
-        $request_body = @file_get_contents('php://input');
-        $event = json_decode($request_body, FALSE);
-        $http_stripe_signature = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? "";
+        $request_body = $request->getContent();
+        $http_stripe_signature = $request->header('Stripe-Signature', '');
 
-        // Verify the Stripe Webhook signature
-        //        try {
-        //            $event = \Stripe\Webhook::constructEvent(
-        //                $request_body,
-        //                $http_stripe_signature,
-        //                $credentials['stripe_webhook_secret_key']
-        //            );
-        //        } catch (\UnexpectedValueException $e) {
-        //            Log::alert('Invalid Payload: ' . $e->getMessage());
-        //            return response()->json(['error' => true, 'message' => 'Invalid payload'], 400);
-        //        } catch (\Stripe\Exception\SignatureVerificationException $e) {
-        //            Log::alert('Invalid Signature: ' . $e->getMessage());
-        //            return response()->json(['error' => true, 'message' => 'Invalid signature'], 400);
-        //        }
+        // Verify the Stripe Webhook signature. This used to be entirely commented out, so $event was built
+        // straight from json_decode($request_body) - i.e. the raw, unauthenticated POST body was trusted
+        // directly, letting anyone forge a payment_intent.succeeded/checkout.session.completed event to
+        // mark any order paid or credit any wallet without ever paying. Restored using the stripe/stripe-php
+        // SDK (already a composer dependency) rather than reimplementing signature verification by hand.
+        try {
+            $event = \Stripe\Webhook::constructEvent(
+                $request_body,
+                $http_stripe_signature,
+                $credentials['stripe_webhook_secret_key'] ?? ''
+            );
+        } catch (\UnexpectedValueException $e) {
+            Log::alert('Stripe Webhook | Invalid Payload: ' . $e->getMessage());
+            return response()->json(['error' => true, 'message' => 'Invalid payload'], 400);
+        } catch (\Stripe\Exception\SignatureVerificationException $e) {
+            Log::alert('Stripe Webhook | Invalid Signature: ' . $e->getMessage());
+            return response()->json(['error' => true, 'message' => 'Invalid signature'], 400);
+        }
 
         Log::alert('Stripe Webhook Event: ' . var_export($event, true));
 
@@ -806,7 +844,10 @@ class Webhook extends Controller
         if ($type === 'wallet') {
             // Check for duplicate transactions (only for wallet)
             $existing_transaction = fetchDetails(Transaction::class, ['txn_id' => $txn_id], '*');
-            if (!empty($existing_transaction)) {
+            // fetchDetails() always returns an Eloquent Collection, even when nothing matched - empty() on
+            // any object is always false in PHP, so this used to report every first-time wallet refill as a
+            // duplicate and never actually credit the wallet. Use the Collection's own isEmpty() instead.
+            if (!$existing_transaction->isEmpty()) {
                 Log::alert('Duplicate Transaction Detected: ' . $txn_id);
                 return response()->json(['error' => false, 'message' => 'Duplicate transaction'], 200);
             }
@@ -816,7 +857,7 @@ class Webhook extends Controller
 
             // Fetch the transaction to get the order ID
             $transaction = fetchDetails(Transaction::class, ['txn_id' => $txn_id], '*');
-            if (empty($transaction)) {
+            if ($transaction->isEmpty()) {
                 Log::alert('Transaction Not Found for Order: ' . $txn_id);
                 return response()->json(['error' => true, 'message' => 'Transaction not found'], 400);
             }
@@ -901,6 +942,7 @@ class Webhook extends Controller
                     Log::alert('Order updated to Cancelled: ' . $txn_id);
                 }
                 Log::alert('Payment Failed: ' . $txn_id);
+                break;
 
             case 'charge.refunded':
                 if ($type === 'wallet') {
@@ -930,6 +972,7 @@ class Webhook extends Controller
                     Log::alert('Order updated to Refunded: ' . $txn_id);
                 }
                 Log::alert('Payment refunded: ' . $txn_id);
+                break;
 
             case 'charge.expired':
                 if ($type === 'wallet') {
@@ -958,6 +1001,7 @@ class Webhook extends Controller
                     Log::alert('Order updated to Expired: ' . $txn_id);
                 }
                 Log::alert('Payment expired: ' . $txn_id);
+                break;
 
             default:
                 Log::alert('Unhandled Event Type: ' . $event->type);

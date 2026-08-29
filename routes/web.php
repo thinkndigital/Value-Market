@@ -203,10 +203,14 @@ Route::middleware(['CheckInstallation'])->group(function () {
 
     //webhook route
 
-    Route::get('admin/webhook/razorpay_webhook', [Webhook::class, 'razorpay_webhook'])->name('admin.razorpay_webhook');
-    Route::get('admin/webhook/paystack_webhook', [Webhook::class, 'paystack_webhook'])->name('admin.paystack_webhook');
+    // Razorpay/Paystack/PhonePe all deliver webhooks as a POST with a JSON body (read via php://input in
+    // each handler) - these were registered as GET, so any real webhook call from the gateway would have
+    // hit Laravel's routing as a 405 Method Not Allowed before ever reaching the handler. Fixed to POST;
+    // stripe_webhook was already correctly POST.
+    Route::post('admin/webhook/razorpay_webhook', [Webhook::class, 'razorpay_webhook'])->name('admin.razorpay_webhook');
+    Route::post('admin/webhook/paystack_webhook', [Webhook::class, 'paystack_webhook'])->name('admin.paystack_webhook');
     Route::post('admin/webhook/stripe_webhook', [Webhook::class, 'stripe_webhook'])->name('admin.stripe_webhook');
-    Route::get('admin/webhook/phonepe_webhook', [Webhook::class, 'phonepe_webhook'])->name('admin.phonepe_webhook');
+    Route::post('admin/webhook/phonepe_webhook', [Webhook::class, 'phonepe_webhook'])->name('admin.phonepe_webhook');
     Route::get('admin/webhook/spr_webhook', [Webhook::class, 'spr_webhook'])->name('admin.spr_webhook');
 });
 // Phase 2 (docs/PHASE_2_IDOR_AUDIT.md, Tasks 8-9): this used to duplicate
