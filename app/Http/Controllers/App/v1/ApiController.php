@@ -288,9 +288,11 @@ Defined Methods:-
 
             $response = ['message' => 'Category(s) retrieved successfully'];
             $language_code = $request->attributes->get('language_code');
-            $cat_res = $categoryController->get_categories($id, $limit, $offset, $sort, $order, $has_child_or_item, '', '', '', $store_id, $search, $ids, $language_code);
+            // Changelog v1.1.1: customer-facing listing only - hides categories with no active products
+            // (own or, up to two levels deep, in a subcategory).
+            $cat_res = $categoryController->get_categories($id, $limit, $offset, $sort, $order, $has_child_or_item, '', '', '', $store_id, $search, $ids, $language_code, true);
             // dd($cat_res);
-            $popular_categories = $categoryController->get_categories(NULL, "", "", 'clicks', 'DESC', 'false', "", "", "", $store_id, "", "", $language_code);
+            $popular_categories = $categoryController->get_categories(NULL, "", "", 'clicks', 'DESC', 'false', "", "", "", $store_id, "", "", $language_code, true);
 
             return response()->json([
                 'error' => $cat_res->original['categories']->isEmpty() ? true : false,
@@ -4491,7 +4493,8 @@ Defined Methods:-
             $sort = $request->input('sort', 'id');
             $language_code = $request->attributes->get('language_code');
             // dd($language_code);
-            $data = $StoreController->getStores($limit, $offset, $sort, $order, $search, "", $language_code);
+            // Changelog v1.1.1: customer-facing listing only - hides stores with no active products.
+            $data = $StoreController->getStores($limit, $offset, $sort, $order, $search, "", $language_code, true);
 
             return response()->json($data);
         }

@@ -72,4 +72,9 @@ class Store extends Model implements HasMedia
     {
         return $this->hasMany(CustomField::class, 'store_id', 'id');
     }
+
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'store_id');
+    }
 }

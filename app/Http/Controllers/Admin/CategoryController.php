@@ -499,7 +499,7 @@ class CategoryController extends Controller
             return $category;
         });
     }
-    public function get_categories($id = null, $limit = '', $offset = '', $sort = 'row_order', $order = 'ASC', $hasChildOrItem = 'true', $slug = '', $ignoreStatus = '', $sellerId = '', $storeId = '', $search = '', $ids = '', $languageCode = "")
+    public function get_categories($id = null, $limit = '', $offset = '', $sort = 'row_order', $order = 'ASC', $hasChildOrItem = 'true', $slug = '', $ignoreStatus = '', $sellerId = '', $storeId = '', $search = '', $ids = '', $languageCode = "", $onlyWithProducts = false)
     {
         $languageCode = !empty($languageCode) ? $languageCode : app(TranslationService::class)->getLanguageCode();
         $storeId = isset($storeId) && !empty($storeId) ? $storeId : app(StoreService::class)->getStoreId();
@@ -545,6 +545,27 @@ class CategoryController extends Controller
                 $q->where('name', 'LIKE', "%{$search}%")
                     ->orWhereHas('children', function ($sub) use ($search) {
                         $sub->where('name', 'LIKE', "%{$search}%");
+                    });
+            });
+        }
+        // Changelog v1.1.1 ("Categories without products are automatically hidden") - opt-in only, and only
+        // ever passed true by the CUSTOMER-facing caller (App\v1\ApiController::get_categories()). This same
+        // method is also called by the SELLER app (Seller\v1\ApiController::get_categories()) to populate
+        // the category picker when adding a product - a seller must still see a brand-new, empty category to
+        // add their first product to it, so this must never apply unconditionally. Checked at the category's
+        // own level and two levels of children deep, matching how deep this same query already eager-loads
+        // (children.children just above) - a category is hidden only if neither it nor any of its
+        // subcategories (to that depth) have an active product.
+        if ($onlyWithProducts) {
+            $query->where(function ($q) {
+                $q->whereHas('products', function ($p) {
+                    $p->where('status', 1);
+                })
+                    ->orWhereHas('children.products', function ($p) {
+                        $p->where('status', 1);
+                    })
+                    ->orWhereHas('children.children.products', function ($p) {
+                        $p->where('status', 1);
                     });
             });
         }

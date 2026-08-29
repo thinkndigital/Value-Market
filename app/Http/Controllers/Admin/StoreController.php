@@ -952,12 +952,23 @@ class StoreController extends Controller
     }
 
 
-    public function getStores($limit = null, $offset = null, $sort = 'id', $order = 'DESC', $search = null, $from_app = false, $language_code = "")
+    public function getStores($limit = null, $offset = null, $sort = 'id', $order = 'DESC', $search = null, $from_app = false, $language_code = "", $onlyWithProducts = false)
     {
         $query = Store::query();
 
         if ($from_app !== true) {
             $query->where('status', 1);
+        }
+
+        // Changelog v1.1.1 ("Stores without products are automatically hidden") - opt-in only, and only ever
+        // passed true by the CUSTOMER-facing caller (App\v1\ApiController::get_stores()). This same method
+        // is also called by the seller app (Seller\v1\ApiController) to show a seller their own store - a
+        // seller with zero products yet must still see their store to add their first product, so this must
+        // never apply unconditionally.
+        if ($onlyWithProducts) {
+            $query->whereHas('products', function ($q) {
+                $q->where('status', 1);
+            });
         }
 
         if (!empty($search)) {

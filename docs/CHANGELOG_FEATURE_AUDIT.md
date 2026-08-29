@@ -28,9 +28,9 @@ opposite of both, confirmed with the user before any implementation work):
 
 | Status | Count |
 |---|---|
-| IMPLEMENTED (incl. FIXED this session) | 51 |
+| IMPLEMENTED (incl. FIXED this session) | 53 |
 | PARTIALLY_IMPLEMENTED | 11 |
-| MISSING | 10 |
+| MISSING | 8 |
 | BROKEN → FIXED | 2 |
 | NOT_APPLICABLE | 8 |
 | **Total items audited** | **82** |
@@ -188,8 +188,8 @@ opposite of both, confirmed with the user before any implementation work):
 | Cart system optimized | NEEDS VERIFICATION | Not yet deep-audited for N+1 queries — folded into the performance audit (item 24). | `app/Services/CartService.php` | Audit (P1) |
 | Cart APIs optimized | NEEDS VERIFICATION | Same. | `app/Http/Controllers/CartController.php` | Audit (P1) |
 | UI automatically updates after cart changes | NEEDS VERIFICATION | Frontend JS behavior, not yet audited. | — | Audit (P2) |
-| Stores without products are automatically hidden | **MISSING** | No product-count filter found in the public store-listing query. | — | Implement (P1) |
-| Categories without products are automatically hidden | **MISSING** | Same — no product-count filter in the public category-listing query. | — | Implement (P1) |
+| Stores without products are automatically hidden | IMPLEMENTED | `Admin\StoreController::getStores()` gained an opt-in `$onlyWithProducts` parameter (default `false` — every existing caller, including the seller app's own "see my store" call, is unaffected), passed `true` only by the customer-facing `App\v1\ApiController::get_stores()`. Deliberately opt-in, not unconditional: the same shared method is also called by `Seller\v1\ApiController`, and a seller must still see their own store before it has any products yet. | `app/Models/Store.php` (new `products()` relation), `app/Http/Controllers/Admin/StoreController.php`, `app/Http/Controllers/App/v1/ApiController.php` | None |
+| Categories without products are automatically hidden | IMPLEMENTED | Same opt-in pattern on `Admin\CategoryController::get_categories()` — hidden only when neither the category itself nor a subcategory (checked two levels deep, matching this query's own existing eager-load depth) has an active product, so a parent category isn't hidden just because products live on its children. | `app/Http/Controllers/Admin/CategoryController.php`, `app/Http/Controllers/App/v1/ApiController.php` | None |
 | Payment gateway issues fixed | NOT_APPLICABLE | Historical; covered by the fresh payment-gateway security audit (item 12/25). | — | None |
 | Installer improvements | NOT_APPLICABLE | `InstallerController` is already confirmed self-guarding and dead-when-installed (audited this session — `install()` checks `File::exists()` before ever rendering, redirects to `/` otherwise). No live bug found. | `app/Http/Controllers/InstallerController.php:16-34` | None |
 | General bug fixes | NOT_APPLICABLE | See item 24/25. | — | None |
