@@ -13,6 +13,17 @@ use Illuminate\Support\Facades\Validator;
  */
 class CommissionRuleController extends Controller
 {
+    /**
+     * The store/update/list endpoints below have existed since Phase 7 with no page to reach them from -
+     * routes/admin_routes.php's admin.commission_rules.* names were all JSON-only, so there was never a way
+     * to actually manage a commission rule from the admin panel itself (only via a raw API call). This is
+     * that page.
+     */
+    public function index()
+    {
+        return view('admin.pages.tables.commission_rules');
+    }
+
     public function list()
     {
         return response()->json(['error' => false, 'data' => CommissionRule::orderByDesc('id')->get()]);

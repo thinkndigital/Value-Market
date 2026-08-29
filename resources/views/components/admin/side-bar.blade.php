@@ -502,6 +502,25 @@
                      </a>
                  </li>
              @endif
+             @if ($user_role == 'super_admin')
+                 <li class="sidebar-title ms-3"><i
+                         class='bx bx-link'></i>{{ labels('admin_labels.affiliate', 'Affiliate') }}
+                 </li>
+                 <li class="nav-item ms-3">
+                     <a class="nav-link {{ Request::is('admin/commission_rules/manage') ? 'active' : '' }}"
+                         href="{{ route('admin.commission_rules.index') }}">
+                         <span
+                             class="nav-link-text ms-1">{{ labels('admin_labels.commission_rules', 'Commission Rules') }}</span>
+                     </a>
+                 </li>
+                 <li class="nav-item ms-3">
+                     <a class="nav-link {{ Request::is('admin/affiliate/links') ? 'active' : '' }}"
+                         href="{{ route('admin.affiliate.links.index') }}">
+                         <span
+                             class="nav-link-text ms-1">{{ labels('admin_labels.affiliate_links', 'Affiliate Links') }}</span>
+                     </a>
+                 </li>
+             @endif
              <li class="sidebar-title ms-3"><i class='bx bx-cycling'></i>
                  {{ labels('admin_labels.delivery_boys', 'Delivery Boys') }}
              </li>
