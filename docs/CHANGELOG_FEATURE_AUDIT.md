@@ -28,12 +28,14 @@ opposite of both, confirmed with the user before any implementation work):
 
 | Status | Count |
 |---|---|
-| IMPLEMENTED | 47 |
+| IMPLEMENTED (incl. FIXED this session) | 51 |
 | PARTIALLY_IMPLEMENTED | 11 |
-| MISSING | 14 |
-| BROKEN | 2 |
+| MISSING | 10 |
+| BROKEN → FIXED | 2 |
 | NOT_APPLICABLE | 8 |
 | **Total items audited** | **82** |
+
+*Updated as each remaining P1/P2 item is implemented — see the "Implementation priority" section below for what's still open.*
 
 ---
 
@@ -197,10 +199,10 @@ opposite of both, confirmed with the user before any implementation work):
 | Feature | Status | Evidence | Files | Action |
 |---|---|---|---|---|
 | Bug fixes / Performance improvements | NOT_APPLICABLE | See items 24/25. | — | None |
-| Interactive map added to address form | **MISSING** | No map library (Leaflet/Google Maps) referenced anywhere in `resources/views`; no `lat`/`lng` fields on the `Address` model/table. | `app/Models/Address.php` | **Implement (P1, explicitly required by this task)** |
-| Automatic latitude selection | **MISSING** | Same — no geolocation/marker logic exists. | — | Implement alongside the map |
-| Automatic longitude selection | **MISSING** | Same. | — | Implement alongside the map |
-| Customers should not need to manually enter coordinates | **MISSING** | Confirmed — there is currently no coordinate field on the address form at all (manual or otherwise), so this is a net-new feature, not a UX fix to an existing manual-entry flow. | `resources/views/*/pages/forms/*address*` | Implement (P1) |
+| Interactive map added to address form | **IMPLEMENTED** (corrected — see note) | This audit's earlier draft wrongly claimed lat/lng didn't exist at the data layer; it does (`addresses.latitude`/`longitude`, already in `Address::$fillable`, already read/written end-to-end by `App\v1\ApiController::add_address()`/`update_address()` — the mobile app's API). What was genuinely missing was any UI to pick a location: this repo has **no customer-facing web storefront at all** — no Blade views for it, and the React/Inertia/Stripe-JS/etc. packages in `package.json` have zero source files under `resources/js` (2 files total, no `Pages/` dir) — vestigial dependencies, not a real frontend. The one address-editing surface that does exist in this repo, admin's Manage Customer Address page, was read-only (`AddressController`'s `index`/`create`/`edit`/`update` are still-empty resource-controller stubs). Built a full edit flow on it: a vendored (no API key) Leaflet/OpenStreetMap picker component, a new `admin.customers.address.update` route reusing the already-validated `AddressController::store()`, and `user_id`/`latitude`/`longitude` + an "Edit" action added to `getCustomersAddressesList()`'s response to drive it. | `resources/views/components/admin/address-map.blade.php`, `app/Http/Controllers/Admin/AddressController.php::updateFromAdmin()`, `resources/views/admin/pages/tables/manage_address.blade.php`, `public/assets/admin/js/leaflet/` | Documented follow-up: when/if a customer web storefront or the mobile app's own map UI is built, it should call the same `App\v1\ApiController` `add_address`/`update_address` endpoints (already accept/validate lat/lng) — no backend work needed there. |
+| Automatic latitude selection | IMPLEMENTED | "Use My Current Location" button in the map component uses `navigator.geolocation.getCurrentPosition()`, with a graceful error message on permission denial/unsupported browsers. | `resources/views/components/admin/address-map.blade.php` | None |
+| Automatic longitude selection | IMPLEMENTED | Same control; also settable by clicking anywhere on the map or dragging the marker — not limited to geolocation. | Same | None |
+| Customers should not need to manually enter coordinates | IMPLEMENTED (on the in-scope surface) | The map's hidden `latitude`/`longitude` inputs are populated entirely by map interaction (click/drag/geolocate) — never manually typed. | Same | None |
 
 ---
 
@@ -210,8 +212,20 @@ opposite of both, confirmed with the user before any implementation work):
    variable-variable) instead of `foreach ($txnSearchRes as $row)`. Fixed earlier this session
    (commit `1ab49e5`) — the AJAX endpoint 500'd on every call before this fix.
 2. **`LanguageController::savelabel()` / `FrontLanguageController::savelabel()`** — arbitrary PHP file
-   upload + `include()` = remote code execution for any admin account. **Not yet fixed as of this audit
-   document's creation** — tracked as the top implementation priority below.
+   upload + `include()` = remote code execution for any admin account. **FIXED** (commit `fe8ad3c`) —
+   replaced with `LanguageJsonImportService`, real JSON validation, no code execution possible. This also
+   delivers the changelog's v1.0.11 "Direct JSON language upload" feature.
+3. **`Admin\Webhook`: razorpay/stripe/paystack webhook signature bypass** — all three trusted the POST body
+   with no real cryptographic verification, letting anyone forge a payment-success event to credit an
+   arbitrary wallet or mark an order paid without paying. **FIXED** (commit `43939c6`) — real HMAC/SDK-based
+   signature verification added to all three. The same commit also fixed: the razorpay/paystack/phonepe
+   webhook routes being registered as GET instead of POST (would 405 on every real webhook call);
+   `php://input`/`$_SERVER` reads replaced with `$request->getContent()`/`$request->header()`; four
+   instances of `empty()` on an Eloquent Collection (always `false` for any object) silently breaking
+   duplicate-transaction detection and crash-guards; a dead `define()` that threw on a second call within
+   one PHP process; missing `break` statements causing Stripe event fallthrough double-processing; and the
+   root cause of a recurring test-flakiness pattern (`SettingService::getSettings()`'s uninvalidated
+   process-static cache) that had already required workarounds in two earlier test files this session.
 
 ## Implementation priority (P0 → P2, per user-approved plan)
 

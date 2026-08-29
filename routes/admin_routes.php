@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AiController;
+use App\Http\Controllers\Admin\AddressController;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -939,6 +940,12 @@ Route::group(
         Route::get('admin/customers/customers_addresses', [UserController::class, 'getCustomersAddresses'])->name('admin.customers.getCustomersAddresses');
 
         Route::get('/customers/getCustomersAddressesList', [UserController::class, 'getCustomersAddressesList'])->name('admin.customers.getCustomersAddressesList');
+
+        // Changelog v1.1.2 ("Interactive map added to address form"): admin's Manage Customer Address page
+        // was read-only (no edit UI existed at all) - AddressController::store() already handles updates
+        // (branches on a present 'id') and already validates/saves latitude/longitude, so this reuses it
+        // rather than duplicating the logic.
+        Route::put('admin/customers/address/update', [AddressController::class, 'updateFromAdmin'])->name('admin.customers.address.update')->middleware(['demo_restriction'])->middleware('permissions:edit address');
 
         Route::get('admin/customers/view_transactions', [UserController::class, 'viewTransactions'])->name('admin.customers.viewTransactions');
 

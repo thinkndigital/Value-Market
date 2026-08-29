@@ -481,8 +481,24 @@ class UserController extends Controller
             ->get();
 
         $rows = $addresses->map(function ($row) use ($allowModification) {
+            // Changelog v1.1.2: user_id/latitude/longitude/country_code added so the "Edit" action (added
+            // alongside this) can populate its form - including the interactive map - from the row's own
+            // data, and so the update request can supply the address's real owning user_id (required by
+            // AddressController::store()'s ownership check on the update path).
+            $editAction = '<a href="javascript:void(0);" class="btn btn-sm btn-outline-primary edit-address"'
+                . ' data-id="' . $row->id . '" data-user_id="' . $row->user_id . '"'
+                . ' data-name="' . e($row->name) . '" data-type="' . e($row->type) . '"'
+                . ' data-mobile="' . e($row->mobile) . '" data-alternate_mobile="' . e($row->alternate_mobile) . '"'
+                . ' data-address="' . e($row->address) . '" data-landmark="' . e($row->landmark) . '"'
+                . ' data-city="' . e($row->city) . '" data-area="' . e($row->area) . '"'
+                . ' data-state="' . e($row->state) . '" data-pincode="' . e($row->pincode) . '"'
+                . ' data-country="' . e($row->country) . '" data-country_code="' . e($row->country_code) . '"'
+                . ' data-latitude="' . e($row->latitude) . '" data-longitude="' . e($row->longitude) . '"'
+                . ' data-bs-toggle="modal" data-bs-target="#edit_address_modal"><i class="bx bx-pencil"></i></a>';
+
             return [
                 'id' => $row->id,
+                'user_id' => $row->user_id,
                 'name' => $row->name,
                 'type' => $row->type,
                 'mobile' => $allowModification ? $row->mobile : '************',
@@ -498,6 +514,10 @@ class UserController extends Controller
                 'system_pincode' => $row->system_pincode,
                 'pincode_name' => $row->pincode,
                 'country' => $row->country,
+                'country_code' => $row->country_code,
+                'latitude' => $row->latitude,
+                'longitude' => $row->longitude,
+                'operate' => $editAction,
             ];
         });
 

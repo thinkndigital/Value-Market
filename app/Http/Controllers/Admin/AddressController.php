@@ -201,6 +201,33 @@ class AddressController extends Controller
         }
     }
 
+    /**
+     * Changelog v1.1.2 ("Interactive map added to address form"): admin's Manage Customer Address page had
+     * no edit capability at all (index()/create()/edit()/update() above are all still-empty resource-
+     * controller stubs). store() already handles updates (branches on a present 'id') and already validates
+     * latitude/longitude, so this reuses it - matching the same call-then-build-own-response pattern
+     * App\v1\ApiController::update_address() already uses, since store() itself has no return value on the
+     * update path.
+     */
+    public function updateFromAdmin(Request $request)
+    {
+        $rules = [
+            'id' => 'required|numeric|exists:addresses,id',
+            'user_id' => 'required|numeric|exists:users,id',
+        ];
+
+        if ($response = $this->HandlesValidation($request, $rules)) {
+            return $response;
+        }
+
+        $this->store($request);
+
+        return response()->json([
+            'error' => false,
+            'message' => labels('admin_labels.address_updated_successfully', 'Address updated successfully'),
+        ]);
+    }
+
     public function getAddress($user_id, $id = null, $fetch_latest = false, $is_default = false)
     {
         $query = Address::query();
