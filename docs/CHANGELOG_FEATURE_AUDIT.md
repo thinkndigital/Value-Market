@@ -28,10 +28,10 @@ opposite of both, confirmed with the user before any implementation work):
 
 | Status | Count |
 |---|---|
-| IMPLEMENTED (incl. FIXED/BROKEN→FIXED this session) | 61 |
+| IMPLEMENTED (incl. FIXED/BROKEN→FIXED this session) | 63 |
 | PARTIALLY_IMPLEMENTED | 7 |
-| MISSING | 15 |
-| NOT_APPLICABLE | 17 |
+| MISSING | 12 |
+| NOT_APPLICABLE | 18 |
 | NEEDS VERIFICATION (flagged for a manual spot-check, not a code-level gap) | 3 |
 | **Total items audited** | **103** |
 
@@ -166,10 +166,10 @@ double-counted here.)
 | Seller App can delete pending Brands | **IMPLEMENTED (fixed this session)** | `Seller\BrandController::destroy()` — ownership- and status-scoped (only the requesting seller's own still-pending row). | `app/Http/Controllers/Seller/BrandController.php` | None |
 | Seller App can view pending Categories | **IMPLEMENTED (fixed this session)** | Same pattern for categories via `Seller\CategoryController::list()`. | `app/Http/Controllers/Seller/CategoryController.php` | None |
 | Seller App can delete pending Categories | **IMPLEMENTED (fixed this session)** | `Seller\CategoryController::destroy()` — same ownership/status scoping. | `app/Http/Controllers/Seller/CategoryController.php` | None |
-| Sellers can deactivate empty stores | **MISSING** | No "deactivate if empty" logic found in `SellerStore` model or seller store controller — store status is a manual toggle with no product-count gate. | — | Implement (P2) |
-| Sellers can delete empty stores | **MISSING** | No delete-store endpoint with an empty-store guard found. | — | Implement (P2) |
+| Sellers can deactivate empty stores | **IMPLEMENTED (fixed this session)** | No self-service store deactivate/delete endpoint existed for sellers at all. Added `Seller\UserController::deactivateStore()`, gated on the store having zero products AND zero combo products (a store with live listings must not be able to disappear out from under active orders/customers) — a self-service "Deactivate Store" button on the seller's account page. | `app/Http/Controllers/Seller/UserController.php`, `resources/views/seller/pages/forms/account.blade.php`, `tests/Feature/SellerStoreDeactivateDeleteTest.php` (6 tests) | None |
+| Sellers can delete empty stores | **IMPLEMENTED (fixed this session)** | Same fix, `destroyStore()` — same empty-store guard, deletes the `SellerStore` row (not the seller's account). | Same as above | None |
 | Delivery Boy active/inactive availability toggle | IMPLEMENTED | New `users.is_available` column (migration `2025_02_17_000000`), deliberately separate from `active`/`status`/`active_status` (three already-overlapping legacy booleans on this table) rather than repurposing any of them. New self-service `PUT toggle_availability` endpoint on `Delivery_boy\v1\ApiController`, restricted to delivery-boy accounts, reported in `get_delivery_boy_details()`. **Not** wired into `DispatchService::rankAvailableDeliveryBoys()`'s existing eligibility filter in this pass — that filter reads one of the other overlapping columns, and changing live dispatch eligibility logic without a much deeper audit of what each column already means risks a real regression in order assignment; documented here as the natural next step rather than done silently. | `database/migrations/2025_02_17_000000_add_delivery_boy_availability_toggle.php`, `app/Http/Controllers/Delivery_boy/v1/ApiController.php`, `app/Models/User.php` | Follow-up (not this pass): wire `is_available` into `DispatchService`'s ranking query once the three legacy status columns' exact semantics are confirmed |
-| Optional alternate slider image for Web | **MISSING** | `category_sliders`/general slider models have a single `banner_image` column; no second/alternate-image column or fallback logic found. | `database/migrations/2025_01_01_000003_baseline_catalog.php` | Implement (P2) |
+| Optional alternate slider image for Web | **NOT_APPLICABLE** (reclassified — see note) | `category_sliders`/`offer_sliders` have a single `banner_image`, already served to the one real client this repo has — the mobile app (`App\v1\ApiController`, `getMediaImageUrl($section->banner_image)`). This changelog item is specifically a *Web*-alternate image; this repo has no customer-facing web storefront to consume a second image for (the same established finding behind PWA support's reclassification above). Adding an unused DB column and admin-form field with zero real consumer would be dead weight, not a feature — deferred until a web client exists to actually read it. | `app/Models/CategorySliders.php`, `app/Models/OfferSliders.php` | None (documented, not silently dropped) |
 | Language and System Settings APIs merged | PARTIALLY_IMPLEMENTED | Both exist as separate endpoints; merging them is an API-shape change with mobile-app-compatibility implications — flagged, not attempted without confirming no mobile client depends on the current split. | `app/Http/Controllers/App/v1/ApiController.php` | Defer — needs mobile-app coordination (P2, documented as blocked) |
 | Rider cash entries in Delivery Boy orders | IMPLEMENTED | `cash_received` column + `CashCollectionController` (bug-fixed this session) + delivery_boy Cash Collection page (built this session) together implement this. | `app/Http/Controllers/Admin/CashCollectionController.php`, `resources/views/delivery_boy/pages/tables/cash_collection.blade.php` | None |
 | Support Ticket chat enabled after Admin reply | PARTIALLY_IMPLEMENTED | `TicketController::sendMessage()`/`editTicketStatus()` exist and are extensive, but the specific "chat only unlocks after admin's first reply" gating rule was not confirmed in the code read so far. | `app/Http/Controllers/Admin/TicketController.php` | Verify/implement the specific gate (P2) |
@@ -297,10 +297,12 @@ double-counted here.)
 - ~~Setup Progress Tracker~~ — **done**, see `app/Services/SetupProgressService.php`.
 - Store-level custom fields.
 - Affiliate policies page, withdrawal limits, charts, shared-products list.
-- Alternate slider image.
+- ~~Alternate slider image~~ — reclassified **NOT_APPLICABLE**, see that row's note above (no web
+  storefront exists to consume a second image).
 - ~~Delivery boy self-service availability toggle~~ — **done**, `is_available` column + self-service
   toggle endpoint (not yet wired into dispatch eligibility — see that row's note above).
-- Seller store deactivate/delete-when-empty.
+- ~~Seller store deactivate/delete-when-empty~~ — **done**, see the "Sellers can deactivate/delete empty
+  stores" rows above.
 - Support ticket chat-gate verification.
 
 This document will be updated as each item is implemented, with the Status column changed to `IMPLEMENTED`

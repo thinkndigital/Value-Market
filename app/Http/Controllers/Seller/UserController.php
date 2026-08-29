@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Seller;
 
 use App\Models\City;
+use App\Models\ComboProduct;
 use App\Models\Media;
+use App\Models\Product;
 use App\Models\Seller;
 use App\Models\Role;
 use App\Models\SellerStore;
@@ -454,6 +456,64 @@ class UserController extends Controller
             }
         }
     }
+
+    /**
+     * docs/CHANGELOG_FEATURE_AUDIT.md (v1.0.11, "Sellers can deactivate empty stores" / "Sellers can delete
+     * empty stores"): confirmed genuinely missing - no self-service store deactivate/delete endpoint
+     * existed for sellers at all (store status was only ever set once, at admin-approval time). Both actions
+     * are gated on the store genuinely having zero products - a seller with live listings must not be able
+     * to make their storefront disappear out from under active orders/customers; an empty, unused store
+     * (e.g. created by mistake, or before the seller ever listed anything) is safe to deactivate or remove
+     * outright. Scoped to the authenticated seller's own SellerStore row for the current session store,
+     * the same seller_id/store_id resolution this controller's own update() already uses.
+     */
+    private function currentSellerStore(): ?SellerStore
+    {
+        $seller_id = Seller::where('user_id', Auth::id())->value('id');
+        $store_id = app(StoreService::class)->getStoreId();
+
+        return SellerStore::where('seller_id', $seller_id)->where('store_id', $store_id)->first();
+    }
+
+    private function storeHasProducts(SellerStore $sellerStore): bool
+    {
+        return Product::where('seller_id', $sellerStore->seller_id)->where('store_id', $sellerStore->store_id)->exists()
+            || ComboProduct::where('seller_id', $sellerStore->seller_id)->where('store_id', $sellerStore->store_id)->exists();
+    }
+
+    public function deactivateStore()
+    {
+        $sellerStore = $this->currentSellerStore();
+        if (!$sellerStore) {
+            return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')], 404);
+        }
+
+        if ($this->storeHasProducts($sellerStore)) {
+            return response()->json(['error' => true, 'message' => labels('seller_labels.cannot_deactivate_store_with_products', 'You cannot deactivate this store while it still has products. Remove all products first.')]);
+        }
+
+        $sellerStore->status = 0;
+        $sellerStore->save();
+
+        return response()->json(['error' => false, 'message' => labels('seller_labels.store_deactivated_successfully', 'Store deactivated successfully.')]);
+    }
+
+    public function destroyStore()
+    {
+        $sellerStore = $this->currentSellerStore();
+        if (!$sellerStore) {
+            return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')], 404);
+        }
+
+        if ($this->storeHasProducts($sellerStore)) {
+            return response()->json(['error' => true, 'message' => labels('seller_labels.cannot_delete_store_with_products', 'You cannot delete this store while it still has products. Remove all products first.')]);
+        }
+
+        $sellerStore->delete();
+
+        return response()->json(['error' => false, 'message' => labels('seller_labels.store_deleted_successfully', 'Store deleted successfully.')]);
+    }
+
     public function seller_zones_data(Request $request)
     {
         $store_id = app(StoreService::class)->getStoreId();

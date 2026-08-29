@@ -633,10 +633,17 @@
                                         </div>
                                     </div>
                                     <div class="card-footer">
-                                        <div class="d-flex justify-content-end mt-4">
+                                        <div class="d-flex justify-content-between align-items-center mt-4">
+                                            <div>
+                                                <button type="button" class="btn btn-outline-warning" id="deactivate_store_btn"
+                                                    data-url="{{ route('seller.store.deactivate') }}">{{ labels('seller_labels.deactivate_store', 'Deactivate Store') }}</button>
+                                                <button type="button" class="btn btn-outline-danger" id="delete_store_btn"
+                                                    data-url="{{ route('seller.store.destroy') }}">{{ labels('seller_labels.delete_store', 'Delete Store') }}</button>
+                                            </div>
                                             <button type="submit" class="btn btn-primary submit_button"
                                                 id="submit_btn">{{ labels('admin_labels.update_settings', 'Update Settings') }}</button>
                                         </div>
+                                        <small class="text-muted d-block mt-2">{{ labels('seller_labels.store_actions_require_no_products', 'Deactivating or deleting your store requires it to have no products.') }}</small>
                                     </div>
                                 </div>
                             </div>
@@ -646,4 +653,57 @@
             </div>
         </form>
     </section>
+    <script>
+        function submitStoreAction(url, successMessage) {
+            $.ajax({
+                method: "GET",
+                url: url,
+                data: { _token: $('meta[name="csrf-token"]').attr("content") },
+                dataType: "json",
+            }).done(function(response) {
+                if (response.error) {
+                    iziToast.error({ title: "Error", message: response.message, position: "topRight" });
+                    return;
+                }
+                iziToast.success({ title: "Success", message: successMessage, position: "topRight" });
+                setTimeout(function() {
+                    window.location.reload();
+                }, 1200);
+            });
+        }
+
+        $(document).on("click", "#deactivate_store_btn", function() {
+            var url = $(this).data("url");
+            Swal.fire({
+                title: "Deactivate your store?",
+                text: "Your store will no longer be visible until reactivated by an admin.",
+                type: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#f0ad4e",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Yes, deactivate it!",
+            }).then(function(result) {
+                if (result.value) {
+                    submitStoreAction(url, "Store deactivated successfully.");
+                }
+            });
+        });
+
+        $(document).on("click", "#delete_store_btn", function() {
+            var url = $(this).data("url");
+            Swal.fire({
+                title: "Delete your store?",
+                text: "This cannot be undone.",
+                type: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#6c757d",
+                confirmButtonText: "Yes, delete it!",
+            }).then(function(result) {
+                if (result.value) {
+                    submitStoreAction(url, "Store deleted successfully.");
+                }
+            });
+        });
+    </script>
 @endsection

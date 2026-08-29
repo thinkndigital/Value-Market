@@ -50,6 +50,12 @@ Route::group(
         Route::get('seller/account/{id}', [UserController::class, 'edit']);
 
         Route::put('seller/account/update/{id}', [UserController::class, 'update'])->name('seller.account.update')->middleware(['demo_restriction']);
+        // Changelog v1.0.11 ("Sellers can deactivate/delete empty stores") - both gated to a store with
+        // zero products, scoped to the authenticated seller's own current-session store. GET, matching this
+        // app's established convention for simple state-changing actions triggered from a confirm dialog
+        // (e.g. seller/categories/destroy/{id}).
+        Route::get('seller/store/deactivate', [UserController::class, 'deactivateStore'])->name('seller.store.deactivate')->middleware(['demo_restriction']);
+        Route::get('seller/store/destroy', [UserController::class, 'destroyStore'])->name('seller.store.destroy')->middleware(['demo_restriction']);
 
         // orders - invoice PDFs
         // Phase 2 (docs/PHASE_2_IDOR_AUDIT.md, Tasks 8-9): these two were previously registered at the top
