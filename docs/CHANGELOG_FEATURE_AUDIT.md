@@ -28,8 +28,8 @@ opposite of both, confirmed with the user before any implementation work):
 
 | Status | Count |
 |---|---|
-| IMPLEMENTED (incl. FIXED this session) | 53 |
-| PARTIALLY_IMPLEMENTED | 11 |
+| IMPLEMENTED (incl. FIXED this session) | 54 |
+| PARTIALLY_IMPLEMENTED | 10 |
 | MISSING | 8 |
 | BROKEN → FIXED | 2 |
 | NOT_APPLICABLE | 8 |
@@ -59,7 +59,7 @@ opposite of both, confirmed with the user before any implementation work):
 | PWA support | **MISSING** | No `manifest.json` (app manifest, distinct from Vite's asset manifest), no service worker registration, no install-prompt handling found anywhere in `resources/views` or `public/`. | — | Implement (P1) |
 | Sitemap | IMPLEMENTED | `spatie/laravel-sitemap` package + `app/Console/Commands/GenerateSitemap.php` + `GET /sitemap` route that calls it on demand. Needs verification it covers products/categories/brands/stores and excludes admin/seller/auth routes (spot-checked in implementation pass). | `routes/web.php:27`, `app/Console/Commands/GenerateSitemap.php` | Verify coverage (P2) |
 | Two new product detail page styles | IMPLEMENTED | `web_product_details_style` setting, 2 options (`_1`/`_2`). | `resources/views/admin/pages/forms/stores.blade.php:488-490` | None |
-| Email order invoices | PARTIALLY_IMPLEMENTED | Invoice **PDF generation** works (confirmed + fixed this session in `tests/Feature/InvoicePdfGenerationTest.php` — two independent bugs in the invoice Blade template were fixed) and is downloadable on demand. No evidence of an **email** being sent with the invoice attached at order placement/status-change time — no `Mail::` call referencing an invoice found in `OrderService`. | `app/Services/OrderService.php`, `resources/views/vendor/invoices/templates/invoice.blade.php` | Implement email delivery (P1) |
+| Email order invoices | IMPLEMENTED (corrected — see note) | This audit's earlier draft missed that `OrderService::placeOrder()` **already** sent an order-confirmation email — a closer read found it, and found it was broken: the email linked to `/admin/orders/generat_invoice_PDF/{id}`, an admin-only route the customer receiving the email has no session for (the link was permanently dead for its actual audience). Also unguarded — an SMTP failure there threw uncaught, *after* the order had already committed, turning a real successful order into a 500 for the customer. Fixed: the PDF is now attached directly (no link/auth needed), via a new `MailService::sendMailWithAttachment()` (the `$attachment` param on the pre-existing `sendCustomMail()`/`sendDigitalProductMail()` was accepted but never once used by either). The whole block is now try/caught and skipped when the customer has no email or email isn't configured. | `app/Services/OrderService.php`, `app/Services/MailService.php` | None |
 | Sellers can add categories during signup | **MISSING** | No category-selection field found in any seller signup/registration controller or view. | — | Implement as part of the broader seller category-request feature (P1) |
 | Admin can edit/delete languages | IMPLEMENTED | `LanguageController::store()/update()/delete()` all present and routed. | `app/Http/Controllers/Admin/LanguageController.php:41,174,260` | None |
 | Bulk product upload for Admin and Seller panels | IMPLEMENTED | Admin + seller bulk-upload views exist (built this session: `category_bulk_upload`, `product_bulk_upload`, `combo_product_bulk_upload`, `translation_bulk_upload` for both panels), backed by real controller import logic. | `resources/views/admin/pages/forms/category_bulk_upload.blade.php`, `resources/views/seller/pages/forms/product_bulk_upload.blade.php`, etc. | Harden for large files (P2, see item 6 below) |

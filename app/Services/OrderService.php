@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Request;
 use App\Services\TranslationService;
 use App\Services\FirebaseNotificationService;
+use App\Services\MailService;
 use App\Services\ProductService;
 use App\Services\ComboProductService;
 use App\Services\CartService;
@@ -636,35 +637,46 @@ class OrderService
             if ($status !== 'awaiting' && $status !== 'Awaiting') {
                 app(FirebaseNotificationService::class)->sendNotification('', $registrationIDs_chunks, $fcmMsg);
                 $userEmail = $user_res[0]->email;
-                $invoiceUrl = url("/admin/orders/generat_invoice_PDF/$order_id");
 
-                // Email Subject
-                $subject = $app_name . ": Invoice for Your Order #$order_id - Thank You for Shopping with Us!";
-                $userName = $user_res[0]->username;
-                // Email Message
-                $messageContent = "
-                <p>Dear <strong>$userName</strong>,</p>
-                <p>Thank you for your order with us! We appreciate your trust in our service.</p>
-                <p>Your order has been successfully placed, and your invoice is ready for download.</p>
-                <p><strong>Invoice Details:</strong></p>
-                <ul>
-                    <li><strong>Order ID:</strong> #$order_id</li>
-                    <li><strong>Date:</strong> " . now()->format('d M, Y') . "</li>
-                </ul>
-                <p>You can download your invoice by clicking the link below:</p>
-                <p><a href='$invoiceUrl' style='background:#007bff;color:white;padding:10px 15px;border-radius:5px;text-decoration:none;'>Download Invoice</a></p>
-                <br>
-                <p>If you have any questions, feel free to contact our support team.</p>
-                <p>Best regards,</p>
-                <p><strong>$app_name</strong></p>
-            ";
+                // Changelog v1.0.3 ("Email order invoices"): this used to link to
+                // /admin/orders/generat_invoice_PDF/{id} - an admin-only route, unreachable by the customer
+                // this email is sent to (they have no admin session). Attaches the actual PDF instead, so no
+                // authenticated link is needed at all. Also now guarded: a missing customer email, email not
+                // yet configured in Settings, or any failure generating the PDF/sending the mail must never
+                // fail order placement - the order itself already committed above, this is a best-effort
+                // notification on top of it, not a checkout step.
+                if (!empty($userEmail) && app(MailService::class)->isEmailConfigured()) {
+                    try {
+                        $subject = $app_name . ": Invoice for Your Order #$order_id - Thank You for Shopping with Us!";
+                        $userName = $user_res[0]->username;
+                        $messageContent = "
+                        <p>Dear <strong>$userName</strong>,</p>
+                        <p>Thank you for your order with us! We appreciate your trust in our service.</p>
+                        <p>Your order has been successfully placed. Your invoice is attached to this email.</p>
+                        <p><strong>Invoice Details:</strong></p>
+                        <ul>
+                            <li><strong>Order ID:</strong> #$order_id</li>
+                            <li><strong>Date:</strong> " . now()->format('d M, Y') . "</li>
+                        </ul>
+                        <br>
+                        <p>If you have any questions, feel free to contact our support team.</p>
+                        <p>Best regards,</p>
+                        <p><strong>$app_name</strong></p>
+                    ";
 
-                // Send email
-                Mail::send([], [], function ($message) use ($userEmail, $subject, $messageContent) {
-                    $message->to($userEmail)
-                        ->subject($subject)
-                        ->html($messageContent);
-                });
+                        $invoicePdf = app(\App\Http\Controllers\Admin\OrderController::class)->generatInvoicePDF($order_id)->getContent();
+
+                        app(MailService::class)->sendMailWithAttachment(
+                            $userEmail,
+                            $subject,
+                            $messageContent,
+                            $invoicePdf,
+                            "invoice-$order_id.pdf"
+                        );
+                    } catch (\Exception $e) {
+                        Log::error('Order invoice email failed for order ' . $order_id . ': ' . $e->getMessage());
+                    }
+                }
             }
 
             app(CartService::class)->removeFromCart($data);
