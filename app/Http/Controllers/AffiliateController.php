@@ -43,6 +43,36 @@ class AffiliateController extends Controller
     }
 
     /**
+     * The affiliate portal's own dashboard (AffiliateAuthController handles its login) - a self-service
+     * summary of the logged-in user's own standing: their link (auto-created on first visit, one per user,
+     * platform-wide - matching the reference eShop Plus product's own "one affiliate account, one link"
+     * shape rather than this engine's more general per-target-type links), clicks/conversions, and
+     * approved/pending commission. Read-only same as Admin\AffiliateController's report - a conversion's
+     * status is still only ever changed by the order lifecycle
+     * (AffiliateService::approveConversionsForOrder()/reverseConversionsForOrder()).
+     */
+    public function dashboard()
+    {
+        $userId = Auth::id();
+        $link = AffiliateLink::where('user_id', $userId)->first();
+        if (!$link) {
+            $link = app(AffiliateService::class)->createLink($userId, AffiliateLink::TARGET_PLATFORM);
+        }
+
+        $conversions = \App\Models\ReferralConversion::where('affiliate_link_id', $link->id)
+            ->selectRaw('status, SUM(commission_amount) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        return view('affiliate.dashboard', [
+            'link' => $link,
+            'shareUrl' => route('affiliate.track', ['code' => $link->code]),
+            'approvedCommission' => $conversions[\App\Models\ReferralConversion::STATUS_APPROVED] ?? 0,
+            'pendingCommission' => $conversions[\App\Models\ReferralConversion::STATUS_PENDING] ?? 0,
+        ]);
+    }
+
+    /**
      * Public - not behind auth. This is the link a visitor actually clicks; tracking their click and
      * redirecting them onward doesn't require them to have an account.
      */

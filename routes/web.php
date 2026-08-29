@@ -128,6 +128,12 @@ Route::middleware(['CheckInstallation'])->group(function () {
     Route::get('delivery_boy/login', [UserController::class, 'delivery_boy_login'])->name('delivery_boy.login');
     Route::get('delivery_boy/logout', [UserController::class, 'delivery_boy_logout'])->name('delivery_boy.logout');
 
+    // affiliate portal - unlike the panels above, open to any active user (a customer or a seller can both
+    // be an affiliate), so its own AffiliateAuthController::authenticate() doesn't branch on role.
+    Route::get('affiliate/login', [\App\Http\Controllers\AffiliateAuthController::class, 'login'])->name('affiliate.login');
+    Route::post('affiliate/authenticate', [\App\Http\Controllers\AffiliateAuthController::class, 'authenticate'])->name('affiliate.authenticate');
+    Route::get('affiliate/logout', [\App\Http\Controllers\AffiliateAuthController::class, 'logout'])->name('affiliate.logout');
+
 
 
     // system policies pages
@@ -174,6 +180,7 @@ Route::middleware(['CheckInstallation'])->group(function () {
         // user, not scoped to one panel the way the includes above are.
         Route::get('affiliate/links', [AffiliateController::class, 'list'])->name('affiliate.links.list');
         Route::post('affiliate/links', [AffiliateController::class, 'store'])->name('affiliate.links.store');
+        Route::get('affiliate/dashboard', [AffiliateController::class, 'dashboard'])->name('affiliate.dashboard');
     });
 
     // Public - the link a visitor actually clicks, no account required to be tracked and redirected.
