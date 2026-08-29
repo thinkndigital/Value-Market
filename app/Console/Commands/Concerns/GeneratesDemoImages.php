@@ -48,6 +48,29 @@ trait GeneratesDemoImages
     }
 
     /**
+     * database/migrations/2025_02_02_000000_seed_default_storage_type.php seeds exactly this row (id 1,
+     * name "public", is_default 1) on every fresh install, precisely because every media-upload call site
+     * in this app (that migration's own docblock lists 11 of them) assumes a default storage type exists
+     * and crashes with "Call to a member function addMedia() on null" otherwise. If it's still missing
+     * here, that migration never actually ran against this database - recreate it rather than trust a
+     * hardcoded id=1 that may not exist either (the bug this replaces: StorageType::find($id ?? 1) returns
+     * null, and null, being falsy, was silently accepted instead of ?? falling back).
+     */
+    private function resolveDefaultStorageType(): StorageType
+    {
+        $storageType = StorageType::where('is_default', 1)->first() ?? StorageType::first();
+
+        if (!$storageType) {
+            $storageType = StorageType::forceCreate([
+                'name' => 'public',
+                'is_default' => 1,
+            ]);
+        }
+
+        return $storageType;
+    }
+
+    /**
      * Uploads a locally-generated image through the real media pipeline and returns a fully-qualified URL
      * (works for both the 'public' and 's3' disks - MediaService::getMediaImageUrl() passes any value
      * starting with "https:" straight through, so a full URL is always correct regardless of which disk is
@@ -58,11 +81,10 @@ trait GeneratesDemoImages
         $localPath = $this->generatePlaceholderImage($label, $bgColorHex);
 
         try {
-            $storageSetting = StorageType::where('is_default', 1)->first();
-            $disk = $storageSetting->name ?? 'public';
-            $mediaModel = StorageType::find($storageSetting->id ?? 1);
+            $storageType = $this->resolveDefaultStorageType();
+            $disk = $storageType->name ?: 'public';
 
-            $mediaItem = $mediaModel->addMedia($localPath)
+            $mediaItem = $storageType->addMedia($localPath)
                 ->usingFileName('demo-' . Str::random(10) . '.png')
                 ->toMediaCollection($collection, $disk);
 

@@ -109,6 +109,30 @@ class DemoSeedCommandsTest extends TestCase
         $this->assertSame(1, $conversions->where('status', ReferralConversion::STATUS_PENDING)->count());
     }
 
+    public function test_demo_create_seller_self_heals_when_no_default_storage_type_row_exists(): void
+    {
+        // Reproduces the real production failure: database/migrations/2025_02_02_000000_seed_default_storage_type.php
+        // never ran there, so storage_types was empty and every upload crashed with "Call to a member
+        // function addMedia() on null". GeneratesDemoImages::resolveDefaultStorageType() must recreate the
+        // row itself rather than assume it's always present.
+        StorageType::query()->delete();
+
+        $this->artisan('demo:create-seller', [
+            '--username' => 'Healed Seller',
+            '--mobile' => '9998880005',
+            '--password' => 'Demo@12345',
+            '--email' => '',
+            '--no-products' => true,
+        ])->assertExitCode(0);
+
+        $this->assertSame(1, StorageType::where('is_default', 1)->count());
+
+        $user = User::where('mobile', '9998880005')->first();
+        $this->assertNotNull($user);
+        $this->assertNotEmpty($user->image);
+        $this->assertTrue(str_starts_with($user->image, 'http'));
+    }
+
     public function test_demo_create_delivery_boy_creates_an_immediately_active_account(): void
     {
         $this->artisan('demo:create-delivery-boy', [
