@@ -638,44 +638,18 @@ class OrderService
                 app(FirebaseNotificationService::class)->sendNotification('', $registrationIDs_chunks, $fcmMsg);
                 $userEmail = $user_res[0]->email;
 
-                // Changelog v1.0.3 ("Email order invoices"): this used to link to
-                // /admin/orders/generat_invoice_PDF/{id} - an admin-only route, unreachable by the customer
-                // this email is sent to (they have no admin session). Attaches the actual PDF instead, so no
-                // authenticated link is needed at all. Also now guarded: a missing customer email, email not
-                // yet configured in Settings, or any failure generating the PDF/sending the mail must never
-                // fail order placement - the order itself already committed above, this is a best-effort
-                // notification on top of it, not a checkout step.
+                // Changelog v1.0.3 ("Email order invoices") + v1.0.10 ("Queue integration" / "Faster order
+                // processing"): this used to link to /admin/orders/generat_invoice_PDF/{id} - an admin-only
+                // route, unreachable by the customer this email is sent to (they have no admin session) -
+                // and generated the PDF + sent the mail inline, inside the checkout request itself. Both
+                // fixed: the PDF is attached directly (no authenticated link needed), and the actual
+                // generation/send work is now deferred to a queued job (SendOrderConfirmationEmailJob) so it
+                // never blocks the customer's checkout response. A missing customer email or email not yet
+                // configured is still checked here (cheap, in-request) so nothing is queued needlessly; any
+                // failure inside the job itself (PDF generation, SMTP) is caught by the job's own `failed()`
+                // handler, never propagating back to affect order placement, which already committed above.
                 if (!empty($userEmail) && app(MailService::class)->isEmailConfigured()) {
-                    try {
-                        $subject = $app_name . ": Invoice for Your Order #$order_id - Thank You for Shopping with Us!";
-                        $userName = $user_res[0]->username;
-                        $messageContent = "
-                        <p>Dear <strong>$userName</strong>,</p>
-                        <p>Thank you for your order with us! We appreciate your trust in our service.</p>
-                        <p>Your order has been successfully placed. Your invoice is attached to this email.</p>
-                        <p><strong>Invoice Details:</strong></p>
-                        <ul>
-                            <li><strong>Order ID:</strong> #$order_id</li>
-                            <li><strong>Date:</strong> " . now()->format('d M, Y') . "</li>
-                        </ul>
-                        <br>
-                        <p>If you have any questions, feel free to contact our support team.</p>
-                        <p>Best regards,</p>
-                        <p><strong>$app_name</strong></p>
-                    ";
-
-                        $invoicePdf = app(\App\Http\Controllers\Admin\OrderController::class)->generatInvoicePDF($order_id)->getContent();
-
-                        app(MailService::class)->sendMailWithAttachment(
-                            $userEmail,
-                            $subject,
-                            $messageContent,
-                            $invoicePdf,
-                            "invoice-$order_id.pdf"
-                        );
-                    } catch (\Exception $e) {
-                        Log::error('Order invoice email failed for order ' . $order_id . ': ' . $e->getMessage());
-                    }
+                    dispatch(new \App\Jobs\SendOrderConfirmationEmailJob($order_id));
                 }
             }
 

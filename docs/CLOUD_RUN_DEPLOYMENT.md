@@ -15,7 +15,7 @@ manually).
 ## 1. Prerequisites
 
 - A Google Cloud project. This guide assumes project id `value-market` (adjust `PROJECT_ID` below if
-  different) and region `me-central1`.
+  different) and region `us-central1`.
 - `gcloud` CLI installed and authenticated (`gcloud auth login`), or Cloud Build triggered from a connected
   GitHub repository (see §5).
 - Billing enabled on the project (Cloud Run, Cloud SQL, Artifact Registry, and Cloud Build all require it).
@@ -45,19 +45,19 @@ already exist:
 ```bash
 gcloud artifacts repositories create value-market \
   --repository-format=docker \
-  --location=me-central1 \
+  --location=us-central1 \
   --description="Value Market container images" \
   --project=value-market
 ```
 
-Resulting image path: `me-central1-docker.pkg.dev/value-market/value-market/value-market`.
+Resulting image path: `us-central1-docker.pkg.dev/value-market/value-market/value-market`.
 
 ## 4. Cloud SQL (database)
 
 ```bash
 gcloud sql instances create value-market-db \
   --database-version=MYSQL_8_0 \
-  --region=me-central1 \
+  --region=us-central1 \
   --tier=db-custom-2-4096 \
   --project=value-market
 
@@ -70,7 +70,7 @@ gcloud sql users create value_market_app \
 ```
 
 Note the instance connection name (`gcloud sql instances describe value-market-db --format='value(connectionName)'`,
-shaped like `value-market:me-central1:value-market-db`) — Cloud Run connects to it via the Cloud SQL Auth
+shaped like `value-market:us-central1:value-market-db`) — Cloud Run connects to it via the Cloud SQL Auth
 Proxy sidecar Cloud Run manages automatically when you pass `--add-cloudsql-instances` on deploy (§7), exposed
 to the container as a Unix domain socket at `/cloudsql/<connection-name>` (not a TCP proxy on 127.0.0.1); the
 application only ever sees that local socket path via `DB_SOCKET` (§7), never Cloud SQL's public IP.
@@ -118,15 +118,15 @@ gcloud builds submit --config=cloudbuild.yaml --project=value-market
 time env vars/secrets change) needs the fuller command below, run once manually:
 
 ```bash
-gcloud run deploy value-market \
-  --image=me-central1-docker.pkg.dev/value-market/value-market/value-market:latest \
-  --region=me-central1 \
+gcloud run deploy value-market-us \
+  --image=us-central1-docker.pkg.dev/value-market/value-market/value-market:latest \
+  --region=us-central1 \
   --platform=managed \
   --allow-unauthenticated \
   --port=8080 \
   --min-instances=0 \
-  --add-cloudsql-instances=value-market:me-central1:value-market-db \
-  --set-env-vars="APP_NAME=Value Market,APP_ENV=production,APP_DEBUG=false,APP_URL=https://<your-cloud-run-url-or-custom-domain>,LOG_CHANNEL=stderr,DB_CONNECTION=mysql,DB_SOCKET=/cloudsql/value-market:me-central1:value-market-db,DB_DATABASE=value_market,DB_USERNAME=value_market_app,CACHE_DRIVER=database,SESSION_DRIVER=database,QUEUE_CONNECTION=database,FILESYSTEM_DISK=s3" \
+  --add-cloudsql-instances=value-market:us-central1:value-market-db \
+  --set-env-vars="APP_NAME=Value Market,APP_ENV=production,APP_DEBUG=false,APP_URL=https://<your-cloud-run-url-or-custom-domain>,LOG_CHANNEL=stderr,DB_CONNECTION=mysql,DB_SOCKET=/cloudsql/value-market:us-central1:value-market-db,DB_DATABASE=value_market,DB_USERNAME=value_market_app,CACHE_DRIVER=database,SESSION_DRIVER=database,QUEUE_CONNECTION=database,FILESYSTEM_DISK=s3" \
   --set-secrets="APP_KEY=value-market-app-key:latest,DB_PASSWORD=value-market-db-password:latest,AWS_SECRET_ACCESS_KEY=value-market-aws-secret:latest" \
   --project=value-market
 ```
@@ -154,8 +154,8 @@ Notes on the env vars above (why these specific values, not the .env.example def
 
 | Setting | Value |
 |---|---|
-| Service name | `value-market` |
-| Region | `me-central1` |
+| Service name | `value-market-us` |
+| Region | `us-central1` |
 | Authentication | Allow public access (`--allow-unauthenticated`) |
 | Port | `8080` |
 | Billing | Request-based (Cloud Run's default; do not enable "instance-based billing" unless a specific always-on workload requires it) |
@@ -172,14 +172,14 @@ whose image you've reviewed:
 
 ```bash
 gcloud run jobs create value-market-migrate \
-  --image=me-central1-docker.pkg.dev/value-market/value-market/value-market:latest \
-  --region=me-central1 \
+  --image=us-central1-docker.pkg.dev/value-market/value-market/value-market:latest \
+  --region=us-central1 \
   --set-env-vars="..." --set-secrets="..." \
-  --set-cloudsql-instances=value-market:me-central1:value-market-db \
+  --set-cloudsql-instances=value-market:us-central1:value-market-db \
   --command="php" --args="artisan,migrate,--force" \
   --project=value-market
 
-gcloud run jobs execute value-market-migrate --region=me-central1 --project=value-market
+gcloud run jobs execute value-market-migrate --region=us-central1 --project=value-market
 ```
 
 (Same env vars/secrets as the service deploy in §7.) Re-create this Job with a fresh `--image` before each
@@ -202,10 +202,14 @@ assumed to be fine.
 ## 11. Queues and the scheduler
 
 `config/queue.php`'s default is `sync` (`QUEUE_CONNECTION=sync` in `.env.example`) — jobs run inline, no
-separate worker process is required for the app to function today. If `QUEUE_CONNECTION` is changed to
-`database`/`redis` in the future, a worker needs to run somewhere Cloud Run's request-driven model doesn't
-provide by itself — a separate Cloud Run service running `php artisan queue:work` (with `--min-instances=1`,
-since a scaled-to-zero worker never processes anything) or a Cloud Run Job triggered periodically.
+separate worker process is required for the app to function today. Changelog v1.0.10 ("Queue integration")
+added real queued jobs (`app/Jobs/`) plus a Cloud-Run-compatible way to drain them **without** a permanently-
+running worker process — full design in `docs/QUEUE_ARCHITECTURE.md`. Short version: set
+`QUEUE_CONNECTION=database` in production, then point a Cloud Scheduler job at
+`GET /admin/cronjob/processQueue?cron_secret=<CRON_SECRET>` on a short interval (every 1–2 minutes is
+reasonable); each hit runs one bounded `queue:work --stop-when-empty --max-time=50` pass and returns. This
+reuses the exact same shared-secret cron pattern already established below for `sitemap:generate`/
+`cart:send-reminders` — no separate always-on Cloud Run service, no `--min-instances=1` worker.
 
 `app/Console/Kernel.php` schedules two commands (`sitemap:generate` daily, `cart:send-reminders` daily at
 09:00) via Laravel's Task Scheduler, which itself needs `php artisan schedule:run` invoked every minute by
@@ -215,10 +219,10 @@ a Cloud Run Job (or an authenticated HTTP endpoint) once a minute:
 
 ```bash
 gcloud run jobs create value-market-schedule \
-  --image=me-central1-docker.pkg.dev/value-market/value-market/value-market:latest \
-  --region=me-central1 \
+  --image=us-central1-docker.pkg.dev/value-market/value-market/value-market:latest \
+  --region=us-central1 \
   --set-env-vars="..." --set-secrets="..." \
-  --set-cloudsql-instances=value-market:me-central1:value-market-db \
+  --set-cloudsql-instances=value-market:us-central1:value-market-db \
   --command="php" --args="artisan,schedule:run" \
   --project=value-market
 
@@ -238,9 +242,9 @@ scheduled commands run in production on Cloud Run.
 
 ```bash
 gcloud run domain-mappings create \
-  --service=value-market \
+  --service=value-market-us \
   --domain=your-domain.example \
-  --region=me-central1 \
+  --region=us-central1 \
   --project=value-market
 ```
 
@@ -253,10 +257,10 @@ or repository.
 Every deploy creates a new, immutable revision. To roll back instantly without rebuilding:
 
 ```bash
-gcloud run revisions list --service=value-market --region=me-central1 --project=value-market
-gcloud run services update-traffic value-market \
+gcloud run revisions list --service=value-market-us --region=us-central1 --project=value-market
+gcloud run services update-traffic value-market-us \
   --to-revisions=<previous-revision-name>=100 \
-  --region=me-central1 --project=value-market
+  --region=us-central1 --project=value-market
 ```
 
 Database migrations are **not** automatically rolled back by this — if the revision being rolled back to
@@ -266,10 +270,10 @@ discipline as any other production migration rollback.
 ## 14. Logs
 
 ```bash
-gcloud run services logs read value-market --region=me-central1 --project=value-market --limit=100
+gcloud run services logs read value-market-us --region=us-central1 --project=value-market --limit=100
 ```
 
-Or the Cloud Logging console, filtered to `resource.type="cloud_run_revision" AND resource.labels.service_name="value-market"`.
+Or the Cloud Logging console, filtered to `resource.type="cloud_run_revision" AND resource.labels.service_name="value-market-us"`.
 With `LOG_CHANNEL=stderr` (§7), Laravel's own application logs (`Log::info()`, exception traces, etc.) appear
 here alongside Apache's access/error logs (the Dockerfile points both at `/proc/self/fd/1`/`2`).
 

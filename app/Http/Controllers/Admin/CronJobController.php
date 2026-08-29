@@ -13,6 +13,7 @@ use App\Models\SellerCommission;
 use App\Models\User;
 use App\Models\UserFcm;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -25,6 +26,32 @@ use App\Services\PromoCodeService;
 class CronJobController extends Controller
 {
     use HandlesValidation;
+
+    /**
+     * Changelog v1.0.10 ("Queue integration", Cloud-Run-compatible design - see docs/QUEUE_ARCHITECTURE.md):
+     * drains the `jobs` table (QUEUE_CONNECTION=database) via one bounded run of `queue:work
+     * --stop-when-empty`, instead of assuming a permanently-running worker process - Cloud Run's
+     * request-driven model doesn't provide one by default, and this app already has an established pattern
+     * for exactly this shape of problem: Cloud Scheduler hitting a `verify_cron_secret`-protected HTTP
+     * endpoint on a fixed interval (see settleCashbackDiscount()/sendCartReminders() below). `--max-time`
+     * bounds the run so a busy queue can't hold the request open past Cloud Run's own timeout; any jobs left
+     * over are picked up on the next scheduled hit. A no-op (near-instant) when QUEUE_CONNECTION=sync
+     * (this app's local/dev default), since nothing is ever queued in that mode.
+     */
+    public function processQueue(Request $request)
+    {
+        Artisan::call('queue:work', [
+            '--stop-when-empty' => true,
+            '--max-time' => 50,
+            '--tries' => 3,
+        ]);
+
+        return response()->json([
+            'error' => false,
+            'message' => 'Queue processed.',
+            'output' => Artisan::output(),
+        ]);
+    }
     public function settleSellerCommission(Request $request)
     {
 

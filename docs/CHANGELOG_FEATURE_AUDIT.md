@@ -28,12 +28,17 @@ opposite of both, confirmed with the user before any implementation work):
 
 | Status | Count |
 |---|---|
-| IMPLEMENTED (incl. FIXED this session) | 59 |
-| PARTIALLY_IMPLEMENTED | 8 |
-| MISSING | 5 |
-| BROKEN → FIXED | 2 |
-| NOT_APPLICABLE | 8 |
-| **Total items audited** | **82** |
+| IMPLEMENTED (incl. FIXED/BROKEN→FIXED this session) | 58 |
+| PARTIALLY_IMPLEMENTED | 9 |
+| MISSING | 17 |
+| NOT_APPLICABLE | 16 |
+| NEEDS VERIFICATION (flagged for a manual spot-check, not a code-level gap) | 3 |
+| **Total items audited** | **103** |
+
+(Recounted directly from the table rows below, not tracked incrementally — the earlier running total of 82
+undercounted as new changelog sub-items were broken out into their own rows across this session. Two rows
+that explicitly cross-reference another row's evidence rather than stating independent findings are not
+double-counted here.)
 
 *Updated as each remaining P1/P2 item is implemented — see the "Implementation priority" section below for what's still open.*
 
@@ -145,8 +150,8 @@ opposite of both, confirmed with the user before any implementation work):
 
 | Feature | Status | Evidence | Files | Action |
 |---|---|---|---|---|
-| Queue integration | **MISSING** | No `ShouldQueue` implementations found anywhere (`app/Jobs` directory doesn't exist). `QUEUE_CONNECTION=database` is set in the documented production env but nothing dispatches jobs to it — the setting is currently a no-op. | — | Implement (P1) — Cloud-Run-compatible design required, see `docs/QUEUE_ARCHITECTURE.md` |
-| Faster order processing / Better UX during high traffic | **MISSING** | Direct consequence of no queue usage — heavy operations (emails, invoice generation, bulk imports) all run synchronously in the request cycle. | — | Same as above |
+| Queue integration | **IMPLEMENTED (fixed this session)** | Confirmed genuinely missing on first read (no `ShouldQueue` implementations anywhere, `app/Jobs` didn't exist, nothing dispatched to `QUEUE_CONNECTION`). Added `App\Jobs\SendOrderConfirmationEmailJob` (moves the invoice-PDF-generation + email-send that used to run inline in checkout) plus a Cloud-Run-compatible drain mechanism — `Admin\CronJobController::processQueue()`, a `verify_cron_secret`-protected HTTP endpoint running one bounded `queue:work --stop-when-empty` pass, reusing this app's existing Cloud Scheduler cron pattern instead of assuming a permanently-running worker process. Full design in `docs/QUEUE_ARCHITECTURE.md`. | `app/Jobs/SendOrderConfirmationEmailJob.php`, `app/Http/Controllers/Admin/CronJobController.php::processQueue()`, `app/Services/OrderService.php`, `docs/QUEUE_ARCHITECTURE.md`, `tests/Feature/QueueIntegrationTest.php` (7 tests) | None |
+| Faster order processing / Better UX during high traffic | **IMPLEMENTED (fixed this session)** | Direct consequence of the fix above — the slowest part of order placement (PDF generation + SMTP send) no longer blocks the checkout response; with `QUEUE_CONNECTION=database` it's genuinely deferred, with this app's local/test default (`sync`) it still runs inline but is now a reusable, independently-testable unit rather than inline code. Bulk-import queueing is tracked separately (see the "Improved bulk upload reliability" row above, still `PARTIALLY_IMPLEMENTED`). | `app/Jobs/SendOrderConfirmationEmailJob.php` | None |
 | System-wide bug fixes / Performance improvements | NOT_APPLICABLE | See item 24. | — | None |
 
 ## v1.0.11
@@ -271,7 +276,7 @@ opposite of both, confirmed with the user before any implementation work):
   component on admin's Manage Customer Address page.
 - ~~Seller category/brand request lifecycle (v1.0.6 + v1.0.11 app views)~~ — **done**, request tracking
   columns + admin approve/reject + seller pending-request list/delete.
-- Queue integration, Cloud-Run-compatible (v1.0.10).
+- ~~Queue integration, Cloud-Run-compatible (v1.0.10)~~ — **done**, see `docs/QUEUE_ARCHITECTURE.md`.
 - ~~Email order invoices (v1.0.3)~~ — **done**, PDF attached directly (the dead admin-only link is gone).
 - ~~Hide empty stores/categories (v1.1.1)~~ — **done**, opt-in `onlyWithProducts` filter on the
   customer-facing store/category endpoints.

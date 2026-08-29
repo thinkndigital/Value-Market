@@ -65,6 +65,9 @@ Route::get('admin/cronjob/settleSellerCommission', [CronJobController::class, 's
 // login) is the fix, not the `permissions` gate settleSellerCommission uses.
 Route::get('admin/cronjob/settleCashbackDiscount', [CronJobController::class, 'settleCashbackDiscount'])->middleware(['demo_restriction', 'verify_cron_secret']);
 Route::get('admin/cronjob/sendCartReminders', [CronJobController::class, 'sendCartReminders'])->middleware(['demo_restriction', 'verify_cron_secret']);
+// Changelog v1.0.10 ("Queue integration") - see docs/QUEUE_ARCHITECTURE.md. Meant for an external Cloud
+// Scheduler job, same as the two routes above.
+Route::get('admin/cronjob/processQueue', [CronJobController::class, 'processQueue'])->middleware(['demo_restriction', 'verify_cron_secret']);
 
 
 Route::group(
