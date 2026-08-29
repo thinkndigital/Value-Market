@@ -12,8 +12,8 @@
 # Substitutions (override with `gcloud builds submit --substitutions=_REGION=...,_SERVICE_NAME=...`, or set
 # as trigger substitutions in the Cloud Build console):
 substitutions:
-  _REGION: me-central1
-  _SERVICE_NAME: value-market
+  _REGION: us-central1
+  _SERVICE_NAME: value-market-us
   _REPOSITORY: value-market
 
 images:
