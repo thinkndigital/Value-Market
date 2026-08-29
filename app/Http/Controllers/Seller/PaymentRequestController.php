@@ -105,7 +105,6 @@ class PaymentRequestController extends Controller
     {
 
         $rules = [
-            'user_id' => 'required|numeric|exists:users,id',
             'payment_address' => 'required',
             'amount' => 'required|numeric|gt:0',
         ];
@@ -114,7 +113,15 @@ class PaymentRequestController extends Controller
             return $response;
         }
 
-        $user_id = $request->input('user_id');
+        // Security fix (docs/CHANGELOG_FEATURE_AUDIT.md, found while building the affiliate withdrawal
+        // flow on this same pattern): user_id used to come straight from the request body - a plain
+        // <input type="hidden" name="user_id"> in withdrawal_request.blade.php, trivially edited via
+        // devtools or a raw HTTP call - validated only as `exists:users,id`, never checked against the
+        // authenticated caller. Any logged-in seller/delivery boy could submit another user's id here,
+        // immediately deducting THAT user's wallet balance (below) and creating a pending payout to their
+        // own payment_address. Always the authenticated user's own id now; the request can no longer name
+        // anyone else.
+        $user_id = Auth::id();
         $payment_address = $request->input('payment_address');
         $amount = $request->input('amount');
         $userData = fetchDetails(User::class, ['id' => $user_id], 'balance');

@@ -28,9 +28,9 @@ opposite of both, confirmed with the user before any implementation work):
 
 | Status | Count |
 |---|---|
-| IMPLEMENTED (incl. FIXED/BROKEN→FIXED this session) | 58 |
+| IMPLEMENTED (incl. FIXED/BROKEN→FIXED this session) | 59 |
 | PARTIALLY_IMPLEMENTED | 9 |
-| MISSING | 16 |
+| MISSING | 15 |
 | NOT_APPLICABLE | 17 |
 | NEEDS VERIFICATION (flagged for a manual spot-check, not a code-level gap) | 3 |
 | **Total items audited** | **103** |
@@ -117,7 +117,7 @@ double-counted here.)
 | Share referral links | IMPLEMENTED | Dashboard has a copy-to-clipboard share button for the generated link. | `resources/views/affiliate/dashboard.blade.php` | None |
 | Commission settlement | PARTIALLY_IMPLEMENTED | Commission approval is **automatic** (order-lifecycle-driven via `approveConversionsForOrder()`/`reverseConversionsForOrder()`) — there is no manual admin "Settle Commission" action distinct from the automatic flow. The real eShop Plus demo shows a manual settle button; this codebase's automatic-only design is arguably *safer* (no manual-override IDOR/fraud surface) but doesn't match the changelog literally. | `app/Services/AffiliateService.php` | Add manual admin settlement view/action for edge cases (P1) |
 | Commission becomes eligible after successful delivery AND return window | IMPLEMENTED | `approveConversionsForOrder()`/`reverseConversionsForOrder()` are called from the order lifecycle (delivery confirmation triggers approval; a return within the window triggers reversal) — confirmed via code comment referencing exactly this rule. | `app/Services/AffiliateService.php:158-198` | Verify wiring at every order-status transition point (P0 spot-check) |
-| Admin can process affiliate payouts | **MISSING** | No `AffiliatePayout`/withdrawal-request flow analogous to seller/delivery-boy `PaymentRequest` found for affiliates specifically. | — | Implement (P1) |
+| Admin can process affiliate payouts | **IMPLEMENTED (fixed this session)** | `AffiliateController::requestWithdrawal()`/`withdrawalHistory()` added — the admin side needed zero changes, since `PaymentRequest` is already a generic `user_id`-scoped model and `Admin\PaymentRequestController::list()`/`update()` already work for any `payment_type`. Withdraws from the same `WalletService::updateBalance()` path (transaction-safe, row-locked) every other panel's withdrawal flow uses — affiliate commission is already real wallet balance by the time it's withdrawable, credited by `AffiliateService::approveConversionsForOrder()` only after delivery + the return window. Building this surfaced and fixed a real IDOR in the sibling `Seller\PaymentRequestController::add_withdrawal_request()`: `user_id` was read straight from the request body (a hidden form field, editable via devtools) and only validated as `exists:users,id`, never checked against the authenticated caller — any seller/delivery boy could deduct another user's balance and create a payout to their own address. Both now always use `Auth::id()`. | `app/Http/Controllers/AffiliateController.php`, `app/Http/Controllers/Seller/PaymentRequestController.php`, `routes/web.php`, `tests/Feature/AffiliateWithdrawalTest.php` (4 tests) | None |
 | Shared products list | **MISSING** | No "products this affiliate has shared" list view found (distinct from the generic affiliate_links admin table). | — | Implement (P2) |
 | (Security, already implemented) Self-referral prevention | IMPLEMENTED | `recordConversion()` explicitly skips recording when the buyer is the affiliate themselves — confirmed via inline comment. | `app/Services/AffiliateService.php:99-`, comment at line ~108 | None |
 
@@ -283,7 +283,8 @@ double-counted here.)
 - Bulk upload hardening — transactions/chunking (v1.0.9).
 - ~~Shiprocket depth audit + hardening + docs (v1.1.0)~~ — **done**, see Fix log item 4 and
   `docs/SHIPROCKET_INTEGRATION.md`.
-- Affiliate: product-level referral link generation, payout/withdrawal flow (v1.0.7).
+- Affiliate: product-level referral link generation (v1.0.7). ~~Payout/withdrawal flow~~ — **done**, see the
+  "Admin can process affiliate payouts" row above.
 - ~~PWA support (v1.0.3)~~ — reclassified **NOT_APPLICABLE**: dead manifest/service-worker scaffolding
   exists but is rendered by no route anywhere; no live customer web storefront exists in this repo for a
   PWA to attach to (see that row's evidence above).

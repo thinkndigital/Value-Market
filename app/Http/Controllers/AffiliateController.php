@@ -3,7 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\AffiliateLink;
+use App\Models\PaymentRequest;
+use App\Models\User;
 use App\Services\AffiliateService;
+use App\Services\WalletService;
+use App\Traits\HandlesValidation;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -16,6 +20,8 @@ use Illuminate\Support\Facades\Validator;
  */
 class AffiliateController extends Controller
 {
+    use HandlesValidation;
+
     public function list()
     {
         $links = AffiliateLink::where('user_id', Auth::id())->orderByDesc('id')->get();
@@ -69,7 +75,73 @@ class AffiliateController extends Controller
             'shareUrl' => route('affiliate.track', ['code' => $link->code]),
             'approvedCommission' => $conversions[\App\Models\ReferralConversion::STATUS_APPROVED] ?? 0,
             'pendingCommission' => $conversions[\App\Models\ReferralConversion::STATUS_PENDING] ?? 0,
+            'balance' => Auth::user()->balance ?? 0,
         ]);
+    }
+
+    /**
+     * Changelog v1.0.7 ("Admin can process affiliate payouts"): confirmed genuinely missing - no
+     * AffiliatePayout/withdrawal-request flow existed for affiliates specifically. The admin side already
+     * fully supports this with zero changes needed: PaymentRequest is a generic, user_id-scoped model (not
+     * seller/delivery-boy specific), and Admin\PaymentRequestController::list()/update() already work for
+     * any user_id - approving an affiliate's request needs no new admin code. What was missing was purely
+     * the affiliate-facing self-service submission, so this mirrors Seller\PaymentRequestController::
+     * add_withdrawal_request()'s pattern exactly (including its just-fixed IDOR fix: the authenticated
+     * user's own id, never a client-supplied one), with payment_type='affiliate' so admin's existing
+     * payment_type filter can distinguish it from seller/delivery_boy requests.
+     *
+     * Commission an affiliate has earned is already real wallet balance by the time it reaches here -
+     * AffiliateService::approveConversionsForOrder() credits WalletService::updateWalletBalance() the
+     * moment a conversion is approved (after delivery + the return window, per that method's own
+     * commission-timing rule) - so this withdraws from the same balance/WalletService::updateBalance()
+     * path every other panel's withdrawal flow already uses, not a separate affiliate-only ledger.
+     */
+    public function requestWithdrawal(Request $request)
+    {
+        $rules = [
+            'payment_address' => 'required',
+            'amount' => 'required|numeric|gt:0',
+        ];
+
+        if ($response = $this->HandlesValidation($request, $rules)) {
+            return $response;
+        }
+
+        $userId = Auth::id();
+        $amount = $request->input('amount');
+        $paymentAddress = $request->input('payment_address');
+
+        $user = User::find($userId);
+        if (!$user || $amount > $user->balance) {
+            return response()->json([
+                'error' => true,
+                'message' => labels('affiliate.insufficient_balance_for_withdrawal', "You don't have enough balance to send this withdrawal request."),
+            ]);
+        }
+
+        PaymentRequest::create([
+            'user_id' => $userId,
+            'payment_address' => $paymentAddress,
+            'payment_type' => 'affiliate',
+            'amount_requested' => $amount,
+        ]);
+
+        app(WalletService::class)->updateBalance($amount, $userId, 'deduct');
+
+        return response()->json([
+            'error' => false,
+            'message' => labels('affiliate.withdrawal_request_sent', 'Withdrawal request sent successfully.'),
+            'balance' => User::find($userId)->balance,
+        ]);
+    }
+
+    public function withdrawalHistory(Request $request)
+    {
+        $requests = PaymentRequest::where('user_id', Auth::id())
+            ->orderByDesc('id')
+            ->get(['id', 'amount_requested', 'payment_address', 'status', 'remarks', 'created_at']);
+
+        return response()->json(['error' => false, 'data' => $requests]);
     }
 
     /**

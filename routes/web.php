@@ -181,6 +181,11 @@ Route::middleware(['CheckInstallation'])->group(function () {
         Route::get('affiliate/links', [AffiliateController::class, 'list'])->name('affiliate.links.list');
         Route::post('affiliate/links', [AffiliateController::class, 'store'])->name('affiliate.links.store');
         Route::get('affiliate/dashboard', [AffiliateController::class, 'dashboard'])->name('affiliate.dashboard');
+
+        // Changelog v1.0.7 ("Admin can process affiliate payouts"): affiliate-facing withdrawal
+        // self-service, mirroring Seller\PaymentRequestController's pattern.
+        Route::post('affiliate/withdrawal', [AffiliateController::class, 'requestWithdrawal'])->name('affiliate.withdrawal.request')->middleware(['demo_restriction']);
+        Route::get('affiliate/withdrawal/history', [AffiliateController::class, 'withdrawalHistory'])->name('affiliate.withdrawal.history');
     });
 
     // Public - the link a visitor actually clicks, no account required to be tracked and redirected.
