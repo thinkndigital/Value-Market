@@ -930,7 +930,10 @@ function brand_query_params(p) {
         order: p.order,
         offset: p.offset,
         search: p.search,
-        status: p.status,
+        // brands.status reuses the same 0/1/2 pending-approval convention as products.status
+        // (docs/CHANGELOG_FEATURE_AUDIT.md v1.0.6/v1.0.11), filtered via the shared productStatusFilter
+        // block (#status_filter), same as category_query_params/stock_query_params below.
+        status: $("#status_filter").val() || p.status,
     };
 }
 
@@ -959,7 +962,8 @@ function PromoqueryParams(p) {
 function category_query_params(p) {
     return {
         category_id: $("#category_id").val(),
-        status: p.status,
+        // See the identical comment in brand_query_params() above.
+        status: $("#status_filter").val() || p.status,
         limit: p.limit,
         sort: p.sort,
         order: p.order,

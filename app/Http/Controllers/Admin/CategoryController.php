@@ -174,19 +174,71 @@ class CategoryController extends Controller
 
 
 
-    public function update_status($id)
+    /**
+     * Also doubles as the category-request approve/reject action (docs/CHANGELOG_FEATURE_AUDIT.md
+     * v1.0.6/v1.0.11), reusing the exact same status dropdown + `change_toggle_status` AJAX handler
+     * already used for plain active/inactive toggling - list() below already renders a 3-option dropdown
+     * for a pending (status=2) row: "Not Approved" (2, current) / "Approve" (1) / "Reject" (0). This method
+     * used to ignore the selected value entirely and blindly toggle status==1 ? 0 : 1 - which silently
+     * *deactivated* a pending row instead of approving it the moment "Approve" was selected, since a
+     * pending row's status is 2, not 1. Now mirrors Admin\ProductController::update_status(), which
+     * already reads $request->status directly for the identical products.status pending-approval case.
+     */
+    public function update_status($id, Request $request)
     {
         $category = Category::findOrFail($id);
         $tables = [Product::class, SellerStore::class];
         $columns = ['category_id', 'category_ids'];
-        if (isForeignKeyInUse($tables, $columns, $id)) {
+
+        $newStatus = $request->input('status');
+        $newStatus = $newStatus !== null && $newStatus !== '' ? (int) $newStatus : ($category->status == '1' ? 0 : 1);
+
+        // Only guard a real deactivation of a currently-active category - a pending (2) or already-inactive
+        // row was never selectable, so it cannot legitimately be "in use" yet.
+        if ($newStatus == 0 && $category->status == 1 && isForeignKeyInUse($tables, $columns, $id)) {
             return response()->json([
                 'status_error' => labels('admin_labels.cannot_deactivate_category_associated_with_products_seller', 'You cannot deactivate this category because it is associated with products and seller.')
             ]);
-        } else {
-            $category->status = $category->status == '1' ? '0' : '1';
-            $category->save();
-            return response()->json(['success' => labels('admin_labels.status_updated_successfully', 'Status updated successfully.')]);
+        }
+
+        $wasPending = $category->approval_status == Category::APPROVAL_PENDING;
+        $category->status = $newStatus;
+
+        if ($newStatus == 1) {
+            $category->approval_status = Category::APPROVAL_APPROVED;
+        } elseif ($wasPending && $newStatus == 0) {
+            // A pending request explicitly rejected (as opposed to an already-approved category being
+            // deactivated later) - keep the row so the seller can still see it was rejected.
+            $category->approval_status = Category::APPROVAL_REJECTED;
+        }
+
+        $category->save();
+
+        // Approval alone isn't enough to make a seller-requested category usable in their own product
+        // form - Seller\CategoryController::getSellerCategories() (which drives that dropdown) only shows
+        // categories in the seller's seller_store.category_ids allow-list, so grant it here.
+        if ($newStatus == 1 && $wasPending && $category->requested_by_seller_id) {
+            $this->grantCategoryToRequestingSeller($category);
+        }
+
+        return response()->json(['success' => labels('admin_labels.status_updated_successfully', 'Status updated successfully.')]);
+    }
+
+    private function grantCategoryToRequestingSeller(Category $category): void
+    {
+        $sellerStore = SellerStore::where('seller_id', $category->requested_by_seller_id)
+            ->where('store_id', $category->store_id)
+            ->first();
+
+        if (!$sellerStore) {
+            return;
+        }
+
+        $ids = array_filter(array_map('trim', explode(',', (string) $sellerStore->category_ids)), fn($v) => $v !== '');
+        if (!in_array((string) $category->id, $ids, true)) {
+            $ids[] = (string) $category->id;
+            $sellerStore->category_ids = implode(',', $ids);
+            $sellerStore->save();
         }
     }
 
@@ -279,6 +331,7 @@ class CategoryController extends Controller
                 ? '<select class="form-select brand_status_dropdown change_toggle_status" data-id="' . $c->id . '" data-url="admin/categories/update_status/' . $c->id . '" aria-label="">' .
                 '<option value="2" selected>Not Approved</option>' .
                 '<option value="1">Approve</option>' .
+                '<option value="0">Reject</option>' .
                 '</select>'
                 : '<select class="form-select brand_status_dropdown change_toggle_status ' . ($c->status == 1 ? 'active_status' : 'inactive_status') . '" data-id="' . $c->id . '" data-url="admin/categories/update_status/' . $c->id . '" aria-label="">' .
                 '<option value="1" ' . ($c->status == 1 ? 'selected' : '') . '>Active</option>' .

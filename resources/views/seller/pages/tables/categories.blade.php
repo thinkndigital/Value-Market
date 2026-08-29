@@ -246,6 +246,9 @@
                                                             <th data-field="status" data-sortable="false">
                                                                 {{ labels('admin_labels.status', 'Status') }}
                                                             </th>
+                                                            <th data-field="operate" data-sortable="false">
+                                                                {{ labels('admin_labels.action', 'Action') }}
+                                                            </th>
                                                         </tr>
                                                     </thead>
                                                 </table>

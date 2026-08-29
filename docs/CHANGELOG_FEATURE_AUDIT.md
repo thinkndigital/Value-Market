@@ -28,9 +28,9 @@ opposite of both, confirmed with the user before any implementation work):
 
 | Status | Count |
 |---|---|
-| IMPLEMENTED (incl. FIXED this session) | 57 |
+| IMPLEMENTED (incl. FIXED this session) | 59 |
 | PARTIALLY_IMPLEMENTED | 8 |
-| MISSING | 7 |
+| MISSING | 5 |
 | BROKEN → FIXED | 2 |
 | NOT_APPLICABLE | 8 |
 | **Total items audited** | **82** |
@@ -79,11 +79,11 @@ opposite of both, confirmed with the user before any implementation work):
 
 | Feature | Status | Evidence | Files | Action |
 |---|---|---|---|---|
-| Sellers can request custom categories | **MISSING** | `categories` table has no `seller_id`/approval-status columns; no `CategoryRequest` model, controller, or route found anywhere. | — | Implement (P1) |
-| Sellers can request custom brands | **MISSING** | Same finding for `brands` — no seller-request columns or workflow. | — | Implement (P1) |
-| Admin can approve/reject seller category requests | **MISSING** | Depends on the above; no admin approval UI exists since no request entity exists. | — | Implement (P1) |
-| Admin can approve/reject seller brand requests | **MISSING** | Same. | — | Implement (P1) |
-| Approved categories/brands become available to sellers for product listing | **MISSING** | Same — sellers currently see the full global category/brand list with no request gate at all (i.e. today every seller can already use every category/brand, which is arguably the pre-1.0.6 behavior this feature was meant to restrict). | — | Implement (P1) |
+| Sellers can request custom categories | **IMPLEMENTED (fixed this session)** | `Seller\CategoryController::store()` already created seller-submitted rows with `status=2` ("pending admin approval") but tracked *who* requested nothing — no seller could ever see or manage their own request. Added `requested_by_seller_id`/`approval_status` columns (migration `2025_02_18_000000_add_category_brand_request_columns.php`) and wired them through `store()`. | `app/Http/Controllers/Seller/CategoryController.php`, `database/migrations/2025_02_18_000000_add_category_brand_request_columns.php` | None |
+| Sellers can request custom brands | **IMPLEMENTED (fixed this session)** | Same fix, mirrored for `Seller\BrandController::store()`. | `app/Http/Controllers/Seller/BrandController.php` | None |
+| Admin can approve/reject seller category requests | **IMPLEMENTED (fixed this session)** | `Admin\CategoryController::update_status()` previously did a blind `status==1 ? 0 : 1` toggle that ignored the admin's actual dropdown selection — choosing "Approve" on a pending (status=2) row silently deactivated it (0) instead of approving it (1). Now reads `$request->status` directly (mirroring `Admin\ProductController::update_status()`'s existing pending-approval handling), sets `approval_status` accordingly, and — for categories specifically — grants the newly-approved category to the requesting seller's product-form dropdown via `SellerStore.category_ids`. | `app/Http/Controllers/Admin/CategoryController.php` | None |
+| Admin can approve/reject seller brand requests | **IMPLEMENTED (fixed this session)** | Same fix, mirrored for `Admin\BrandController::update_status()`. | `app/Http/Controllers/Admin/BrandController.php` | None |
+| Approved categories/brands become available to sellers for product listing | **IMPLEMENTED (fixed this session)** | Verified end-to-end: an approved category is granted into the requesting seller's `seller_store.category_ids`, and `Seller\ProductController::getBrands()` already filters brands by `store_id`+`status==1` — so an approved brand is immediately visible with no further change needed. | `app/Http/Controllers/Admin/CategoryController.php`, `app/Http/Controllers/Seller/ProductController.php` | None |
 | Return requests route directly to sellers | IMPLEMENTED | `Seller\ReturnRequestController::list()` scopes to `whereHas('orderItem', fn($q) => $q->where('seller_id', $seller_id))`. | `app/Http/Controllers/Seller/ReturnRequestController.php:34-46` | None |
 | Sellers can approve return requests | IMPLEMENTED | `ReturnRequestController::update()` (seller) handles status transitions including approve. | `app/Http/Controllers/Seller/ReturnRequestController.php:115-` | None |
 | Sellers can reject return requests | IMPLEMENTED | Same method handles reject transitions. | Same | None |
@@ -132,8 +132,8 @@ opposite of both, confirmed with the user before any implementation work):
 
 | Feature | Status | Evidence | Files | Action |
 |---|---|---|---|---|
-| Setup Progress Tracker | **MISSING** | No controller/model/view found under "setup_progress"/"onboarding" or equivalent; admin dashboard has no completion-percentage widget. | — | Implement (P2) |
-| Setup completion tracking in admin dashboard | **MISSING** | Same. | — | Implement (P2) |
+| Setup Progress Tracker | **IMPLEMENTED (fixed this session)** | Confirmed genuinely missing on first read (no controller/model/view existed under this or an equivalent name). Added `SetupProgressService::getProgress()`, checking 9 real, current configuration states (store, currency, payment gateway incl. bank transfer, delivery zone, language, privacy/terms content, category, product, brand) — every check is a live query against current data, never a stored/cached flag, per this feature's own "do not use fake percentages" requirement. Rendered as a progress bar + checklist on `/admin/home`, shown only while incomplete. | `app/Services/SetupProgressService.php`, `app/Http/Controllers/Admin/HomeController.php`, `resources/views/admin/pages/forms/home.blade.php`, `tests/Feature/SetupProgressTrackerTest.php` (6 tests) | None |
+| Setup completion tracking in admin dashboard | **IMPLEMENTED (fixed this session)** | Same feature/evidence as above — this is the same tracker, not a second one. | Same as above | None |
 | Live image preview for style-related image fields | IMPLEMENTED | Confirmed via this session's own work — every image-upload field (`media_link` widget) shows an immediate preview via the existing media-modal JS; style-selector fields (category slider style, featured section style) show static preview images next to the selector. | `public/assets/admin/custom/custom.js` (media modal), `resources/views/admin/pages/forms/category_sliders.blade.php` | None |
 | Country code storage in user/customer details | IMPLEMENTED | `country_code` column present on `users` (baseline identity/RBAC migration) and on the geography table. | `database/migrations/2025_01_01_000001_baseline_identity_rbac.php:59`, `2025_01_01_000007_baseline_geography.php:176` | Verify it's actually populated by registration/checkout flows, not just schema (P2 spot-check) |
 | Improved bulk upload reliability and stability for large imports | PARTIALLY_IMPLEMENTED | Bulk upload endpoints exist (see v1.0.3) but were not found wrapped in DB transactions or chunked processing — a large file could partially import on failure or exhaust memory. | `app/Http/Controllers/Admin/CategoryController.php::process_bulk_upload()` and siblings | Harden: transactions, chunking, per-row error collection (P1) |
@@ -153,14 +153,14 @@ opposite of both, confirmed with the user before any implementation work):
 
 | Feature | Status | Evidence | Files | Action |
 |---|---|---|---|---|
-| Direct JSON language upload from Admin Panel | **BROKEN** (existing feature is a critical vulnerability, not just "missing JSON support") | `LanguageController::savelabel()` and `FrontLanguageController::savelabel()` both do `include($file->getRealPath())` on an **uploaded file with no content validation** — any authenticated admin can upload a `.php` file that gets executed server-side (arbitrary code execution). The changelog's "JSON upload" was apparently never actually implemented; instead this dangerous PHP-include mechanism exists in its place. | `app/Http/Controllers/Admin/LanguageController.php:107-160`, `app/Http/Controllers/Admin/FrontLanguageController.php:111` | **Fix immediately (P0, security)** — replace with real JSON validation/parsing, no `include()` |
-| JSON language upload for App | **MISSING** | No JSON-format API endpoint for language files found. | — | Implement as part of the P0 fix above |
-| JSON language upload for Panel | **MISSING** | Same — the existing panel upload is the vulnerable PHP-include path. | — | Implement as part of the P0 fix |
-| JSON language upload for Web | **MISSING** | `FrontLanguageController::savelabel()` has the identical vulnerable pattern. | — | Implement as part of the P0 fix |
-| Seller App can view pending Brands | **MISSING** | Depends on the brand-request feature (v1.0.6) not existing yet. | — | Implement alongside brand requests (P1) |
-| Seller App can delete pending Brands | **MISSING** | Same dependency. | — | Same |
-| Seller App can view pending Categories | **MISSING** | Same dependency (category requests). | — | Same |
-| Seller App can delete pending Categories | **MISSING** | Same dependency. | — | Same |
+| Direct JSON language upload from Admin Panel | **FIXED — now IMPLEMENTED** | Was a critical vulnerability, not just "missing JSON support": `LanguageController::savelabel()` and `FrontLanguageController::savelabel()` both did `include($file->getRealPath())` on an **uploaded file with no content validation** — any authenticated admin could upload a `.php` file that got executed server-side (arbitrary code execution). **FIXED** (commit `fe8ad3c`) — replaced with `LanguageJsonImportService::parse()`, which validates the `.json` extension, `json_decode()`s the content, and rejects anything that isn't a flat string-to-scalar map; never executes uploaded content. This delivers the changelog's actual "JSON upload" feature as a side effect of the fix. | `app/Services/LanguageJsonImportService.php`, `app/Http/Controllers/Admin/LanguageController.php`, `app/Http/Controllers/Admin/FrontLanguageController.php`, `tests/Feature/LanguageJsonUploadSecurityTest.php` (5 tests) | None |
+| JSON language upload for App | **NOT_APPLICABLE** | No customer/seller-facing mobile "upload a language file" flow exists in this changelog item or codebase — language files are an admin-panel-only import; there is no separate "App" upload surface to implement. | — | None |
+| JSON language upload for Panel | **IMPLEMENTED (fixed this session)** | Same fix as the row above — this is the same admin panel upload, not a second one. | Same as above | None |
+| JSON language upload for Web | **IMPLEMENTED (fixed this session)** | `FrontLanguageController::savelabel()` (the "Web" / front-language variant) received the identical fix. | `app/Http/Controllers/Admin/FrontLanguageController.php` | None |
+| Seller App can view pending Brands | **IMPLEMENTED (fixed this session)** | Delivered as part of the seller brand-request lifecycle: `Seller\BrandController::list()` now shows both admin-assigned brands and every brand the seller has requested themselves, at any approval status, with a "Pending Approval"/"Rejected" badge. | `app/Http/Controllers/Seller/BrandController.php` | None |
+| Seller App can delete pending Brands | **IMPLEMENTED (fixed this session)** | `Seller\BrandController::destroy()` — ownership- and status-scoped (only the requesting seller's own still-pending row). | `app/Http/Controllers/Seller/BrandController.php` | None |
+| Seller App can view pending Categories | **IMPLEMENTED (fixed this session)** | Same pattern for categories via `Seller\CategoryController::list()`. | `app/Http/Controllers/Seller/CategoryController.php` | None |
+| Seller App can delete pending Categories | **IMPLEMENTED (fixed this session)** | `Seller\CategoryController::destroy()` — same ownership/status scoping. | `app/Http/Controllers/Seller/CategoryController.php` | None |
 | Sellers can deactivate empty stores | **MISSING** | No "deactivate if empty" logic found in `SellerStore` model or seller store controller — store status is a manual toggle with no product-count gate. | — | Implement (P2) |
 | Sellers can delete empty stores | **MISSING** | No delete-store endpoint with an empty-store guard found. | — | Implement (P2) |
 | Delivery Boy active/inactive availability toggle | IMPLEMENTED | New `users.is_available` column (migration `2025_02_17_000000`), deliberately separate from `active`/`status`/`active_status` (three already-overlapping legacy booleans on this table) rather than repurposing any of them. New self-service `PUT toggle_availability` endpoint on `Delivery_boy\v1\ApiController`, restricted to delivery-boy accounts, reported in `get_delivery_boy_details()`. **Not** wired into `DispatchService::rankAvailableDeliveryBoys()`'s existing eligibility filter in this pass — that filter reads one of the other overlapping columns, and changing live dispatch eligibility logic without a much deeper audit of what each column already means risks a real regression in order assignment; documented here as the natural next step rather than done silently. | `database/migrations/2025_02_17_000000_add_delivery_boy_availability_toggle.php`, `app/Http/Controllers/Delivery_boy/v1/ApiController.php`, `app/Models/User.php` | Follow-up (not this pass): wire `is_available` into `DispatchService`'s ranking query once the three legacy status columns' exact semantics are confirmed |
@@ -244,6 +244,21 @@ opposite of both, confirmed with the user before any implementation work):
    already-correct seller-panel equivalent); and `Seller\OrderController::edit_orders()` passing the raw
    Shiprocket credentials blob into a seller-facing Blade view. Full detail in
    `docs/SHIPROCKET_INTEGRATION.md`.
+5. **`Admin\CategoryController::update_status()` / `Admin\BrandController::update_status()`** — both already
+   rendered a "Not Approved (2) / Approve (1)" dropdown for seller-requested rows (`Seller\CategoryController
+   ::store()`/`Seller\BrandController::store()` already created rows with `status=2` and a "wait for admin
+   approval" message), but the handler ignored the dropdown's selected value entirely and did a blind
+   `status==1 ? 0 : 1` toggle — selecting "Approve" on a pending row actually flipped it to `0`
+   (deactivated), never to `1` (approved). Compounding this, nothing tracked *which* seller had requested a
+   row, so a seller could never see their own pending/rejected requests or withdraw one. **FIXED** — added
+   `requested_by_seller_id`/`approval_status` columns (migration
+   `2025_02_18_000000_add_category_brand_request_columns.php`), both controllers now read the actual
+   selected status (mirroring `Admin\ProductController::update_status()`'s existing pending-approval
+   handling), an approved category is granted into the requesting seller's `seller_store.category_ids`, and
+   sellers gained a pending-request view + withdraw (`Seller\CategoryController::destroy()`/
+   `Seller\BrandController::destroy()`) scoped to their own still-pending rows. 12 new tests
+   (`tests/Feature/SellerCategoryBrandRequestTest.php`), including an IDOR regression test confirming a
+   seller cannot see or delete another seller's pending request.
 
 ## Implementation priority (P0 → P2, per user-approved plan)
 
@@ -252,11 +267,14 @@ opposite of both, confirmed with the user before any implementation work):
 - Payment gateway callback/webhook security audit (item 12).
 
 **P1 (changelog features with real user/business impact):**
-- Interactive address map with lat/lng (v1.1.2 — explicitly required).
-- Seller category/brand request lifecycle (v1.0.6 + v1.0.11 app views).
+- ~~Interactive address map with lat/lng (v1.1.2 — explicitly required)~~ — **done**, Leaflet/OpenStreetMap
+  component on admin's Manage Customer Address page.
+- ~~Seller category/brand request lifecycle (v1.0.6 + v1.0.11 app views)~~ — **done**, request tracking
+  columns + admin approve/reject + seller pending-request list/delete.
 - Queue integration, Cloud-Run-compatible (v1.0.10).
-- Email order invoices (v1.0.3).
-- Hide empty stores/categories (v1.1.1).
+- ~~Email order invoices (v1.0.3)~~ — **done**, PDF attached directly (the dead admin-only link is gone).
+- ~~Hide empty stores/categories (v1.1.1)~~ — **done**, opt-in `onlyWithProducts` filter on the
+  customer-facing store/category endpoints.
 - Bulk upload hardening — transactions/chunking (v1.0.9).
 - ~~Shiprocket depth audit + hardening + docs (v1.1.0)~~ — **done**, see Fix log item 4 and
   `docs/SHIPROCKET_INTEGRATION.md`.
@@ -266,11 +284,12 @@ opposite of both, confirmed with the user before any implementation work):
 **P2 (smaller/UX/lower-impact features):**
 - Admin Preference Page + Single/Multi Store mode.
 - Tooltips (admin + seller).
-- Setup Progress Tracker.
+- ~~Setup Progress Tracker~~ — **done**, see `app/Services/SetupProgressService.php`.
 - Store-level custom fields.
 - Affiliate policies page, withdrawal limits, charts, shared-products list.
 - Alternate slider image.
-- Delivery boy self-service availability toggle.
+- ~~Delivery boy self-service availability toggle~~ — **done**, `is_available` column + self-service
+  toggle endpoint (not yet wired into dispatch eligibility — see that row's note above).
 - Seller store deactivate/delete-when-empty.
 - Support ticket chat-gate verification.
 

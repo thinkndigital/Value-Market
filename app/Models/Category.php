@@ -12,6 +12,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Category extends Model
 {
     use HasApiTokens, HasFactory, Notifiable;
+
+    // Seller category-request lifecycle (docs/CHANGELOG_FEATURE_AUDIT.md v1.0.6/v1.0.11), tracked in
+    // `approval_status` alongside the pre-existing `status` (0/1/2) convention already used for products
+    // (see Admin\ProductController::update_status()) - `status` drives every existing "is this usable"
+    // query (2 = pending is never selected by `where('status', 1)`), `approval_status` exists only so a
+    // rejected request can stay visible/distinguishable in the seller's own request history instead of
+    // looking identical to "admin deactivated an approved category".
+    const APPROVAL_PENDING = 'pending';
+    const APPROVAL_APPROVED = 'approved';
+    const APPROVAL_REJECTED = 'rejected';
+
     protected $fillable = [
         'name',
         'store_id',
@@ -22,7 +33,9 @@ class Category extends Model
         'status',
         'style',
         'row_order',
-        'clicks'
+        'clicks',
+        'requested_by_seller_id',
+        'approval_status',
     ];
 
     public static function getCategories()

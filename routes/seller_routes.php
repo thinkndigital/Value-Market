@@ -80,6 +80,9 @@ Route::group(
         Route::get('seller/categories/list', [CategoryController::class, 'list'])->name('seller_categories.list');
         Route::get('seller/categories/get_seller_categories', [CategoryController::class, 'getSellerCategories']);
         Route::get('seller/categories/get_seller_categories_filter', [CategoryController::class, 'get_seller_categories_filter']);
+        // Withdraw a still-pending category request (docs/CHANGELOG_FEATURE_AUDIT.md v1.0.11) - GET +
+        // 'destroy' naming matches every other delete action in this file (e.g. seller/media/destroy/{id}).
+        Route::get('seller/categories/destroy/{id}', [CategoryController::class, 'destroy'])->name('seller.categories.destroy')->middleware(['demo_restriction']);
 
         // pickup locations
     
@@ -473,6 +476,8 @@ Route::group(
         Route::get('seller/brands', [BrandController::class, 'index'])->name('seller_brands.index');
         Route::post('brands', [BrandController::class, 'store'])->middleware(['demo_restriction'])->name('seller.brands.store');
         Route::get('/brands/list', [BrandController::class, 'list'])->name('seller.brands.list');
+        // Withdraw a still-pending brand request (docs/CHANGELOG_FEATURE_AUDIT.md v1.0.11).
+        Route::get('seller/brands/destroy/{id}', [BrandController::class, 'destroy'])->name('seller.brands.destroy')->middleware(['demo_restriction']);
 
         // Phase 4 (docs/PHASE_4_VENDOR_SYSTEM.md): branch and employee management.
         Route::get('seller/branches', [BranchController::class, 'list'])->name('seller.branches.list');

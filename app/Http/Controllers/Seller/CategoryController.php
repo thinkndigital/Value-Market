@@ -73,6 +73,11 @@ class CategoryController extends Controller
             $translations = array_merge($translations, $categoryData['translated_category_name']);
         }
 
+        // Category-request lifecycle (docs/CHANGELOG_FEATURE_AUDIT.md v1.0.6): resolved via the Seller row's
+        // id, never Auth::id() directly - sellers and their Seller row have different ids, and every other
+        // seller-scoped ownership check in this codebase (list() below included) resolves it the same way.
+        $seller_id = Seller::where('user_id', Auth::id())->value('id');
+
         // Build data for storage
         $categoryData = [
             'name' => json_encode($translations, JSON_UNESCAPED_UNICODE),
@@ -83,6 +88,8 @@ class CategoryController extends Controller
             'style' => $request->category_style ?? '',
             'status' => 2,
             'store_id' => $storeId,
+            'requested_by_seller_id' => $seller_id,
+            'approval_status' => Category::APPROVAL_PENDING,
         ];
 
         Category::create($categoryData);
@@ -107,18 +114,21 @@ class CategoryController extends Controller
         $limit = request('limit') ?: 10;
 
 
-        $seller_data = SellerStore::select('category_ids')->where('seller_id', $seller_id)->where('store_id', $store_id)->get();
+        $seller_store = SellerStore::select('category_ids')->where('seller_id', $seller_id)->where('store_id', $store_id)->first();
+        $category_ids = ($seller_store && $seller_store->category_ids) ? explode(",", $seller_store->category_ids) : [];
 
-        if (!$seller_data) {
-            return response()->json([
-                "rows" => [],
-                "total" => 0,
-            ]);
-        }
-
-        $category_ids = explode(",", $seller_data[0]->category_ids);
-
-        $category_data = Category::whereIn('id', $category_ids)->where('store_id', $store_id);
+        // A seller sees two things in this same table: the categories admin has assigned them
+        // (category_ids on their seller_store pivot row) AND every category-request they've submitted
+        // themselves (any approval status - pending/approved/rejected), scoped to their own Seller row id
+        // per docs/CHANGELOG_FEATURE_AUDIT.md v1.0.11 "Seller App can view pending Categories". Never
+        // Auth::id() - see the ownership-scoping comment in store() above.
+        $category_data = Category::where('store_id', $store_id)
+            ->where(function ($query) use ($category_ids, $seller_id) {
+                if (!empty($category_ids)) {
+                    $query->whereIn('id', $category_ids);
+                }
+                $query->orWhere('requested_by_seller_id', $seller_id);
+            });
         if ($search) {
             $category_data->where(function ($query) use ($search) {
                 $query->where('name', 'like', '%' . $search . '%')
@@ -131,8 +141,8 @@ class CategoryController extends Controller
             ->limit($limit)
             ->get();
         $language_code = app(TranslationService::class)->getLanguageCode();
-        $data = $categories->map(function ($c) use ($language_code) {
-            $status = ($c->status == 1) ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-danger">Deactive</span>';
+        $data = $categories->map(function ($c) use ($language_code, $seller_id) {
+            $status = $this->requestStatusBadge($c);
             $image = route('seller.dynamic_image', [
                 'url' => app(MediaService::class)->getMediaImageUrl($c->image),
                 'width' => 60,
@@ -143,12 +153,26 @@ class CategoryController extends Controller
                 'width' => 60,
                 'quality' => 90
             ]);
+
+            $operate = '';
+            if ($c->requested_by_seller_id == $seller_id && $c->approval_status == Category::APPROVAL_PENDING) {
+                $operate = '<div class="dropdown bootstrap-table-dropdown">
+                    <a href="#" class="text-dark" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="bx bx-dots-horizontal-rounded"></i>
+                    </a>
+                    <div class="dropdown-menu table_dropdown" aria-labelledby="dropdownMenuButton">
+                        <a class="dropdown-item delete-data dropdown_menu_items" data-url="' . route('seller.categories.destroy', $c->id) . '"><i class="bx bx-trash mx-2"></i> ' . labels('admin_labels.delete', 'Delete') . '</a>
+                    </div>
+                </div>';
+            }
+
             return [
                 'id' => $c->id,
                 'name' => app(TranslationService::class)->getDynamicTranslation(Category::class, 'name', $c->id, $language_code),
                 'status' => $status,
                 'image' => '<div><a href="' . app(MediaService::class)->getMediaImageUrl($c->image)  . '" data-lightbox="image-' . $c->id . '"><img src="' . $image  . '" alt="Avatar" class="rounded"/></a></div>',
                 'banner' => '<div ><a href="' . app(MediaService::class)->getMediaImageUrl($c->banner) . '" data-lightbox="banner-' . $c->id . '"><img src="' . $banner  . '" alt="Avatar" class="rounded"/></a></div>',
+                'operate' => $operate,
             ];
         });
 
@@ -156,6 +180,47 @@ class CategoryController extends Controller
             "rows" => $data,
             "total" => $total,
         ]);
+    }
+
+    /**
+     * Human-readable status badge for the seller's own "Manage Categories" table, distinguishing a
+     * pending/rejected request from a plain active/inactive category (docs/CHANGELOG_FEATURE_AUDIT.md
+     * v1.0.6/v1.0.11).
+     */
+    private function requestStatusBadge(Category $c): string
+    {
+        if ($c->approval_status == Category::APPROVAL_PENDING) {
+            return '<span class="badge bg-warning">' . labels('admin_labels.pending_approval', 'Pending Approval') . '</span>';
+        }
+        if ($c->approval_status == Category::APPROVAL_REJECTED) {
+            return '<span class="badge bg-danger">' . labels('admin_labels.rejected', 'Rejected') . '</span>';
+        }
+        return $c->status == 1
+            ? '<span class="badge bg-success">' . labels('admin_labels.active', 'Active') . '</span>'
+            : '<span class="badge bg-danger">' . labels('admin_labels.deactive', 'Deactive') . '</span>';
+    }
+
+    /**
+     * Withdraw a still-pending category request. Ownership- and status-scoped: only the requesting
+     * seller's own row, and only while it's still pending - an approved/rejected request stays visible in
+     * the seller's request history instead (docs/CHANGELOG_FEATURE_AUDIT.md v1.0.11).
+     */
+    public function destroy($id)
+    {
+        $seller_id = Seller::where('user_id', Auth::id())->value('id');
+        $category = Category::where('id', $id)->where('requested_by_seller_id', $seller_id)->first();
+
+        if (!$category) {
+            return response()->json(['error' => labels('admin_labels.data_not_found', 'Data Not Found')]);
+        }
+
+        if ($category->approval_status != Category::APPROVAL_PENDING) {
+            return response()->json(['error' => labels('seller_labels.only_pending_category_requests_can_be_deleted', 'Only pending category requests can be deleted.')]);
+        }
+
+        $category->delete();
+
+        return response()->json(['error' => false, 'message' => labels('admin_labels.category_deleted_successfully', 'Category deleted successfully!')]);
     }
 
 

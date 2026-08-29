@@ -204,9 +204,13 @@
                                         class="form-control searchInput" placeholder="Search...">
                                     <span class="input-group-text">Search</span>
                                 </div>
+                                {{-- productStatusFilter (not StatusFilter) reuses the existing
+                                Approved/Not-Approved/Deactivated 3-option filter - categories.status uses the
+                                identical 0/1/2 convention as products.status, including the same pending-approval
+                                value (docs/CHANGELOG_FEATURE_AUDIT.md v1.0.6/v1.0.11). --}}
                                 <a class="btn me-2" id="tableFilter" data-bs-toggle="offcanvas"
                                     data-bs-target="#columnFilterOffcanvas" data-table="admin_category_table"
-                                    StatusFilter='true'><i class='bx bx-filter-alt'></i></a>
+                                    productStatusFilter='true'><i class='bx bx-filter-alt'></i></a>
                                 <a class="btn me-2" id="tableRefresh" data-table="admin_category_table"><i
                                         class='bx bx-refresh'></i></a>
                                 <div class="dropdown">

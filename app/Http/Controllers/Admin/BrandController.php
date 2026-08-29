@@ -138,6 +138,7 @@ class BrandController extends Controller
                 ? '<select class="form-select brand_status_dropdown change_toggle_status" data-id="' . $b->id . '" data-url="/admin/brand/update_status/' . $b->id . '" aria-label="">' .
                     '<option value="2" selected>Not Approved</option>' .
                     '<option value="1">Approve</option>' .
+                    '<option value="0">Reject</option>' .
                 '</select>'
                 : '<select class="form-select brand_status_dropdown change_toggle_status ' . ($b->status == 1 ? 'active_status' : 'inactive_status') . '" data-id="' . $b->id . '" data-url="/admin/brand/update_status/' . $b->id . '" aria-label="">' .
                     '<option value="1" ' . ($b->status == 1 ? 'selected' : '') . '>Active</option>' .
@@ -154,17 +155,35 @@ class BrandController extends Controller
     }
 
 
-    public function update_status($id)
+    /**
+     * Also the brand-request approve/reject action (docs/CHANGELOG_FEATURE_AUDIT.md v1.0.6/v1.0.11) - see
+     * the identical rationale in Admin\CategoryController::update_status(). Unlike categories, an approved
+     * brand needs no extra per-seller grant: Seller\ProductController::get_brands()/getBrands() (the
+     * product-form brand widget) already filter only by store_id + status==1, with no seller-specific
+     * allow-list, so flipping status to 1 alone is enough to make it usable.
+     */
+    public function update_status($id, Request $request)
     {
         $brand = Brand::findOrFail($id);
 
-        if (isForeignKeyInUse(Product::class, 'brand', $id)) {
+        $newStatus = $request->input('status');
+        $newStatus = $newStatus !== null && $newStatus !== '' ? (int) $newStatus : ($brand->status == '1' ? 0 : 1);
+
+        if ($newStatus == 0 && $brand->status == 1 && isForeignKeyInUse(Product::class, 'brand', $id)) {
             return response()->json(['status_error' => labels('admin_labels.you_can_not_deactivate_this_brand_because_it_is_associated_with_product', 'You cannot deactivate this brand because it is associated with products')]);
-        } else {
-            $brand->status = $brand->status == '1' ? '0' : '1';
-            $brand->save();
-            return response()->json(['success' => labels('admin_labels.status_updated_successfully', 'Status updated successfully.')]);
         }
+
+        $wasPending = $brand->approval_status == Brand::APPROVAL_PENDING;
+        $brand->status = $newStatus;
+
+        if ($newStatus == 1) {
+            $brand->approval_status = Brand::APPROVAL_APPROVED;
+        } elseif ($wasPending && $newStatus == 0) {
+            $brand->approval_status = Brand::APPROVAL_REJECTED;
+        }
+
+        $brand->save();
+        return response()->json(['success' => labels('admin_labels.status_updated_successfully', 'Status updated successfully.')]);
     }
 
     public function destroy($id)
