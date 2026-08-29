@@ -18,6 +18,7 @@ use App\Models\Section;
 use App\Models\Store;
 use App\Models\Tax;
 use App\Models\Zone;
+use App\Services\LanguageJsonImportService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
@@ -106,56 +107,53 @@ class LanguageController extends Controller
 
     public function savelabel(Request $request)
     {
-        if ($request->hasFile('translation_file')) {
-            $file = $request->file('translation_file');
-
-            if ($file->isValid()) {
-
-                // Use the PHP file directly
-                $data = include($file->getRealPath());
-
-                if (!is_array($data)) {
-                    return response()->json(['error' => true, 'message' => 'Uploaded PHP file must return an array.']);
-                }
-
-                // Prepare data for saving
-                $langstr = '';
-                foreach ($data as $key => $value) {
-                    $label_data = strip_tags($value);
-                    $label_key = $key;
-                    // $langstr .= "'" . $label_key . "' => '" . addslashes($label_data) . "',\n";
-                    $langstr .= var_export($label_key, true) . ' => ' . var_export($label_data, true) . ",\n";
-                }
-
-                // Final content to be written in the PHP file
-                $langstr_final = "<?php return [\n\n" . $langstr . "];";
-
-                // Get the current language code (from session or request)
-                $language_code = session()->get('locale');
-
-                // Define the directory for the language
-                $dir = base_path("/resources/lang/{$language_code}");
-                if (!file_exists($dir)) {
-                    mkdir($dir, 0755, true);
-                }
-
-                // Set the filename to 'admin_labels.php'
-                $filename = $dir . '/admin_labels.php';
-
-                // Save the PHP file with the fixed name
-                file_put_contents($filename, $langstr_final);
-
-                // Return success response
-                return response()->json([
-                    'error' => false,
-                    'message' => labels('admin_labels.language_labels_added_successfully', 'Language labels added successfully')
-                ]);
-            } else {
-                return response()->json(['error' => true, 'message' => 'Uploaded file is invalid.']);
-            }
-        } else {
+        if (!$request->hasFile('translation_file')) {
             return response()->json(['error' => true, 'message' => 'No file uploaded.']);
         }
+
+        $file = $request->file('translation_file');
+
+        if (!$file->isValid()) {
+            return response()->json(['error' => true, 'message' => 'Uploaded file is invalid.']);
+        }
+
+        $data = app(LanguageJsonImportService::class)->parse($file);
+
+        if ($data === null) {
+            return response()->json(['error' => true, 'message' => 'Uploaded file must be a JSON object of label keys mapped to string values.']);
+        }
+
+        // Prepare data for saving
+        $langstr = '';
+        foreach ($data as $key => $value) {
+            $label_data = strip_tags($value);
+            $label_key = $key;
+            $langstr .= var_export($label_key, true) . ' => ' . var_export($label_data, true) . ",\n";
+        }
+
+        // Final content to be written in the PHP file
+        $langstr_final = "<?php return [\n\n" . $langstr . "];";
+
+        // Get the current language code (from session or request)
+        $language_code = session()->get('locale');
+
+        // Define the directory for the language
+        $dir = base_path("/resources/lang/{$language_code}");
+        if (!file_exists($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        // Set the filename to 'admin_labels.php'
+        $filename = $dir . '/admin_labels.php';
+
+        // Save the PHP file with the fixed name
+        file_put_contents($filename, $langstr_final);
+
+        // Return success response
+        return response()->json([
+            'error' => false,
+            'message' => labels('admin_labels.language_labels_added_successfully', 'Language labels added successfully')
+        ]);
     }
 
     public function setLanguage($locale)

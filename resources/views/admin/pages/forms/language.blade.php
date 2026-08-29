@@ -74,7 +74,7 @@
                         <div class="mb-3">
                             <label
                                 for="translation_file">{{ labels('admin_labels.upload_file', 'Upload Translation File') }}</label>
-                            <input type="file" name="translation_file" id="translation_file" accept=".php"
+                            <input type="file" name="translation_file" id="translation_file" accept=".json"
                                 class="form-control">
                         </div>
                         <div class="mt-2 d-flex justify-content-end">
