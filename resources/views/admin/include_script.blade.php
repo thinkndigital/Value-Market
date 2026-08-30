@@ -55,7 +55,7 @@
  <script src="/assets/filepond/dist/filepond-plugin-pdf-preview.min.js"></script>
  <script src="/assets/admin/js/filepond-plugin-file-validate-size.js"></script>
  <script src="/assets/admin/js/filepond-plugin-file-validate-type.js"></script>
- <script src="/assets/filepond/dist/filepond-plugin-image-validate-size.js"></script>
+ <script src="/assets/admin/js/filepond-plugin-image-validate-size.js"></script>
  <script src="/assets/filepond/dist/filepond.jquery.js"></script>
 
 

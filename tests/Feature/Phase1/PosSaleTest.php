@@ -154,6 +154,38 @@ class PosSaleTest extends TestCase
         $this->assertSame(9, $product->fresh()->stock);
     }
 
+    /**
+     * Live QA finding (docs/POS_LIVE_QA_REVERIFICATION.md): a walk-in sale with no "Existing Customer"
+     * selected in the POS UI sends user_id empty - place_order() looked it up with fetchDetails() (an
+     * Eloquent Collection) and checked `!empty($user_mobile)`, which is always true for an object
+     * regardless of whether the lookup found anything, then indexed $user_mobile[0]->mobile and crashed
+     * with "Undefined array key 0" on every such sale. Every other test in this file always passes a real
+     * customer id, so none of them exercised this path - reproduced live via a real browser POS click-through
+     * before being fixed here.
+     */
+    public function test_a_walk_in_sale_with_no_customer_selected_succeeds(): void
+    {
+        $this->seedCommonSettings();
+        [, $product, $variant] = $this->seedSellerWithSellableProduct(stock: 10);
+
+        $request = new Request([
+            'data' => json_encode([
+                ['variant_id' => $variant->id, 'quantity' => 1, 'product_type' => 'regular', 'title' => 'POS Product'],
+            ]),
+            'payment_method' => 'cash',
+            'user_id' => '',
+            'delivery_charges' => 0,
+            'discount' => 0,
+        ]);
+
+        $response = app(PosController::class)->place_order($request);
+        $payload = json_decode($response->getContent(), true);
+
+        $this->assertFalse($payload['error'] ?? true, 'place_order should succeed for a walk-in sale: ' . json_encode($payload));
+        $this->assertSame(1, Order::count());
+        $this->assertSame(9, $product->fresh()->stock);
+    }
+
     public function test_a_single_item_pos_sale_creates_an_order_and_decrements_stock(): void
     {
         $this->seedCommonSettings();

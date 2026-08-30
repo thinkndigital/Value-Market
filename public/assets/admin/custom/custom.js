@@ -8776,6 +8776,13 @@ $(document).on("click", ".delete-onboard-media", function () {
 document.addEventListener("DOMContentLoaded", function () {
     var rowSize = 100; // => container height / number of items
     var container = document.querySelector(".category-order-container");
+    // Bug fix: this block ran unconditionally on every page's DOMContentLoaded (loaded via the shared
+    // include_script.blade.php on every admin/seller/delivery_boy page, POS included), but
+    // .category-order-container only exists on the admin category-order page. Everywhere else this crashed
+    // with TweenLite's own "Cannot tween a null target." the moment it ran.
+    if (!container) {
+        return;
+    }
     var listItems = Array.from(document.querySelectorAll(".list-item")); // Array of elements
     if (listItems.length <= 1) {
         $("#save_category_order").addClass("d-none");
@@ -8913,6 +8920,12 @@ document.addEventListener("DOMContentLoaded", function () {
 document.addEventListener("DOMContentLoaded", function () {
     var rowSize = 100; // => container height / number of items
     var container = document.querySelector(".section-order-container");
+    // Bug fix: same as the category-order block above - this ran unconditionally on every page (POS
+    // included) via the shared include_script.blade.php, crashing with "Cannot tween a null target." on
+    // every page other than the admin feature-section-order page where .section-order-container exists.
+    if (!container) {
+        return;
+    }
     var listItems = Array.from(document.querySelectorAll(".section-list-item")); // Array of elements
     var sortables = listItems.map(Sortable); // Array of sortables
 

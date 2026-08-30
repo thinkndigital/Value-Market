@@ -436,8 +436,8 @@
                         <div class="col-md-12">
                             <div class="form-group product-type-box">
                                 <label class="form-check-label"
-                                    for="payment_method">{{ labels('admin_labels.cash', 'Cash') }} </label>
-                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method"
+                                    for="payment_method_cash">{{ labels('admin_labels.cash', 'Cash') }} </label>
+                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method" id="payment_method_cash"
                                     value="COD">
                             </div>
                         </div>
@@ -445,7 +445,7 @@
                             <div class="form-group product-type-box">
                                 <label class="form-check-label"
                                     for="card_payment">{{ labels('admin_labels.card_payment', 'Card Payment') }}</label>
-                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method"
+                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method" id="card_payment"
                                     value="card_payment">
                             </div>
                         </div>
@@ -453,7 +453,7 @@
                             <div class="form-group product-type-box">
                                 <label class="form-check-label"
                                     for="bar_code">{{ labels('admin_labels.barcode_or_qr_code_scan', 'Bar Code/QR Code Scan') }}</label>
-                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method"
+                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method" id="bar_code"
                                     value="bar_code">
                             </div>
                         </div>
@@ -461,7 +461,7 @@
                             <div class="form-group product-type-box">
                                 <label class="form-check-label"
                                     for="net_banking">{{ labels('admin_labels.net_banking', 'Net Banking') }}</label>
-                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method"
+                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method" id="net_banking"
                                     value="net_banking">
                             </div>
                         </div>
@@ -469,7 +469,7 @@
                             <div class="form-group product-type-box">
                                 <label class="form-check-label"
                                     for="online_payment">{{ labels('admin_labels.online_payment', 'Online Payment') }}</label>
-                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method"
+                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method" id="online_payment"
                                     value="online_payment">
                             </div>
                         </div>
@@ -477,7 +477,7 @@
                             <div class="form-group product-type-box">
                                 <label class="form-check-label"
                                     for="other">{{ labels('admin_labels.other', 'Other') }}</label>
-                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method"
+                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method" id="other"
                                     value="other">
                             </div>
                         </div>
@@ -548,48 +548,48 @@
                         <div class="col-md-12">
                             <div class="form-group product-type-box">
                                 <label class="form-check-label"
-                                    for="payment_method">{{ labels('admin_labels.cash', 'Cash') }} </label>
-                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method"
+                                    for="combo_payment_method_cash">{{ labels('admin_labels.cash', 'Cash') }} </label>
+                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method" id="combo_payment_method_cash"
                                     value="COD">
                             </div>
                         </div>
                         <div class="col-md-12">
                             <div class="form-group product-type-box">
                                 <label class="form-check-label"
-                                    for="card_payment">{{ labels('admin_labels.card_payment', 'Card Payment') }} </label>
-                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method"
+                                    for="combo_card_payment">{{ labels('admin_labels.card_payment', 'Card Payment') }} </label>
+                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method" id="combo_card_payment"
                                     value="card_payment">
                             </div>
                         </div>
                         <div class="col-md-12">
                             <div class="form-group product-type-box">
                                 <label class="form-check-label"
-                                    for="bar_code">{{ labels('admin_labels.barcode_or_qr_code_scan', 'Bar Code/QR Code Scan') }}</label>
-                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method"
+                                    for="combo_bar_code">{{ labels('admin_labels.barcode_or_qr_code_scan', 'Bar Code/QR Code Scan') }}</label>
+                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method" id="combo_bar_code"
                                     value="bar_code">
                             </div>
                         </div>
                         <div class="col-md-12">
                             <div class="form-group product-type-box">
                                 <label class="form-check-label"
-                                    for="net_banking">{{ labels('admin_labels.net_banking', 'Net Banking') }}</label>
-                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method"
+                                    for="combo_net_banking">{{ labels('admin_labels.net_banking', 'Net Banking') }}</label>
+                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method" id="combo_net_banking"
                                     value="net_banking">
                             </div>
                         </div>
                         <div class="col-md-12">
                             <div class="form-group product-type-box">
                                 <label class="form-check-label"
-                                    for="online_payment">{{ labels('admin_labels.online_payment', 'Online Payment') }}</label>
-                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method"
+                                    for="combo_online_payment">{{ labels('admin_labels.online_payment', 'Online Payment') }}</label>
+                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method" id="combo_online_payment"
                                     value="online_payment">
                             </div>
                         </div>
                         <div class="col-md-12 other">
                             <div class="form-group product-type-box">
                                 <label class="form-check-label"
-                                    for="other">{{ labels('admin_labels.other', 'Other') }}</label>
-                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method"
+                                    for="combo_other">{{ labels('admin_labels.other', 'Other') }}</label>
+                                <input class="form-check-input m-0 payment_method" type="radio" name="payment_method" id="combo_other"
                                     value="other">
                             </div>
                         </div>

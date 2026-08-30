@@ -285,7 +285,12 @@ class PosController extends Controller
         $place_order_data['quantity'] = implode(",", $quantity);
         $place_order_data['user_id'] = $user_id;
         $user_mobile = fetchDetails(User::class, ['id' => $user_id], "mobile");
-        $place_order_data['mobile'] = isset($user_mobile) && !empty($user_mobile) ? $user_mobile[0]->mobile : '';
+        // Bug fix: $user_mobile is an Eloquent Collection - empty() on an object is always false, so a POS
+        // sale with no user_id (or an id matching nobody) still tried $user_mobile[0]->mobile and crashed
+        // with "Undefined array key 0" instead of falling back to ''. Same bug class already fixed twice
+        // in App\v1\ApiController::place_order() this session (see docs/PHASE_21_API_AUDIT.md) - matched
+        // the correct isEmpty() check here too.
+        $place_order_data['mobile'] = !$user_mobile->isEmpty() ? $user_mobile[0]->mobile : '';
         $place_order_data['address_id'] = $request->input('address_id');
         $place_order_data['is_wallet_used'] = 0;
         $place_order_data['delivery_charge'] = $request->input('delivery_charges');
@@ -515,7 +520,10 @@ class PosController extends Controller
 
             // add promocode calculation here
             if (isset($place_order_data['promo_code_id']) && !empty($place_order_data['promo_code_id'])) {
-                $place_order_data['promo_code'] = fetchDetails(Promocode::class, ['id' => $place_order_data['promo_code_id']], 'promo_code')[0]->promo_code;
+                // Bug fix: unconditional [0] index - a stale/deleted promo_code_id (submitted from a client
+                // that cached an older promo list) crashed here instead of just not applying a promo code.
+                $promo_code_lookup = fetchDetails(Promocode::class, ['id' => $place_order_data['promo_code_id']], 'promo_code');
+                $place_order_data['promo_code'] = !$promo_code_lookup->isEmpty() ? $promo_code_lookup[0]->promo_code : null;
                 // dd($total);
                 $promo_code = app(abstract: PromoCodeService::class)->validatePromoCode($place_order_data['promo_code_id'], $place_order_data['user_id'], $total, 1);
                 $promo_code = $promo_code->original;
@@ -880,9 +888,12 @@ class PosController extends Controller
         $order_payment_currency_data = fetchDetails(Currency::class, ['code' => $currency], ['id', 'exchange_rate']);
         $user_mobile = fetchDetails(User::class, ['id' => $user_id], "mobile");
 
+        // Bug fix: same "Undefined array key 0" crash as place_order()'s walk-in-sale bug above (fixed a
+        // few hundred lines up in this same controller) - this combo-order path indexed [0] unconditionally,
+        // with no guard at all, on a walk-in sale with no customer selected.
         $order_data = [
             'user_id' => $user_id,
-            'mobile' => $user_mobile[0]->mobile,
+            'mobile' => !$user_mobile->isEmpty() ? $user_mobile[0]->mobile : '',
             'address_id' => $request->input('address_id'),
             'address' => $request->input('address'),
             'total' => $sub_total,

@@ -18,7 +18,7 @@ use App\Services\MediaService;
     <link href="/assets/filepond/dist/filepond-plugin-image-preview.css" rel="stylesheet" type="text/css" />
     <link href="/assets/filepond/dist/filepond-plugin-pdf-preview.min.css" rel="stylesheet" type="text/css" />
     <link href="/assets/filepond/dist/filepond-plugin-media-preview.css" rel="stylesheet" type="text/css" />
-    <link href="/assets/filepond/dist/filepond-plugin-media-preview.min.css" rel="stylesheet" type="text/css" />
+    <link href="/assets/admin/css/filepond-plugin-media-preview.min.css" rel="stylesheet" type="text/css" />
     <!-- filepond Css -->
 
     <!-- Nucleo Icons -->
