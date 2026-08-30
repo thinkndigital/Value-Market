@@ -4,6 +4,9 @@ namespace App\Services;
 use App\Http\Controllers\Admin\AddressController;
 use App\Libraries\Paystack;
 use App\Libraries\Razorpay;
+use App\Libraries\HyperPay;
+use App\Libraries\PayTabs;
+use App\Libraries\TapPayments;
 use App\Models\Address;
 use App\Models\ComboProduct;
 use App\Models\Currency;
@@ -2623,7 +2626,14 @@ class OrderService
             ReturnRequest::create($requestData);
         }
     }
-    public function verifyPaymentTransaction($transaction_id = '', $payment_method = '', $additional_data = [])
+    /**
+     * $sellerId: optional. When given, a seller's own enabled gateway credentials (SellerPaymentGateway)
+     * are used to verify the transaction instead of the platform default - required for razorpay/hyperpay/
+     * paytabs/tap, since a payment created under a seller's own merchant account can only be verified
+     * (captured/fetched) with that same account's API keys, not the platform's. Existing callers that omit
+     * it keep today's platform-only verification behavior unchanged.
+     */
+    public function verifyPaymentTransaction($transaction_id = '', $payment_method = '', $additional_data = [], $sellerId = null)
     {
         $transaction_id = $transaction_id ?? '';
         $payment_method = trim($payment_method ?? '');
@@ -2639,7 +2649,7 @@ class OrderService
 
         switch ($payment_method) {
             case 'razorpay':
-                $razorpay = new Razorpay();
+                $razorpay = new Razorpay($sellerId);
                 $payment = $razorpay->fetch_payments($transaction_id);
 
                 if (!empty($payment) && isset($payment['status'])) {
@@ -2697,6 +2707,64 @@ class OrderService
                     ];
                 } else {
                     $response['message'] = "Payment not found by the transaction ID!";
+                }
+                break;
+
+            case 'hyperpay':
+                // $transaction_id here is HyperPay's checkout id - fetching the final result.code is the
+                // only trustworthy source, per HyperPay's own integration guidance never the browser
+                // redirect alone.
+                $hyperpay = new HyperPay($sellerId);
+                $payment = $hyperpay->get_payment_status($transaction_id);
+                $result_code = $payment['result']['code'] ?? '';
+
+                if (!empty($payment)) {
+                    $response = [
+                        'error' => !$hyperpay->is_successful($result_code),
+                        'message' => $hyperpay->is_successful($result_code)
+                            ? 'Payment captured successfully'
+                            : ($payment['result']['description'] ?? 'Payment could not be verified'),
+                        'amount' => $payment['amount'] ?? 0,
+                        'data' => $payment,
+                    ];
+                } else {
+                    $response['message'] = "Payment not found by the checkout ID!";
+                }
+                break;
+
+            case 'paytabs':
+                $paytabs = new PayTabs($sellerId);
+                $payment = $paytabs->verify_payment($transaction_id);
+                $payment_result = $payment['payment_result'] ?? null;
+
+                if (!empty($payment)) {
+                    $response = [
+                        'error' => !$paytabs->is_successful($payment_result),
+                        'message' => $payment_result['response_message'] ?? 'Payment could not be verified',
+                        'amount' => $payment['cart_amount'] ?? 0,
+                        'data' => $payment,
+                    ];
+                } else {
+                    $response['message'] = "Payment not found by the transaction reference!";
+                }
+                break;
+
+            case 'tap':
+                $tap = new TapPayments($sellerId);
+                $payment = $tap->retrieve_charge($transaction_id);
+                $status = $payment['status'] ?? '';
+
+                if (!empty($payment)) {
+                    $response = [
+                        'error' => !$tap->is_successful($status),
+                        'message' => $tap->is_successful($status)
+                            ? 'Payment captured successfully'
+                            : 'Payment is ' . ucwords(strtolower((string) $status)) . '!',
+                        'amount' => $payment['amount'] ?? 0,
+                        'data' => $payment,
+                    ];
+                } else {
+                    $response['message'] = "Payment not found by the charge ID!";
                 }
                 break;
         }

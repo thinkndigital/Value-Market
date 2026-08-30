@@ -12,17 +12,33 @@ use Illuminate\Support\Facades\Validator;
 /**
  * 32-phase SaaS brief, Phase 6: lets a seller store their own gateway credentials, used in place of the
  * platform-global default when configured and enabled (app/Services/SellerPaymentGatewayService.php).
- * Only Razorpay is wired end to end this pass (app/Libraries/Razorpay.php, the two real order-aware
- * checkout entry points) - see docs/PHASE_6_PAYMENT_GATEWAYS.md for why Paystack/Stripe/PayPal/PhonePe
- * aren't. The credential fields per gateway are intentionally limited to what those entry points
- * actually read (this app's webhook receivers stay platform-global - a single fixed inbound URL per
- * gateway can't be routed to a seller without its own, larger project).
+ * Razorpay, HyperPay, PayTabs, and Tap Payments are wired end to end (app/Libraries/*.php, the real
+ * checkout entry points in CartController) - see docs/PHASE_6_PAYMENT_GATEWAYS.md and
+ * docs/PHASE_6B_JORDAN_GULF_GATEWAYS.md. Stripe/PayPal/PhonePe/Paystack aren't wired to this per-seller
+ * layer (deprioritized by the product owner in favor of the Jordan/Gulf gateways above). The credential
+ * fields per gateway are intentionally limited to what those entry points actually read (this app's
+ * webhook receivers stay platform-global - a single fixed inbound URL per gateway can't be routed to a
+ * seller without its own, larger project).
  */
 class PaymentGatewayController extends Controller
 {
-    /** Field keys match exactly what app/Libraries/Razorpay.php's constructor reads from an override. */
+    /** Field keys match exactly what each gateway's app/Libraries/*.php constructor reads from an override. */
     public const FIELDS = [
         'razorpay' => ['razorpay_key_id' => 'Key ID', 'razorpay_secret_key' => 'Key Secret'],
+        'hyperpay' => [
+            'hyperpay_entity_id' => 'Entity ID',
+            'hyperpay_access_token' => 'Access Token',
+            'hyperpay_mode' => 'Mode (test or live)',
+        ],
+        'paytabs' => [
+            'paytabs_profile_id' => 'Profile ID',
+            'paytabs_server_key' => 'Server Key',
+            'paytabs_region' => 'Region (JOR, SAU, ARE, EGY, OMN, or GLOBAL)',
+        ],
+        'tap' => [
+            'tap_secret_key' => 'Secret Key',
+            'tap_publishable_key' => 'Publishable Key',
+        ],
     ];
 
     private function sellerId(): ?int

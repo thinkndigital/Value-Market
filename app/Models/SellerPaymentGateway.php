@@ -12,7 +12,7 @@ class SellerPaymentGateway extends Model
     /** Every gateway a seller can self-configure; keys match the credential field names each
      *  app/Libraries/*.php class already reads from the platform-global `payment_method` setting, so a
      *  seller override slots into the exact same field. */
-    public const GATEWAYS = ['razorpay', 'paystack'];
+    public const GATEWAYS = ['razorpay', 'hyperpay', 'paytabs', 'tap'];
 
     protected $fillable = ['seller_id', 'gateway', 'credentials', 'is_enabled'];
 

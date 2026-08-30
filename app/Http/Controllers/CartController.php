@@ -7,6 +7,9 @@ use App\Libraries\Midtrans;
 use App\Libraries\Paystack;
 use App\Libraries\Razorpay;
 use App\Libraries\Stripe;
+use App\Libraries\HyperPay;
+use App\Libraries\PayTabs;
+use App\Libraries\TapPayments;
 use App\Models\Address;
 use App\Models\Cart;
 use App\Models\ComboProduct;
@@ -957,6 +960,74 @@ class CartController extends Controller
                     'response_message' => $order['error']['description']
                 ]);
             }
+        } elseif ($request['payment_method'] == 'hyperpay') {
+            $seller_id = app(\App\Services\SellerPaymentGatewayService::class)->resolveSellerIdForStore($store_id);
+            $hyperpay = new HyperPay($seller_id);
+            $checkout = $hyperpay->create_checkout($overall_amount, $request['currency_code'] ?? 'USD');
+
+            if (!empty($checkout['id'])) {
+                return response()->json([
+                    'error' => false,
+                    'checkout_id' => $checkout['id'],
+                    'entity_id' => $hyperpay->entity_id,
+                    'mode' => $hyperpay->mode,
+                    'response_message' => 'Checkout created successfully.',
+                ]);
+            }
+            return response()->json([
+                'error' => true,
+                'response_message' => $checkout['result']['description'] ?? 'Checkout could not be created.',
+            ]);
+        } elseif ($request['payment_method'] == 'paytabs') {
+            $seller_id = app(\App\Services\SellerPaymentGatewayService::class)->resolveSellerIdForStore($store_id);
+            $paytabs = new PayTabs($seller_id);
+            $cart_id = "ptb-" . $user_id . "-" . time() . "-" . rand(100, 999);
+            $customer = [
+                'name' => $user[0]->username ?? '',
+                'email' => $user[0]->email ?? '',
+                'phone' => $user[0]->mobile ?? '',
+                'street1' => 'N/A', 'city' => 'N/A', 'state' => 'N/A', 'country' => 'JO', 'zip' => '00000',
+                'ip' => $request->ip(),
+            ];
+            $return_url = $request['return_url'] ?? url('/');
+            $page = $paytabs->create_payment_page($overall_amount, $request['currency_code'] ?? 'JOD', $cart_id, $product_name, $customer, $return_url, $return_url);
+
+            if (!empty($page['redirect_url'])) {
+                return response()->json([
+                    'error' => false,
+                    'tran_ref' => $page['tran_ref'] ?? '',
+                    'cart_id' => $cart_id,
+                    'redirect_url' => $page['redirect_url'],
+                    'response_message' => 'Payment page created successfully.',
+                ]);
+            }
+            return response()->json([
+                'error' => true,
+                'response_message' => $page['message'] ?? 'Payment page could not be created.',
+            ]);
+        } elseif ($request['payment_method'] == 'tap') {
+            $seller_id = app(\App\Services\SellerPaymentGatewayService::class)->resolveSellerIdForStore($store_id);
+            $tap = new TapPayments($seller_id);
+            $customer = [
+                'first_name' => $user[0]->username ?? '',
+                'email' => $user[0]->email ?? '',
+                'phone' => ['number' => $user[0]->mobile ?? ''],
+            ];
+            $return_url = $request['return_url'] ?? url('/');
+            $charge = $tap->create_charge($overall_amount, $request['currency_code'] ?? 'JOD', $customer, $return_url, $return_url, $product_name);
+
+            if (!empty($charge['transaction']['url'])) {
+                return response()->json([
+                    'error' => false,
+                    'charge_id' => $charge['id'] ?? '',
+                    'redirect_url' => $charge['transaction']['url'],
+                    'response_message' => 'Charge created successfully.',
+                ]);
+            }
+            return response()->json([
+                'error' => true,
+                'response_message' => $charge['message'] ?? 'Charge could not be created.',
+            ]);
         } elseif ($request['payment_method'] == "midtrans" || $request['payment_method'] == "Midtrans") {
             $order_id = "mdtrns-" . $user_id . "-" . time() . "-" . rand("100", "999");
 
@@ -1138,6 +1209,24 @@ class CartController extends Controller
                 return response()->json($response);
             }
         }
+        if ($request['payment_method'] == 'hyperpay') {
+            $validator = Validator::make($request->all(), ['hyperpay_checkout_id' => 'required']);
+            if ($validator->fails()) {
+                return response()->json(['error' => true, 'message' => $validator->errors()->all(), 'code' => 102]);
+            }
+        }
+        if ($request['payment_method'] == 'paytabs') {
+            $validator = Validator::make($request->all(), ['paytabs_tran_ref' => 'required']);
+            if ($validator->fails()) {
+                return response()->json(['error' => true, 'message' => $validator->errors()->all(), 'code' => 102]);
+            }
+        }
+        if ($request['payment_method'] == 'tap') {
+            $validator = Validator::make($request->all(), ['tap_charge_id' => 'required']);
+            if ($validator->fails()) {
+                return response()->json(['error' => true, 'message' => $validator->errors()->all(), 'code' => 102]);
+            }
+        }
         if ($request['is_wallet_used'] == '1') {
             $validator = Validator::make($request->all(), [
                 'wallet_balance_used' => 'required|numeric',
@@ -1235,18 +1324,37 @@ class CartController extends Controller
                     'product_type' => implode(",", $cart_product_types) ?? "",
                     'order_payment_currency_code' => $order_payment_currency_code ?? "",
                     'razorpay_payment_id' => $request['razorpay_payment_id'] ?? "",
+                    'hyperpay_checkout_id' => $request['hyperpay_checkout_id'] ?? "",
+                    'paytabs_tran_ref' => $request['paytabs_tran_ref'] ?? "",
+                    'tap_charge_id' => $request['tap_charge_id'] ?? "",
                     'status' => $request['status'] ?? "awaiting"
                 ];
 
+                $gateway_seller_id = app(\App\Services\SellerPaymentGatewayService::class)->resolveSellerIdForStore($store_id);
+
                 if ($request['payment_method'] == "razorpay") {
 
-                    if (!app(OrderService::class)->verifyPaymentTransaction($data['razorpay_payment_id'], 'razorpay')) {
+                    if (!app(OrderService::class)->verifyPaymentTransaction($data['razorpay_payment_id'], 'razorpay', [], $gateway_seller_id)) {
                         $response = [
                             'error' => true,
                             'message' => 'Invalid Razorpay Payment Transaction',
                             'code' => 102,
                         ];
                         return response()->json($response);
+                    }
+                } elseif (in_array($request['payment_method'], ['hyperpay', 'paytabs', 'tap'])) {
+                    $verify_ref = match ($request['payment_method']) {
+                        'hyperpay' => $data['hyperpay_checkout_id'],
+                        'paytabs' => $data['paytabs_tran_ref'],
+                        'tap' => $data['tap_charge_id'],
+                    };
+                    $transfer = app(OrderService::class)->verifyPaymentTransaction($verify_ref, $request['payment_method'], [], $gateway_seller_id);
+                    if (!empty($transfer['error'])) {
+                        return response()->json([
+                            'error' => true,
+                            'message' => $transfer['message'] ?? 'Payment could not be verified',
+                            'code' => 102,
+                        ]);
                     }
                 } elseif ($request['payment_method'] == "paystack") {
                     $paystack = new Paystack();
@@ -1288,7 +1396,7 @@ class CartController extends Controller
                         ];
                         return response()->json($response);
                     }
-                    if ($data['payment_method'] == "bank_transfer" || $data['payment_method'] == "direct_bank_transfer" || $data['payment_method'] == 'stripe' || $data['payment_method'] == 'phonepe' || $data['payment_method'] == 'paypal' || $data['payment_method'] == 'paystack' || $data['payment_method'] == 'razorpay') {
+                    if ($data['payment_method'] == "bank_transfer" || $data['payment_method'] == "direct_bank_transfer" || $data['payment_method'] == 'stripe' || $data['payment_method'] == 'phonepe' || $data['payment_method'] == 'paypal' || $data['payment_method'] == 'paystack' || $data['payment_method'] == 'razorpay' || $data['payment_method'] == 'hyperpay' || $data['payment_method'] == 'paytabs' || $data['payment_method'] == 'tap') {
                         if ($data['payment_method'] == 'phonepe') {
                             $transaction_id = $request['phonepe_transaction_id'];
                         } elseif ($data['payment_method'] == 'paypal') {
@@ -1303,6 +1411,18 @@ class CartController extends Controller
                             $message = 'Payment Successfully';
                         } elseif ($data['payment_method'] == 'razorpay') {
                             $transaction_id = $request['razorpay_payment_id'];
+                            $status = 'success';
+                            $message = 'Payment Successfully';
+                        } elseif ($data['payment_method'] == 'hyperpay') {
+                            $transaction_id = $request['hyperpay_checkout_id'];
+                            $status = 'success';
+                            $message = 'Payment Successfully';
+                        } elseif ($data['payment_method'] == 'paytabs') {
+                            $transaction_id = $request['paytabs_tran_ref'];
+                            $status = 'success';
+                            $message = 'Payment Successfully';
+                        } elseif ($data['payment_method'] == 'tap') {
+                            $transaction_id = $request['tap_charge_id'];
                             $status = 'success';
                             $message = 'Payment Successfully';
                         }
@@ -1327,16 +1447,32 @@ class CartController extends Controller
         } else {
 
 
+            $gateway_seller_id = app(\App\Services\SellerPaymentGatewayService::class)->resolveSellerIdForStore($store_id);
+
             if (
                 $request['payment_method'] == "razorpay"
             ) {
-                if (!app(OrderService::class)->verifyPaymentTransaction($request['razorpay_payment_id'], 'razorpay')) {
+                if (!app(OrderService::class)->verifyPaymentTransaction($request['razorpay_payment_id'], 'razorpay', [], $gateway_seller_id)) {
                     $response = [
                         'error' => true,
                         'message' => 'Invalid Razorpay Payment Transaction',
                         'code' => 102,
                     ];
                     return response()->json($response);
+                }
+            } elseif (in_array($request['payment_method'], ['hyperpay', 'paytabs', 'tap'])) {
+                $verify_ref = match ($request['payment_method']) {
+                    'hyperpay' => $request['hyperpay_checkout_id'] ?? '',
+                    'paytabs' => $request['paytabs_tran_ref'] ?? '',
+                    'tap' => $request['tap_charge_id'] ?? '',
+                };
+                $transfer = app(OrderService::class)->verifyPaymentTransaction($verify_ref, $request['payment_method'], [], $gateway_seller_id);
+                if (!empty($transfer['error'])) {
+                    return response()->json([
+                        'error' => true,
+                        'message' => $transfer['message'] ?? 'Payment could not be verified',
+                        'code' => 102,
+                    ]);
                 }
             } elseif ($request['payment_method'] == "paystack") {
 
@@ -1389,12 +1525,15 @@ class CartController extends Controller
                 'payment_method' => $request['payment_method'] ?? "",
                 'product_type' => implode(",", $cart_product_types) ?? "",
                 'order_payment_currency_code' => $order_payment_currency_code,
-                'razorpay_payment_id' => $request['razorpay_payment_id'] ?? ""
+                'razorpay_payment_id' => $request['razorpay_payment_id'] ?? "",
+                'hyperpay_checkout_id' => $request['hyperpay_checkout_id'] ?? "",
+                'paytabs_tran_ref' => $request['paytabs_tran_ref'] ?? "",
+                'tap_charge_id' => $request['tap_charge_id'] ?? "",
             ];
             $res = app(OrderService::class)->placeOrder($data, 1);
 
             if (!empty($res)) {
-                if ($data['payment_method'] == "bank_transfer" || $data['payment_method'] == 'direct_bank_transfer' || $data['payment_method'] == 'stripe' || $data['payment_method'] == 'phonepe' || $data['payment_method'] == 'paypal' || $data['payment_method'] == 'paystack' || $data['payment_method'] == 'razorpay') {
+                if ($data['payment_method'] == "bank_transfer" || $data['payment_method'] == 'direct_bank_transfer' || $data['payment_method'] == 'stripe' || $data['payment_method'] == 'phonepe' || $data['payment_method'] == 'paypal' || $data['payment_method'] == 'paystack' || $data['payment_method'] == 'razorpay' || $data['payment_method'] == 'hyperpay' || $data['payment_method'] == 'paytabs' || $data['payment_method'] == 'tap') {
                     if ($data['payment_method'] == 'phonepe') {
                         $transaction_id = $request['phonepe_transaction_id'];
                     } elseif ($data['payment_method'] == 'paypal') {
@@ -1407,8 +1546,20 @@ class CartController extends Controller
                         $transaction_id = $request['stripe_payment_id'];
                         $status = 'success';
                         $message = 'Payment Successfully';
-                    } elseif ($data['payment_method'] == 'stripe') {
+                    } elseif ($data['payment_method'] == 'razorpay') {
                         $transaction_id = $request['razorpay_payment_id'];
+                        $status = 'success';
+                        $message = 'Payment Successfully';
+                    } elseif ($data['payment_method'] == 'hyperpay') {
+                        $transaction_id = $request['hyperpay_checkout_id'];
+                        $status = 'success';
+                        $message = 'Payment Successfully';
+                    } elseif ($data['payment_method'] == 'paytabs') {
+                        $transaction_id = $request['paytabs_tran_ref'];
+                        $status = 'success';
+                        $message = 'Payment Successfully';
+                    } elseif ($data['payment_method'] == 'tap') {
+                        $transaction_id = $request['tap_charge_id'];
                         $status = 'success';
                         $message = 'Payment Successfully';
                     }
