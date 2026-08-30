@@ -24,6 +24,31 @@ API surface). These need constructed request bodies per endpoint rather than a q
 more work per route, and are exactly the kind of thing this session's product owner has asked to work
 through incrementally rather than all at once — a natural batch 2 for this phase, not started here.
 
+## Batch 2: customer POST/PUT/DELETE routes (`routes/api.php`)
+
+Same methodology, extended to Sanctum-authenticated mutating requests (bearer token passed per-call, not via
+a persistent default header — see `CustomerApiMutationRouteSweepTest.php`'s docblock for why that distinction
+matters for the intentionally-unauthenticated routes in the same sweep). Covers all 47 non-GET routes in
+`routes/api.php` (`tests/Feature/Phase21/CustomerApiMutationRouteSweepTest.php`), except the 5 real
+external-service/webhook routes excluded for the same reason as the GET batch's exclusions (`api/ipn`,
+`api/phonepe_app`, `api/razorpay_create_order`, `api/check_shiprocket_serviceability`, `api/test-email`).
+
+Found and fixed 9 real bugs:
+
+| Route / area | Root cause |
+|---|---|
+| `manage_cart` (shared cart-fetch helper, `CartController.php`) | Leftover duplicate tax-recalculation lines right after the tax total was already computed correctly, silently overwriting it with a second, wrong `array_sum` over an unrelated array. |
+| `send_bank_transfer_proof` | Undefined `$uploaded_images` variable used outside the scope it was conditionally set in. |
+| `register_user` | Unconditional `UserFcm` insert crashed when no `fcm_id` was supplied (NOT NULL column) — wrapped in `$request->filled('fcm_id')`. |
+| `verify_user`, `verify_otp`, `resend_otp` | Three more instances of this session's established "fresh-install crash class": unguarded `$settings['authentication_method']` reads against a `Setting` row that doesn't always have that key. |
+| `update_order_item_status` → `ProductRatingController`/`ComboProductRatingController` seller-rating updates | `Seller::where('user_id', ...)->update(['rating' => ...])` — wrong table (rating/no_of_ratings live on the `seller_store` pivot, not `seller_data`) and wrong WHERE column (`seller_id` on `Product`/`ComboProduct` is already `sellers.id`, not `sellers.user_id`). Fixed in both controllers' `delete_rating()`/`set_rating()` methods to use `$seller->stores()->updateExistingPivot(...)`. |
+| `manage_cart` | Missing `?? null` guard on `$settings['maximum_item_allowed_in_cart']` — another fresh-install-crash-class instance. |
+| Namespace case bug | `use App\Http\Controllers\admin\OrderController;` (lowercase `admin`) silently resolved to nothing usable on case-sensitive filesystems/autoloaders, breaking `update_order_status`. Fixed to `Admin\OrderController`. |
+| `place_order` | `$city_id = isset($city_id) && !empty($city_id) ? $city_id[0]->id : ''` — `$city_id` is an Eloquent Collection; `empty()` on an object is always `false`, so an empty city lookup still tried `$city_id[0]->id` and crashed with "Undefined array key 0". The adjacent `$zipcode_id` line just above it already used the correct `!$zipcode_id->isEmpty()` check — mirrored that. |
+| `update_order_status` | Three compounding bugs: (1) passed `$request->order_id` (an `orders.id`) to `OrderService::process_refund()` with `$type = 'order_items'`, which looks the id up in `order_items` — wrong table, matching nothing or an unrelated row; every other whole-order caller in the codebase passes `'orders'` for exactly this reason, fixed to match. (2) `process_refund()`'s `order_items` branch read `$active_status[1][0]` with no `isset()` guard, unlike the equivalent check in its own `orders` branch a few hundred lines down — crashes on any item with only one status-history entry; guarded to match. (3) `Order::find(...)->orderItems()->first(...)` returns a single model (or `null`), not a collection — `$data[0]->order_type` was reading Eloquent's `ArrayAccess` for a non-existent `"0"` attribute (always `null`) and crashing; fixed to read `$data->order_type` directly with a `null` guard. |
+
+No routes remain broken in this batch — full sweep is green.
+
 ## Result: the GET surface is healthy
 
 Across all 109 GET routes, only 2 were broken — both in `routes/api.php`, both simple dead-route slots
@@ -64,9 +89,9 @@ tests needed to work around.
 
 ## What's still open for Phase 21
 
-- **POST/PUT/DELETE routes** (~97 across the three files) — registration/login, cart/checkout, order
-  placement, payment-gateway creation, seller product/order/inventory mutation, delivery-boy status and
-  cash-collection updates. Not started.
+- **POST/PUT/DELETE routes for `routes/seller_api.php` and `routes/delivery_boy_api.php`** (~50 routes
+  combined) — seller product/order/inventory mutation, delivery-boy status and cash-collection updates. Not
+  started (batch 2 above covered only the customer-facing 47 in `routes/api.php`).
 - **Contract consistency** (response shape, error-code conventions, pagination parameters) across the ~280
   methods in these three controllers — not audited; would need to be done by reading representative methods
   from each controller family (list endpoints, mutation endpoints, payment endpoints) rather than every one.
@@ -78,5 +103,6 @@ tests needed to work around.
 ## Regression coverage
 
 `tests/Feature/Phase21/{CustomerApiRouteSweepTest,SellerApiRouteSweepTest,DeliveryBoyApiRouteSweepTest}.php`
-are permanent regression coverage for the 109 GET routes swept. Full suite: 652 passing (649 before this
-batch), stable across 2 repeat full-suite runs, zero regressions.
+are permanent regression coverage for the 109 GET routes swept in batch 1.
+`tests/Feature/Phase21/CustomerApiMutationRouteSweepTest.php` is permanent regression coverage for the 47
+customer POST/PUT/DELETE routes swept in batch 2. Full suite: 653 passing, zero failures, zero regressions.

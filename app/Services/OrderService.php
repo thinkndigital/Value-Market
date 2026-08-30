@@ -2819,7 +2819,10 @@ class OrderService
             $active_status = json_decode($order_item_details[0]->status, true);
 
             if (strtolower($payment_method) != 'wallet') {
-                if ($active_status[1][0] == 'cancelled' && $active_status[0][0] == 'awaiting') {
+                // Bug fix: an item with only one status-history entry (e.g. still 'awaiting', no second
+                // transition yet) has no index 1, crashing this unguarded read. The 'orders'-type branch of
+                // this same method (below) already guards the equivalent check with isset() - mirrored here.
+                if (isset($active_status[1][0]) && $active_status[1][0] == 'cancelled' && isset($active_status[0][0]) && $active_status[0][0] == 'awaiting') {
                     $response['error'] = true;
                     $response['message'] = 'Refund cannot be processed.';
                     $response['data'] = array();

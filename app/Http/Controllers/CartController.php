@@ -161,8 +161,6 @@ class CartController extends Controller
                 } else {
                     $total_tax = 0;
                 }
-                $tax_percentage = explode(',', $percentage);
-                $total_tax = array_sum($tax_percentage);
                 $d->name = app(TranslationService::class)->getDynamicTranslation(Product::class, 'name', $d->id, $language_code);
                 $d->short_description = app(TranslationService::class)->getDynamicTranslation(Product::class, 'short_description', $d->id, $language_code);
                 if (isset($d->is_prices_inclusive_tax) && $d->is_prices_inclusive_tax == 0) {

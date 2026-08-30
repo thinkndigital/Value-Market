@@ -9,7 +9,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ComboProductRatingController;
 use App\Http\Controllers\Admin\FaqController;
 use App\Http\Controllers\Admin\NotificationController;
-use App\Http\Controllers\admin\OrderController;
+use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductRatingController;
 use App\Http\Controllers\Admin\PromoCodeController;
 use App\Http\Controllers\Admin\SellerController;
@@ -1066,7 +1066,10 @@ Defined Methods:-
         $authentication_settings = app(SettingService::class)->getSettings('system_settings', true);
         $authentication_settings = json_decode($authentication_settings, true);
 
-        if ($authentication_settings['authentication_method'] == "firebase") {
+        // Same "fresh-install crash class" this app already guards against elsewhere (see
+        // system_settings.blade.php's isKeySetAndNotEmpty() guards) - a system_settings row that was never
+        // (re-)saved with this key would otherwise 500 on every login/OTP attempt through the mobile app.
+        if (($authentication_settings['authentication_method'] ?? null) == "firebase") {
             if ($user) {
                 Auth::login($user);
                 $token = $user->createToken('authToken')->plainTextToken;
@@ -1157,7 +1160,7 @@ Defined Methods:-
         $otp = $request->input('otp');
         $auth_settings = json_decode(app(SettingService::class)->getSettings('system_settings', true), true);
 
-        if ($auth_settings['authentication_method'] == "sms") {
+        if (($auth_settings['authentication_method'] ?? null) == "sms") {
             $otps = Otps::where('mobile', $mobile)->first();
 
             if (!$otps) {
@@ -1212,7 +1215,7 @@ Defined Methods:-
         $mobile = $request->input('mobile');
         $auth_settings = json_decode(app(SettingService::class)->getSettings('system_settings', true), true);
 
-        if ($auth_settings['authentication_method'] == "sms") {
+        if (($auth_settings['authentication_method'] ?? null) == "sms") {
             $otps = Otps::where('mobile', $mobile)->first();
 
             if (!$otps) {
@@ -1349,17 +1352,20 @@ Defined Methods:-
 
             if ($lastInsertId) {
 
-                // add fcm id in user fcm table
-
-                $fcm_data = [
-                    'fcm_id' => $request->fcm_id,
-                    'user_id' => $lastInsertId,
-                ];
-                $existing_fcm = UserFcm::where('user_id', $lastInsertId)
-                    ->where('fcm_id', $request->fcm_id)
-                    ->first();
-                if (!$existing_fcm) {
-                    UserFcm::insert($fcm_data);
+                // add fcm id in user fcm table - fcm_id is a nullable field (a registration with no push
+                // token yet is legitimate, e.g. web signup or denied push permission); user_fcm.fcm_id is
+                // NOT NULL, so inserting unconditionally 500'd on every such registration.
+                if ($request->filled('fcm_id')) {
+                    $fcm_data = [
+                        'fcm_id' => $request->fcm_id,
+                        'user_id' => $lastInsertId,
+                    ];
+                    $existing_fcm = UserFcm::where('user_id', $lastInsertId)
+                        ->where('fcm_id', $request->fcm_id)
+                        ->first();
+                    if (!$existing_fcm) {
+                        UserFcm::insert($fcm_data);
+                    }
                 }
 
                 // update user's welcome wallet balance
@@ -3177,7 +3183,11 @@ Defined Methods:-
 
             // $city_id = fetchDetails(City::class, ['name' => $city], 'id');
             $city_id = fetchDetails(City::class, ['name->en' => $city], 'id');
-            $city_id = isset($city_id) && !empty($city_id) ? $city_id[0]->id : '';
+            // Bug fix: $city_id is an Eloquent Collection - empty() on an object is always false, so this
+            // unconditionally read $city_id[0] even when the lookup found nothing, crashing with "Undefined
+            // array key 0" (Collection::offsetGet). Matches the correct isEmpty() check $zipcode_id uses
+            // just above for the exact same fetchDetails() pattern.
+            $city_id = !$city_id->isEmpty() ? $city_id[0]->id : '';
 
 
             $settings = app(DeliveryService::class)->getDeliveryChargeSetting($store_id);
@@ -3622,7 +3632,7 @@ Defined Methods:-
                     'tax_amount' => (isset($res['tax_amount'])) ? strval($res['tax_amount']) : "0",
                     'currency_tax_amount_data' => app(CurrencyService::class)->getPriceCurrency(isset($res['tax_amount']) ? strval($res['tax_amount']) : "0"),
                     'cart_count' => (isset($res[0]->cart_count)) ? strval($res[0]->cart_count) : "0",
-                    'max_items_cart' => $settings['maximum_item_allowed_in_cart'],
+                    'max_items_cart' => $settings['maximum_item_allowed_in_cart'] ?? null,
                     'overall_amount' => $res['overall_amount'],
                     'currency_overall_amount_data' => app(CurrencyService::class)->getPriceCurrency($res['overall_amount']),
                 ];
@@ -5325,17 +5335,25 @@ Defined Methods:-
         $response = $OrderController->update_order_status($request);
 
         if (trim($request->status) != 'returned') {
-            app(OrderService::class)->process_refund($request->order_id, $request->status, 'order_items');
+            // Bug fix: $request->order_id is an orders.id, but 'order_items' tells process_refund() to look
+            // it up in order_items (fetchDetails(OrderItems::class, ['id' => $id], ...)) - wrong table
+            // entirely, either finding nothing or an unrelated item that happens to share the numeric id.
+            // Every other whole-order caller (ApiController::cancel/delete_order at lines ~1834/4859) passes
+            // 'orders' for exactly this reason; this call site is the one that didn't match that precedent.
+            app(OrderService::class)->process_refund($request->order_id, $request->status, 'orders');
         }
 
         if (trim($request->status) == 'cancelled') {
+            // Bug fix: ->first() returns a single OrderItems model (or null), not a collection - $data[0]
+            // was reading Eloquent's ArrayAccess for an attribute literally named "0" (never set, so always
+            // null), then crashing on ->order_type. Read the model's own attributes directly instead.
             $data = Order::find($request->order_id)->orderItems()->first(['product_variant_id', 'quantity', 'order_type']);
 
-            if ($data[0]->order_type == 'regular_order') {
-                app(ProductService::class)->updateStock($data[0]->product_variant_id, $data[0]->quantity, 'plus');
+            if ($data && $data->order_type == 'regular_order') {
+                app(ProductService::class)->updateStock($data->product_variant_id, $data->quantity, 'plus');
             }
-            if ($data[0]->order_type == 'combo_order') {
-                app(ComboProductService::class)->updateComboStock($data[0]->product_variant_id, $data[0]->quantity, 'plus');
+            if ($data && $data->order_type == 'combo_order') {
+                app(ComboProductService::class)->updateComboStock($data->product_variant_id, $data->quantity, 'plus');
             }
         }
         return $response;
@@ -6053,6 +6071,10 @@ Defined Methods:-
             $media = StorageType::find($mediaStorageType);
 
             $mediaIds = [];
+            // attachments[] is documented as optional (see docblock above) - $uploaded_images is only
+            // otherwise assigned inside the branches below, so a request with no attachments at all (a
+            // legitimate case) threw "Undefined variable $uploaded_images" building the response later.
+            $uploaded_images = [];
 
             if ($request->hasFile('attachments')) {
 

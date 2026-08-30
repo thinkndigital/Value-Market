@@ -219,8 +219,16 @@ class ComboProductRatingController extends Controller
 
                 $new_rating_seller = ($no_of_ratings_seller > 0) ? round($total_rating_seller / $no_of_ratings_seller, 1, PHP_ROUND_HALF_UP) : 0;
 
-                Seller::where('user_id', $product->seller_id)
-                    ->update(['rating' => $new_rating_seller, 'no_of_ratings' => $no_of_ratings_seller]);
+                // rating/no_of_ratings live on the seller_store pivot (matching set_rating() above), not on
+                // seller_data directly - it has no such columns. $product->seller_id is already sellers.id
+                // (ComboProduct::seller() belongsTo Seller, 'seller_id'), not sellers.user_id.
+                $seller = Seller::find($product->seller_id);
+                if ($seller) {
+                    $seller->stores()->updateExistingPivot($product->store_id, [
+                        'rating' => $new_rating_seller,
+                        'no_of_ratings' => $no_of_ratings_seller,
+                    ]);
+                }
             }
             return true;
         } else {
