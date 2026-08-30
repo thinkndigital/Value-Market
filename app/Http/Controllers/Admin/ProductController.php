@@ -738,7 +738,13 @@ class ProductController extends Controller
         // dd($search);
         $sort = (request('sort')) ? request('sort') : "id";
         $order = (request('order')) ? request('order') : "DESC";
-        $limit = request("limit");
+        // Bug fix: an omitted `limit` query param left this null, and Eloquent's take(null) still sets a
+        // limit clause (Builder::limit() treats null as passing its `$value >= 0` guard) - producing
+        // invalid SQL ("... ORDER BY id DESC OFFSET 0" with no preceding LIMIT). bootstrap-table always
+        // sends `limit` in real usage so this never hit the actual admin UI, but any direct/API call
+        // without it 500'd - matches the same default this controller's own upload-list methods already
+        // use elsewhere in this file.
+        $limit = (int) request("limit", 10);
         $offset = $search || (request('pagination_offset')) ? (request('pagination_offset')) : 0;
         $settings = app(SettingService::class)->getSettings('system_settings', true);
         $settings = json_decode($settings, true);
