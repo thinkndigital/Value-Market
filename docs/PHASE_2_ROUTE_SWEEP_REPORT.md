@@ -164,8 +164,45 @@ from under a later check). Two real, previously-unknown bugs found and fixed:
 Both proven by dedicated regression tests (`tests/Feature/Phase2/AreaAndSellerEditBugsTest.php`), not just
 the sweep itself. Full suite: 645 passing (642 before this batch), zero regressions.
 
-**Remaining for later batches**: seller/delivery_boy/affiliate param routes (32/4/1), and the admin routes
-needing richer, multi-model fixtures (products, combo products, orders, sellers-as-seller-not-admin,
-attributes, currency exchange-rate/language-locale routes, system users/permissions, sliders/offers/
-category-sliders, manage-stock) — deliberately not attempted in batch 1, which stuck to single-model
-resources to keep this pass reviewable.
+**Remaining for later batches**: the admin routes needing richer, multi-model fixtures (products, combo
+products, orders, sellers-as-seller-not-admin, attributes, currency exchange-rate/language-locale routes,
+system users/permissions, sliders/offers/category-sliders, manage-stock) — deliberately not attempted in
+batch 1, which stuck to single-model resources to keep this pass reviewable.
+
+## Param-route sweep, batch 2 (seller/delivery_boy/affiliate)
+
+`tests/Feature/Phase2/ParamRouteSweepBatch2Test.php` covers the seller/delivery_boy/affiliate panels' 37
+param routes with real seeded fixtures (seller+store, customer, category, brand, product+variant, combo
+product, order+order item, tax, pickup location, product/combo-product FAQ, attribute, combo-product
+attribute). Four routes deliberately deferred to a later batch (their own docblock explains why - each
+needs a materially different, more fragile fixture: real PDF rendering, a real uploaded media file, or a
+Parcel instead of an Order).
+
+**A systemic pattern, not isolated bugs**: 9 of the remaining 33 routes turned out broken, and every single
+one is *also* confirmed unreachable — grepped every seller/delivery_boy Blade view and found zero
+references (not even a hardcoded JS URL string) to any of them. This is the same "Category 1: dead route"
+shape the original no-param sweep found for every `/create` route, now found across a chunk of seller's
+`Route::resource()`-generated `edit`/`show` action slots specifically: Laravel auto-generates the route the
+moment `Route::resource(...)` is declared, but nobody wrote the controller method *or* wired a UI action to
+it. Recorded in `ParamRouteSweepBatch2Test::KNOWN_BROKEN_ROUTES` (not silently skipped) with per-route root
+cause:
+
+| Route | Root cause |
+|---|---|
+| `seller/chat/{id}`, `seller/chat/{id}/edit` | Chatify's vendor `MessagesController` has no `show()`/`edit()` at all - the resource route's names were never excepted. |
+| `seller/combo_product_attributes/{id}/edit` | No `edit()` on `Seller\ComboProductAttributeController` — Admin's own equivalent has a real, working one; this is the same gap, just on the seller side and with no UI action pointing at it either. |
+| `seller/pickup_locations/{id}/edit` | No `edit()` on `Seller\PickupLocationController`. |
+| `seller/products/attributes/{id}/edit` | No `edit()` on `Seller\AttributeController`. |
+| `seller/tax/{id}/edit` | No `edit()` on `Seller\TaxController`. |
+| `seller/combo_products/view_product/{id}` | No `view_product()` on `Seller\ComboProductController` — the `combo_product.blade.php` view itself also has a separate bug (reads a property off a plain array). |
+| `seller/orders/{id}/edit` | `Seller\OrderController::edit()` exists, but throws `PermissionDoesNotExist` for `'view store'` — a permission name that was never seeded — before it can render. |
+| `seller/orders/destroy/{id}` | No `destroy()` on `Seller\OrderController` at all. |
+
+None of these were fixed this pass — each is a real, mechanical, low-risk completion (the working pattern
+already exists on the Admin side or via `editData()`-style helpers for most of them), but with zero
+reachability today, building 8 controller methods' worth of business logic (and, in several cases, the UI
+action to reach them) is real, unscoped feature work, not a route-sweep fix. Flagged here with root cause
+so whoever picks this up next doesn't have to re-diagnose it.
+
+Full suite: 646 passing (645 before this batch — no new bugs *fixed* this batch, but 9 previously-unknown
+dead-route root causes newly documented), zero regressions.
