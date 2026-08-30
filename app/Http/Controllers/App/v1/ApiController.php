@@ -3471,10 +3471,12 @@ Defined Methods:-
 
             $is_variant_available_in_cart = app(CartService::class)->isVariantAvailableInCart($product_variant_id, $user_id);
             if (!$is_variant_available_in_cart) {
-                if ($cart_count >= $settings['maximum_item_allowed_in_cart']) {
+                // Bug fix (fresh-install crash class, same as the guarded read further down this method):
+                // a Setting row that has never saved this key crashed every first-time add-to-cart.
+                if ($cart_count >= ($settings['maximum_item_allowed_in_cart'] ?? PHP_INT_MAX)) {
                     $response = [
                         'error' => true,
-                        'message' => 'Maximum ' . $settings['maximum_item_allowed_in_cart'] . ' Item(s) Can Be Added Only!',
+                        'message' => 'Maximum ' . ($settings['maximum_item_allowed_in_cart'] ?? '') . ' Item(s) Can Be Added Only!',
                         'data' => [],
                     ];
                     return response()->json($response);

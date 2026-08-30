@@ -17,9 +17,8 @@ use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\StoreController;
 use App\Http\Controllers\Seller\CategoryController;
+use App\Http\Controllers\Customer\HomeController as CustomerHomeController;
 
-
-use App\Livewire\Home;
 use Spatie\Sitemap\Sitemap;
 use Spatie\Sitemap\Tags\Url;
 
@@ -68,10 +67,7 @@ Route::get('/manifest', function () {
 })->name('manifest');
 
 Route::middleware(['CheckInstallation'])->group(function () {
-    Route::get('/', function () {
-        return redirect()->route('admin.home');
-    });
-    // Route::get('/', Home::class)->name('home');
+    Route::get('/', [CustomerHomeController::class, 'index'])->name('home');
     Route::get('admin/register', [UserController::class, 'create']);
 
     Route::post('admin/users', [UserController::class, 'store']);

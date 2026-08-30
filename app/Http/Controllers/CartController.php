@@ -503,8 +503,10 @@ class CartController extends Controller
         $user_id = auth()->id() ?? 0;
         $product_variant_id = $request["variant_id"];
         $qty = $request["qty"];
-        $address_id = $request["is_saved_for_later"];
-        $is_saved_for_later = $request["address_id"];
+        // Bug fix: these two were swapped - address_id was reading the is_saved_for_later input and vice
+        // versa, so every call silently validated/stored the wrong value under each name.
+        $address_id = $request["address_id"];
+        $is_saved_for_later = $request["is_saved_for_later"];
         $product_type = $request["product_type"];
         $cart_data = [
             'product_variant_id' => $product_variant_id,
@@ -593,7 +595,7 @@ class CartController extends Controller
             }
 
             $settings = json_decode($settings, true);
-            if ($settings['single_seller_order_system'] == 1) {
+            if (($settings['single_seller_order_system'] ?? null) == 1) {
                 if (!app(CartService::class)->isSingleSeller($product_variant_id, $user_id, $product_type)) {
                     $response = [
                         'error' => true,
