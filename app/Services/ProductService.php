@@ -1067,15 +1067,44 @@ class ProductService
      * Phase 5 code (InventoryService::adjustStock(), PurchaseOrderService::receiveGoods()) passes the extra
      * args for accurate classification. See PHASE_5_INVENTORY_PROCUREMENT.md §2 for the full reasoning.
      */
+    /**
+     * Phase 9/10 (32-phase SaaS brief - docs/PHASE_9_10_POS_CONCURRENCY_AND_BRANCHES.md): the read here
+     * used to be a plain, unlocked SELECT - two concurrent decrements for the same variant (a storefront
+     * checkout and a POS sale, say) could both read the same stale stock value and both write a
+     * decremented result, oversell the same last unit, or drift stock negative. The minus-branches below
+     * also only ever checked "is stock positive" (`> 0`), not "is stock enough for this quantity" - a
+     * request for qty=5 against stock=2 would have set stock to -3.
+     *
+     * Fixed by moving the read inside its own transaction with `lockForUpdate()`: MySQL/InnoDB blocks any
+     * other transaction from reading-for-update or writing these same rows until this one commits, so a
+     * concurrent decrement always sees the just-committed, real value rather than a stale one. Both real
+     * callers of this method that place orders (OrderService::placeOrder(), Seller\PosController::
+     * place_order()) already wrap their whole request in an outer DB::beginTransaction() - Laravel nests
+     * this method's own DB::transaction() as a savepoint inside that, so the lock is held for the outer
+     * transaction's full lifetime, not released early. Standalone callers (admin manual stock adjustment,
+     * webhooks) get a real atomic transaction here for the first time too.
+     *
+     * This closes the race and guarantees stock is never driven negative under concurrent load. It does
+     * NOT roll back or reject the *order* when a race is actually detected (two requests landing on the
+     * true last unit at the same instant still both get "success" today, one clamped to a no-op decrement)
+     * - making every one of this method's 15+ call sites check a real insufficient-stock return value and
+     * abort order creation on it is a separate, larger, cross-cutting change (each call site has its own
+     * error contract today), not attempted in this pass.
+     */
     public function updateStock($product_variant_ids, $qtns, $type = '', $branchId = null, $referenceType = 'legacy_adjustment', $referenceId = null, $unitCost = null, $notes = null)
     {
 
         $ids = implode(',', (array) $product_variant_ids);
 
+        // The lock must be held for the read AND every write below, in the same transaction - locking only
+        // the read (then writing afterward, unguarded) would release the row lock before the writes even
+        // happen for any caller with no outer transaction of its own, defeating the point entirely.
+        DB::transaction(function () use ($product_variant_ids, $qtns, $type, $branchId, $referenceType, $referenceId, $unitCost, $notes, $ids) {
         $productVariants = Product_variants::select('p.*', 'product_variants.*', 'p.id as p_id', 'product_variants.id as pv_id', 'p.stock as p_stock', 'product_variants.stock as pv_stock')
             ->whereIn('product_variants.id', is_array($product_variant_ids) ? $product_variant_ids : [$product_variant_ids])
             ->join('products as p', 'product_variants.product_id', '=', 'p.id')
             ->orderByRaw('FIELD(product_variants.id,' . $ids . ')')
+            ->lockForUpdate()
             ->get();
 
         foreach ($productVariants as $i => $res) {
@@ -1117,7 +1146,9 @@ class ProductService
                         }
                     } else {
 
-                        if ($res->p_stock !== null && $res->p_stock > 0) {
+                        // >= $qty, not > 0 - the old ">0" guard let a decrement past what's actually in
+                        // stock through (e.g. qty=5 against stock=2 used to set stock to -3).
+                        if ($res->p_stock !== null && intval($res->p_stock) >= $qty) {
                             $stock = intval($res->p_stock) - $qty;
                             Product::where('id', $res->product_id)->update(['stock' => $stock]);
                             if ($stock == 0) {
@@ -1144,7 +1175,7 @@ class ProductService
                             $recordMovement();
                         }
                     } else {
-                        if ($res->pv_stock !== null && $res->pv_stock > 0) {
+                        if ($res->pv_stock !== null && intval($res->pv_stock) >= $qty) {
                             $stock = intval($res->pv_stock) - $qty;
                             Product::where('id', $res->p_id)->update(['stock' => $stock]);
                             Product_variants::where('product_id', $res->product_id)->update(['stock' => $stock]);
@@ -1168,7 +1199,7 @@ class ProductService
                             $recordMovement();
                         }
                     } else {
-                        if ($res->pv_stock !== null && $res->pv_stock > 0) {
+                        if ($res->pv_stock !== null && intval($res->pv_stock) >= $qty) {
                             $stock = intval($res->pv_stock) - $qty;
                             Product_variants::where('id', $res->id)->update(['stock' => $stock]);
                             if ($stock == 0) {
@@ -1180,6 +1211,7 @@ class ProductService
                 }
             }
         }
+        });
     }
 
     public function getPriceRangeOfProduct($product_id = '')

@@ -16,6 +16,54 @@ use Illuminate\Support\Facades\DB;
  */
 class InventoryService
 {
+    /** Current on-hand quantity for one variant at one branch (0 if never received into that branch). */
+    public function branchStockQuantity(int $sellerId, int $branchId, int $productVariantId): int
+    {
+        return (int) (StockItem::where('seller_id', $sellerId)
+            ->where('branch_id', $branchId)
+            ->where('product_variant_id', $productVariantId)
+            ->value('quantity') ?? 0);
+    }
+
+    /**
+     * Phase 9/10 (32-phase SaaS brief - docs/PHASE_9_10_POS_CONCURRENCY_AND_BRANCHES.md): before this, a
+     * POS sale's stock check (validateStock(), the app/function_helper.php global) only ever compared
+     * against the seller's total global stock (products.stock/product_variants.stock) - never against what
+     * this specific branch actually has on hand in stock_items, even though stock_items has tracked a
+     * real per-branch running total since Phase 5. A seller with Branch A holding 6 units and Branch B
+     * holding 4 could sell 8 units from Branch A's POS terminal and it would succeed (global stock = 10),
+     * silently overselling a location that never had that much inventory.
+     *
+     * $branchId === null (no branch resolved for this sale - the seller isn't using branches, or POS
+     * didn't verify one) skips this check entirely, same as before this fix - preserves today's behavior
+     * for every seller not using the branch feature. Combo products aren't branch-tracked (updateComboStock()
+     * takes no branch parameter either - matches that existing scope), so only regular items are checked.
+     *
+     * @return array{error: bool, message: string}
+     */
+    public function validateBranchStock(int $sellerId, ?int $branchId, array $productVariantIds, array $quantities, array $productTypes): array
+    {
+        if ($branchId === null) {
+            return ['error' => false, 'message' => ''];
+        }
+
+        foreach ($productVariantIds as $index => $variantId) {
+            if (($productTypes[$index] ?? 'regular') !== 'regular') {
+                continue;
+            }
+
+            $onHand = $this->branchStockQuantity($sellerId, $branchId, (int) $variantId);
+            if ($onHand < (int) $quantities[$index]) {
+                return [
+                    'error' => true,
+                    'message' => "This branch only has {$onHand} unit(s) of this item in stock.",
+                ];
+            }
+        }
+
+        return ['error' => false, 'message' => ''];
+    }
+
     /**
      * Writes one immutable ledger row and updates (or creates) the matching stock_items running total.
      * Does NOT touch product_variants/products.stock - callers that need the legacy field kept in sync

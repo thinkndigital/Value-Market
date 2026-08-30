@@ -1,21 +1,19 @@
-@extends('seller/layout')
+{{--
+    32-phase SaaS brief, Phase 9/10 (docs/PHASE_9_10_POS_CONCURRENCY_AND_BRANCHES.md): rendered inside
+    seller/pos_layout.blade.php (a dedicated full-screen shell - no sidebar/header chrome, its own
+    responsive two-panel layout below lg) instead of the normal seller/layout chrome. Everything below this
+    point - every id, every class the page's own JS (assets/admin/custom/pos.js) queries - is unchanged;
+    only the wrapper this content renders inside changed.
+--}}
+@extends('seller/pos_layout')
 @section('title')
     {{ labels('admin_labels.point_of_sale', 'Point Of Sale') }}
 @endsection
 @section('content')
     <section class="main-content">
-        <div class="container-fluid mt-5 mb-5 px-6">
-            <x-seller.breadcrumb :title="labels('admin_labels.point_of_sale', 'Point Of Sale')" :subtitle="labels(
-                'admin_labels.grow_your_sales_with_the_right_tools',
-                'Grow Your Sales With The Right Tools',
-            )" :breadcrumbs="[
-                ['label' => labels('admin_labels.manage', 'Manage')],
-                ['label' => labels('admin_labels.point_of_sale', 'Point Of Sale')],
-            ]" />
-
-
+        <div class="container-fluid px-0">
             <section class="pos-data row">
-                <div class="col-md-12 col-xxl-8">
+                <div class="col-md-12 col-xxl-8 pos-products-panel">
                     <div class="card content-area ps-5 pe-5 ">
                         <div class="mt-4 col-md-12 additional-info-nav-header d-flex">
                             <div class="col-sm-6">

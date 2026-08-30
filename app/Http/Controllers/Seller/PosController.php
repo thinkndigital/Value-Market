@@ -312,6 +312,23 @@ class PosController extends Controller
             return response()->json($response);
         }
 
+        // Phase 9/10 (32-phase SaaS brief - docs/PHASE_9_10_POS_CONCURRENCY_AND_BRANCHES.md): the check
+        // above only compares against the seller's total global stock, never against what this specific
+        // branch actually has on hand - resolved and validated separately here, before any write, same
+        // "check then abort" placement as validateStock() above.
+        $acting_seller_id = Seller::where('user_id', Auth::user()->id)->value('id');
+        $pos_branch_id = $this->resolveOwnedPosBranchId($request->input('pos_branch_id'), $acting_seller_id);
+        $branch_stock_status = app(\App\Services\InventoryService::class)->validateBranchStock($acting_seller_id, $pos_branch_id, $product_variant_id, $quantity, $product_type);
+
+        if ($branch_stock_status['error'] == true) {
+            $response = [
+                'error' => true,
+                'message' => $branch_stock_status['message'],
+                'data' => []
+            ];
+            return response()->json($response);
+        }
+
 
         $data = array(
             'product_variant_id' => implode(",", $product_variant_id),
@@ -619,7 +636,10 @@ class PosController extends Controller
             // processed, and adding the same per-item stock deduction OrderService::placeOrder() already
             // does for the e-commerce checkout path (ProductService::updateStock() for regular items,
             // ComboProductService::updateComboStock() for combo items) - POS never decremented stock at all.
-            $posBranchId = $this->resolveOwnedPosBranchId($request->input('pos_branch_id'), $product_variant[0]->product['seller_id'] ?? null);
+            // Reuses the same branch already resolved and validated against above ($pos_branch_id) - kept
+            // as one value instead of re-deriving it a second time, so what was validated is exactly what
+            // gets decremented.
+            $posBranchId = $pos_branch_id;
 
             for ($i = 0; $i < count($product_variant); $i++) {
                 // dd($product_variant[$i]);
