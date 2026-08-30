@@ -40,6 +40,9 @@ class Seller extends Model implements HasMedia
         'national_identity_card',
         'category_ids',
         'disk',
+        'subscription_plan_id',
+        'subscription_started_at',
+        'subscription_expires_at',
     ];
     // public function order_items()
     // {
@@ -52,6 +55,10 @@ class Seller extends Model implements HasMedia
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+    public function subscriptionPlan()
+    {
+        return $this->belongsTo(SubscriptionPlan::class, 'subscription_plan_id');
     }
     public function products()
     {

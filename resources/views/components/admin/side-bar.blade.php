@@ -521,6 +521,18 @@
                      </a>
                  </li>
              @endif
+             @if ($user_role == 'super_admin')
+                 <li class="sidebar-title ms-3"><i
+                         class='bx bx-crown'></i>{{ labels('admin_labels.subscription_plans', 'Subscription Plans') }}
+                 </li>
+                 <li class="nav-item ms-3">
+                     <a class="nav-link {{ Request::is('admin/subscription_plans/manage') ? 'active' : '' }}"
+                         href="{{ route('admin.subscription_plans.index') }}">
+                         <span
+                             class="nav-link-text ms-1">{{ labels('admin_labels.subscription_plans', 'Subscription Plans') }}</span>
+                     </a>
+                 </li>
+             @endif
              <li class="sidebar-title ms-3"><i class='bx bx-cycling'></i>
                  {{ labels('admin_labels.delivery_boys', 'Delivery Boys') }}
              </li>

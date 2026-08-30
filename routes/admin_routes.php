@@ -1297,6 +1297,14 @@ Route::group(
         Route::post('admin/commission_rules', [\App\Http\Controllers\Admin\CommissionRuleController::class, 'store'])->middleware(['demo_restriction'])->name('admin.commission_rules.store');
         Route::post('admin/commission_rules/{id}', [\App\Http\Controllers\Admin\CommissionRuleController::class, 'update'])->middleware(['demo_restriction'])->name('admin.commission_rules.update');
 
+        // Phase 11 (32-phase SaaS brief, docs/PHASE_11_SUBSCRIPTIONS.md): admin-managed subscription tiers.
+        Route::get('admin/subscription_plans/manage', [\App\Http\Controllers\Admin\SubscriptionPlanController::class, 'index'])->name('admin.subscription_plans.index');
+        Route::get('admin/subscription_plans', [\App\Http\Controllers\Admin\SubscriptionPlanController::class, 'list'])->name('admin.subscription_plans.list');
+        Route::post('admin/subscription_plans', [\App\Http\Controllers\Admin\SubscriptionPlanController::class, 'store'])->middleware(['demo_restriction'])->name('admin.subscription_plans.store');
+        Route::post('admin/subscription_plans/{id}', [\App\Http\Controllers\Admin\SubscriptionPlanController::class, 'update'])->middleware(['demo_restriction'])->name('admin.subscription_plans.update');
+        Route::delete('admin/subscription_plans/{id}', [\App\Http\Controllers\Admin\SubscriptionPlanController::class, 'destroy'])->middleware(['demo_restriction'])->name('admin.subscription_plans.destroy');
+        Route::post('admin/subscription_plans/assign', [\App\Http\Controllers\Admin\SubscriptionPlanController::class, 'assignToSeller'])->middleware(['demo_restriction'])->name('admin.subscription_plans.assign');
+
         // Read-only admin visibility into the Phase 7 affiliate engine (who has links, click/conversion
         // counts, commission owed) - previously reachable only via direct DB access or the self-service
         // App\Http\Controllers\AffiliateController's own endpoints (a user's own links only).
