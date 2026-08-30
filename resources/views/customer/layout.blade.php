@@ -10,6 +10,12 @@
         <link rel="shortcut icon" href="{{ asset('storage/' . $web_settings['favicon']) }}" type="image/x-icon">
     @endif
 
+    {{-- plugins.css bundles the real Bootstrap 5 framework this theme's own markup assumes (.container,
+    .d-flex, .btn, .form-control, .row/.col-*, etc.) - style.css/theme.css only add this theme's own classes
+    on top of it, they don't include Bootstrap itself. Omitting this rendered every Bootstrap-class element
+    on every storefront page as unstyled plain text (confirmed live: no header layout, no button styling,
+    no form styling) - matches app.blade.php's own asset order, which loads this first for the same reason. --}}
+    <link rel="stylesheet" href="{{ asset('frontend/elegant/css/plugins.css') }}">
     <link rel="stylesheet" href="{{ asset('frontend/elegant/css/bootstrap-icons.css') }}">
     <link rel="stylesheet" href="{{ asset('frontend/elegant/css/swiper-bundle.min.css') }}">
     <link rel="stylesheet" href="{{ asset('frontend/elegant/css/style.css') }}">
