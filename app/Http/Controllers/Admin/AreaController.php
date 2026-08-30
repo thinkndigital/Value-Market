@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 
+use App\Models\Area;
 use App\Models\City;
 use App\Models\Language;
 use App\Models\Zipcode;
@@ -826,6 +827,21 @@ class AreaController extends Controller
         }
     }
 
+
+    /**
+     * Real bug (Phase 2 param-route sweep, batch 1): admin/area/edit/{id} routed here (admin.area.edit)
+     * but this method never existed - a BadMethodCallException on every hit. Fixed with the same
+     * editData() one-liner cityEdit()/zipcodesEdit() already use for the identical shape. Area's other
+     * missing methods (areaList/storeArea/areaDestroy - admin.area.list/.store/.destroy, and displayArea
+     * for admin.display_area) are a separate, larger, unfinished-feature gap - see docs/
+     * PHASE_2_ROUTE_SWEEP_REPORT.md's corrected finding, not fixed here (no frontend action for any of
+     * them exists in resources/views/admin/pages/forms/areas.blade.php either - inventing that UI/wiring
+     * from scratch is its own scoped task, not a route-sweep-batch fix).
+     */
+    public function areaEdit($id)
+    {
+        return $this->editData(Area::class, $id, labels('admin_labels.data_not_found', 'Data Not Found'));
+    }
 
     public function zipcodesEdit($id)
     {

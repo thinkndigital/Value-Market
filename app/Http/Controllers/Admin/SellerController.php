@@ -490,7 +490,11 @@ class SellerController extends Controller
             ? fetchDetails(Zipcode::class, ['id' => $selected_zipcode_id], 'zipcode')
             : null;
 
-        $selected_zipcode_text = $selected_zipcode_text[0]->zipcode;
+        // Real bug (Phase 2 param-route sweep, batch 1): this used to unconditionally re-dereference
+        // $selected_zipcode_text[0]->zipcode even when the seller's store has no zipcode set (the branch
+        // just above correctly leaves $selected_zipcode_text as null for that case) - crashing
+        // ("Trying to access array offset on null") on any seller edit page whose store lacks a zipcode.
+        $selected_zipcode_text = !empty($selected_zipcode_text) ? $selected_zipcode_text[0]->zipcode : null;
         // dd($store_data[0]->category_ids);
         // dd($store_data[0]->seller->authorized_signature);
         if ($store_data->isEmpty()) {

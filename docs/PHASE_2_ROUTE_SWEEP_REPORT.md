@@ -129,3 +129,43 @@ passing, zero regressions).
 isn't already in `KNOWN_BROKEN_ROUTES` will fail the suite immediately, catching future instances of exactly
 this bug class before they ship. Parameter-required routes (Phase 2's other 107 routes) remain unaudited —
 real next-step scope, needs per-route seed fixtures rather than a blanket sweep.
+
+## Param-route sweep, batch 1 (32-phase SaaS brief follow-up)
+
+Continuing the deferred param-route scope above, one batch at a time (real per-route fixtures, not a blanket
+substitution) — product owner's direction: work through it incrementally rather than all at once.
+`tests/Feature/Phase2/ParamRouteSweepBatch1Test.php` covers the admin panel's simpler single-model CRUD
+resources: category, brand, blog, blog_category, tax, zone, city, currency, promo_code, storage_type, faq,
+zipcode, area, pickup_location, custom_message, ticket_type, seller — 39 routes (edit/destroy/update_status/
+view, each with a real seeded fixture, destroy routes ordered last per resource so nothing gets deleted out
+from under a later check). Two real, previously-unknown bugs found and fixed:
+
+1. **`admin/area/edit/{id}` → `BadMethodCallException`.** The route (`admin.area.edit`) was wired to
+   `AreaController::areaEdit()`, which never existed. Fixed with the same one-line `editData()` call
+   `cityEdit()`/`zipcodesEdit()` already use for the identical shape.
+
+   **A fuller, corrected finding while investigating this**: the *entire* Area CRUD backend is missing, not
+   just `edit` — `areaList`/`storeArea`/`areaDestroy`/`displayArea` (backing `admin.area.list`/`.store`/
+   `.destroy`/`admin.display_area`) don't exist either, and `resources/views/admin/pages/forms/areas.blade.php`
+   (a real Add-Area form + an empty results table) has no sidebar link and no edit/delete action wired in its
+   markup at all. This corrects Category 2's original "AJAX-only, needs params, ~none risk" categorization
+   for `/admin/area`/`/admin/area/list` — it's actually Category 3 (unfinished feature), just one with
+   unusually low reachability (no navigation path to it at all, not even a broken one). Only `areaEdit()`
+   was fixed here (a safe, precedented, non-UI-inventing completion); building out `areaList`/`storeArea`/
+   `areaDestroy`/`displayArea` — and deciding whether "Area" should exist at all given City+Zipcode already
+   cover the same real business need — needs its own scoped product decision, not a route-sweep-batch fix.
+
+2. **`admin/sellers/edit/{id}` → `ErrorException: Trying to access array offset on null`.**
+   `Admin\SellerController::edit()` computed `$selected_zipcode_text` correctly (null-guarded) on one line,
+   then immediately overwrote it on the next by unconditionally doing `$selected_zipcode_text[0]->zipcode` —
+   crashing on any seller whose store has no zipcode set. Fixed by merging the guard into the single
+   computation instead of a redundant, unguarded second pass.
+
+Both proven by dedicated regression tests (`tests/Feature/Phase2/AreaAndSellerEditBugsTest.php`), not just
+the sweep itself. Full suite: 645 passing (642 before this batch), zero regressions.
+
+**Remaining for later batches**: seller/delivery_boy/affiliate param routes (32/4/1), and the admin routes
+needing richer, multi-model fixtures (products, combo products, orders, sellers-as-seller-not-admin,
+attributes, currency exchange-rate/language-locale routes, system users/permissions, sliders/offers/
+category-sliders, manage-stock) — deliberately not attempted in batch 1, which stuck to single-model
+resources to keep this pass reviewable.
