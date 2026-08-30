@@ -6,6 +6,7 @@ use App\Models\AffiliateLink;
 use App\Models\CommissionRule;
 use App\Models\LinkClick;
 use App\Models\ReferralConversion;
+use App\Models\Seller;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -99,6 +100,26 @@ class AffiliateService
 
             if ($rule) {
                 return $rule;
+            }
+
+            // Phase 11 (docs/PHASE_11_SUBSCRIPTIONS.md): a seller's subscription plan can carry its own
+            // commission_rate override. No explicit admin-managed vendor-scope CommissionRule exists for
+            // this seller (checked just above) - if their plan sets a rate, it stands in for one at the
+            // same point in the precedence chain a real vendor-scope rule would (still outranked by
+            // product/category, still outranking affiliate/platform). Not persisted - a transient
+            // CommissionRule instance, so every existing caller that just reads ->rate_type/->rate_value
+            // needs no changes.
+            if ($scope === CommissionRule::SCOPE_VENDOR && $scopeId !== null) {
+                $planRate = Seller::join('subscription_plans', 'subscription_plans.id', '=', 'seller_data.subscription_plan_id')
+                    ->where('seller_data.id', $scopeId)
+                    ->value('subscription_plans.commission_rate');
+                if ($planRate !== null) {
+                    return new CommissionRule([
+                        'scope' => CommissionRule::SCOPE_VENDOR, 'scope_id' => $scopeId,
+                        'rate_type' => CommissionRule::RATE_PERCENTAGE, 'rate_value' => $planRate,
+                        'status' => CommissionRule::STATUS_ACTIVE,
+                    ]);
+                }
             }
         }
 

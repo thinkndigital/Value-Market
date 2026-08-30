@@ -42,15 +42,21 @@ guessing actual business pricing, which risked either under- or over-charging re
   (would plug into the per-seller/platform payment gateways this session already built in Phase 6/6B) —
   building it speculatively here, before the admin has even confirmed real pricing, risked wiring a billing
   engine around numbers everyone already expects to change.
-- **No enforcement of plan limits anywhere else in the app.** `commission_rate` and `max_products` are
-  stored and shown, not read by any other controller yet — a seller on a plan with `max_products: 50` can
-  still list a 51st product today. Wiring `commission_rate` into `AffiliateService::resolveCommissionRule()`
-  and `max_products` into `Seller\ProductController::store()` are natural, contained follow-ups once the
-  admin has confirmed these are the real numbers to enforce (enforcing placeholder numbers would be worse
-  than not enforcing anything).
-- **No seller-facing "my subscription" page.** The ask was specifically admin control; a seller-facing view
-  is straightforward to add later (read-only, `Auth::user()->seller->subscriptionPlan`) but wasn't part of
-  this pass's scope.
+- ~~No enforcement of plan limits anywhere else in the app.~~ **Closed in a follow-up pass** (same phase,
+  next commit): `max_products` is now enforced in `Seller\ProductController::store()` (only within the
+  same seller-ownership-checked scope this method's existing security fix already applies — an admin
+  creating a product on a seller's behalf is unaffected), and `commission_rate` now stands in as a
+  vendor-scope fallback in `AffiliateService::resolveCommissionRule()` — only when no explicit
+  admin-managed `CommissionRule` already exists at vendor scope for that seller (an explicit admin rule
+  still wins, matching the precedence an admin would expect). Both skip entirely for a seller with no plan,
+  or a plan that leaves the field unset (null = unlimited / use-platform-default) — no behavior change for
+  anyone not on a plan with these fields actually set.
+- ~~No seller-facing "my subscription" page.~~ **Closed in the same follow-up**: `Seller\
+  SubscriptionController` + `seller/pages/tables/my_subscription.blade.php` — read-only (current plan,
+  products-used-of-limit, commission rate, expiry, feature list). No "change plan" button — the product
+  owner's ask was admin control, not seller self-service upgrades, so the page points sellers to contact
+  support instead.
+- **No billing/payment collection** is still true and still deliberately out of scope — see above.
 
 ## Tests
 
@@ -58,6 +64,11 @@ guessing actual business pricing, which risked either under- or over-charging re
 delete (including the commission-rate-over-100 rejection mirroring `CommissionRuleRateCapTest`'s own cap,
 and the delete-blocked-while-a-seller-is-assigned guard), assign/clear a seller's subscription (expiry
 computed correctly), and the `Seller::subscriptionPlan()` relation.
+
+`tests/Feature/Phase11/SubscriptionEnforcementTest.php` (8 tests, follow-up pass): a seller at/below/with-no
+plan/with-an-unlimited-plan product limit; the plan commission-rate fallback (used when no explicit vendor
+rule exists, correctly outranked when one does, correctly absent for a seller with no plan at all); and the
+my-subscription page rendering the seller's current plan.
 
 `tests/Feature/Phase1/MigrationBaselineTest.php`'s table-count assertion updated 123 → 124.
 

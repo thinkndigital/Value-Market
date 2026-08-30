@@ -141,7 +141,25 @@ class ProductController extends Controller
             }
             // Every later use of $request->seller_id in this method (the permissions lookup and the
             // product row itself) now reads this server-derived value instead of whatever the request sent.
-            $request->merge(['seller_id' => Seller::where('user_id', Auth::id())->value('id')]);
+            $sellerId = Seller::where('user_id', Auth::id())->value('id');
+            $request->merge(['seller_id' => $sellerId]);
+
+            // Phase 11 (docs/PHASE_11_SUBSCRIPTIONS.md): a subscription plan's max_products is stored but
+            // was never actually enforced anywhere - this is that enforcement. No plan assigned, or a plan
+            // with max_products left null (unlimited), both skip the check entirely.
+            $maxProducts = DB::table('seller_data')
+                ->join('subscription_plans', 'subscription_plans.id', '=', 'seller_data.subscription_plan_id')
+                ->where('seller_data.id', $sellerId)
+                ->value('subscription_plans.max_products');
+            if ($maxProducts !== null && Product::where('seller_id', $sellerId)->count() >= $maxProducts) {
+                $message = labels('seller.subscription_product_limit_reached', "Your subscription plan allows up to {$maxProducts} products. Upgrade your plan to add more.");
+                if ($fromApp) {
+                    return response()->json(['error' => true, 'message' => $message]);
+                }
+                return $request->ajax()
+                    ? response()->json(['error' => true, 'message' => $message])
+                    : redirect()->back()->with('error', $message)->withInput();
+            }
         }
 
         // dd('here');

@@ -10,6 +10,7 @@ use App\Http\Controllers\Seller\SupplierController;
 use App\Http\Controllers\Seller\ReturnRequestController;
 use App\Http\Controllers\Seller\AffiliateProgramController;
 use App\Http\Controllers\Seller\PaymentGatewayController;
+use App\Http\Controllers\Seller\SubscriptionController;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -256,6 +257,9 @@ Route::group(
         //Transaction
         Route::get('seller/transaction/wallet_transactions', [TransactionController::class, 'wallet_transactions'])->name('seller.transaction.wallet_transactions');
         Route::get('seller/transaction/wallet_transactions_list', [TransactionController::class, 'wallet_transactions_list'])->name('seller.transaction.wallet_transactions_list');
+
+        //My Subscription (Phase 11 - docs/PHASE_11_SUBSCRIPTIONS.md)
+        Route::get('seller/my_subscription', [SubscriptionController::class, 'index'])->name('seller.my_subscription.index');
 
         //Payment Gateways (Phase 6 - docs/PHASE_6_PAYMENT_GATEWAYS.md)
         Route::get('seller/payment_gateways', [PaymentGatewayController::class, 'index'])->name('seller.payment_gateways.index');

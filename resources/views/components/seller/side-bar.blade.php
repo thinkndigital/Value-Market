@@ -263,6 +263,15 @@
                     <span class="nav-link-text ">{{ labels('admin_labels.payment_gateways', 'Payment Gateways') }}</span>
                 </a>
             </li>
+            <li class="sidebar-title "><i class='bx bx-crown'></i>
+                {{ labels('admin_labels.my_subscription', 'My Subscription') }}
+            </li>
+            <li class="nav-item ">
+                <a class="nav-link {{ Request::is('seller/my_subscription') ? 'active' : '' }}"
+                    href="{{ route('seller.my_subscription.index') }}">
+                    <span class="nav-link-text ">{{ labels('admin_labels.my_subscription', 'My Subscription') }}</span>
+                </a>
+            </li>
             <li class="sidebar-title "><i
                     class='bx bx-tachometer'></i></i>{{ labels('admin_labels.location_management', 'Location Management') }}
             </li>
