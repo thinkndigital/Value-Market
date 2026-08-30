@@ -14,10 +14,19 @@
     @endif
     <title>@yield('title') | {{ $system_settings['app_name'] }}</title>
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet" />
+    <link href="{{ asset('/assets/css/nucleo-icons.css') }}" rel="stylesheet" />
+    <link href="{{ asset('/assets/css/nucleo-svg.css') }}" rel="stylesheet" />
     <link rel="stylesheet" href="{{ asset('assets/admin/css/iziToast.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/fontawesome/css/all.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/boxicons/css/boxicons.min.css') }}">
+    {{-- style.min.css's fixed-sidebar layout (#db-wrapper/.navbar-vertical/#page-content) builds on
+    Bootstrap's own grid/flex classes - without bootstrap.min.css loaded first, the sidebar renders as a
+    plain block element instead of a fixed column, pushing all page content down below it. Same include
+    order as seller/include_css.blade.php, which is the proven-working reference. --}}
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/bootstrap.min.css') }}">
     <link id="pagestyle" href="{{ asset('/assets/css/argon-dashboard.css?v=2.0.4') }}" rel="stylesheet" />
     <link id="pagestyle" href="{{ asset('/assets/admin/css/style.min.css') }}" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ asset('assets/boxicons/css/boxicons.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('/assets/css/theme.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/admin/custom/custom.css') }}">
     <style>
         .affiliate-content-wrap {
