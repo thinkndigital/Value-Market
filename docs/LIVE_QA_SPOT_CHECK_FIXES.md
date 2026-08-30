@@ -81,16 +81,30 @@ add-product page (verified live - full form renders, all fields present, categor
 after fix #2 above). Same "Category 1: dead route" shape Phase 2 batches 1-3 found repeatedly elsewhere in
 this app - not fixed here, consistent with that established discipline.
 
-## What this pass did NOT fully verify
+## Full end-to-end verification: a real product was created
 
-A complete, real product-creation submission (filling every section of the Add Product form - pricing,
-stock, image upload, deliverable zones - and confirming a row lands in `products`) was not completed. The
-form's deeper conditional fields (e.g. the simple-product price/stock inputs, which only appear after
-selecting both "Product Type" and "Type of Product") did not become visible during automated testing within
-a reasonable time budget, and no JS error or other concrete evidence pointed to a real bug there - it may
-simply need a specific interaction sequence this pass didn't find. The blocking issue that *was* found
-(category dropdown never loading, #2 above) is fixed and verified; a human should still click through one
-full product creation to confirm the rest of the form's happy path.
+Followed up by completing one full, real submission of the Add Product form as the demo seller - not just
+confirming the page renders. Two things needed a specific interaction sequence to get right (neither is a
+bug, both are documented here for anyone re-running this kind of check):
+
+- **"Type of Product" (`#product-type`) is Select2-enhanced**, and its own price/stock-revealing logic
+  (`custom.js`) listens specifically for Select2's `select2:select` event - which only fires from a real
+  click through Select2's dropdown UI, not from a plain `<select>` value change. `category_id` and "Choose
+  Product Type" are plain selects and don't have this requirement.
+- **"Main Image" is a modal media picker, not a direct dropzone**: clicking it opens `#media-upload-modal`,
+  which has its own FilePond upload form (POSTs to `seller/media/upload`); after a successful upload the
+  modal auto-closes, and reopening it shows the uploaded file in a Bootstrap-table list to select and
+  confirm via "Choose Media" - only then does a real `<input name="pro_input_image">` get written onto the
+  main form.
+
+With both handled correctly, and one thing this exercise incidentally surfaced - this dev environment's
+`subscription_plans`/`seller_payment_gateways` migrations had never been run here (`php artisan migrate`
+fixed it; a purely local-environment gap, not a code bug, since production already has these tables) - the
+form's own `max_products` subscription check (Phase 11) ran cleanly and the submission succeeded outright:
+`POST /seller/products` returned `200 {"error":false,"message":"Product added successfully.","data":{"id":10,...}}`,
+confirmed present in the `products` table with the real uploaded image, category, and price. The blocking
+issue found and fixed earlier in this pass (category dropdown never loading, #2 above) was the only thing
+actually stopping product creation - the rest of the form's happy path is confirmed working.
 
 ## Regression coverage
 
