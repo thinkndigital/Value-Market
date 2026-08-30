@@ -9,7 +9,7 @@
     )" :breadcrumbs="[['label' => labels('admin_labels.update_store', 'Update Store')]]" />
 
     @php
-        $store_settings = $data->store_settings;
+        $store_settings = $data->store_settings ?? [];
         use App\Services\MediaService;
         use App\Services\SettingService;
     @endphp
@@ -637,14 +637,14 @@
                                                     <select class="feature_section_header_style form-select form-control"
                                                         name="store_style">
                                                         <option value="header_style_1"
-                                                            {{ $store_settings['store_style'] === 'header_style_1' ? 'selected' : '' }}>
+                                                            {{ ($store_settings['store_style'] ?? '') === 'header_style_1' ? 'selected' : '' }}>
                                                             Style 1
                                                         </option>
                                                         <option value="header_style_2"
-                                                            {{ $store_settings['store_style'] === 'header_style_2' ? 'selected' : '' }}>
+                                                            {{ ($store_settings['store_style'] ?? '') === 'header_style_2' ? 'selected' : '' }}>
                                                             Style 2</option>
                                                         <option value="header_style_3"
-                                                            {{ $store_settings['store_style'] === 'header_style_3' ? 'selected' : '' }}>
+                                                            {{ ($store_settings['store_style'] ?? '') === 'header_style_3' ? 'selected' : '' }}>
                                                             Style 3</option>
                                                     </select>
                                                 </div>
@@ -667,13 +667,13 @@
                                                     <select class="product_card_style form-select form-control"
                                                         name="product_style">
                                                         <option value="style_1"
-                                                            {{ $store_settings['product_style'] === 'style_1' ? 'selected' : '' }}>
+                                                            {{ ($store_settings['product_style'] ?? '') === 'style_1' ? 'selected' : '' }}>
                                                             Style 1</option>
                                                         <option value="style_2"
-                                                            {{ $store_settings['product_style'] === 'style_2' ? 'selected' : '' }}>
+                                                            {{ ($store_settings['product_style'] ?? '') === 'style_2' ? 'selected' : '' }}>
                                                             Style 2</option>
                                                         <option value="style_3"
-                                                            {{ $store_settings['product_style'] === 'style_3' ? 'selected' : '' }}>
+                                                            {{ ($store_settings['product_style'] ?? '') === 'style_3' ? 'selected' : '' }}>
                                                             Style 3</option>
                                                     </select>
                                                 </div>
@@ -822,10 +822,10 @@
                                                     <select class="categories_style form-control form-select"
                                                         name="category_style">
                                                         <option value="category_style_1"
-                                                            {{ $store_settings['category_style'] === 'category_style_1' ? 'selected' : '' }}>
+                                                            {{ ($store_settings['category_style'] ?? '') === 'category_style_1' ? 'selected' : '' }}>
                                                             Style 1</option>
                                                         <option value="category_style_2"
-                                                            {{ $store_settings['category_style'] === 'category_style_2' ? 'selected' : '' }}>
+                                                            {{ ($store_settings['category_style'] ?? '') === 'category_style_2' ? 'selected' : '' }}>
                                                             Style 2</option>
                                                     </select>
                                                 </div>
@@ -846,13 +846,13 @@
                                                     <select class="categories_card_style form-control form-select"
                                                         name="category_card_style">
                                                         <option value="category_card_style_1"
-                                                            {{ $store_settings['category_card_style'] === 'category_card_style_1' ? 'selected' : '' }}>
+                                                            {{ ($store_settings['category_card_style'] ?? '') === 'category_card_style_1' ? 'selected' : '' }}>
                                                             Style 1</option>
                                                         <option value="category_card_style_2"
-                                                            {{ $store_settings['category_card_style'] === 'category_card_style_2' ? 'selected' : '' }}>
+                                                            {{ ($store_settings['category_card_style'] ?? '') === 'category_card_style_2' ? 'selected' : '' }}>
                                                             Style 2</option>
                                                         <option value="category_card_style_3"
-                                                            {{ $store_settings['category_card_style'] === 'category_card_style_3' ? 'selected' : '' }}>
+                                                            {{ ($store_settings['category_card_style'] ?? '') === 'category_card_style_3' ? 'selected' : '' }}>
                                                             Style 3</option>
                                                     </select>
                                                 </div>
@@ -953,10 +953,10 @@
                                                     <select class="brands_style form-control form-select"
                                                         name="brand_style">
                                                         <option value="brands_style_1"
-                                                            {{ $store_settings['brand_style'] === 'brands_style_1' ? 'selected' : '' }}>
+                                                            {{ ($store_settings['brand_style'] ?? '') === 'brands_style_1' ? 'selected' : '' }}>
                                                             Style 1</option>
                                                         <option value="brands_style_2"
-                                                            {{ $store_settings['brand_style'] === 'brands_style_2' ? 'selected' : '' }}>
+                                                            {{ ($store_settings['brand_style'] ?? '') === 'brands_style_2' ? 'selected' : '' }}>
                                                             Style 2</option>
                                                     </select>
                                                 </div>
@@ -1047,19 +1047,19 @@
                                                     <select class="slider_style form-control form-select"
                                                         name="offer_slider_style">
                                                         <option value="slider_style_1"
-                                                            {{ $store_settings['offer_slider_style'] === 'slider_style_1' ? 'selected' : '' }}>
+                                                            {{ ($store_settings['offer_slider_style'] ?? '') === 'slider_style_1' ? 'selected' : '' }}>
                                                             Style 1</option>
                                                         <option value="slider_style_2"
-                                                            {{ $store_settings['offer_slider_style'] === 'slider_style_2' ? 'selected' : '' }}>
+                                                            {{ ($store_settings['offer_slider_style'] ?? '') === 'slider_style_2' ? 'selected' : '' }}>
                                                             Style 2</option>
                                                         <option value="slider_style_3"
-                                                            {{ $store_settings['offer_slider_style'] === 'slider_style_3' ? 'selected' : '' }}>
+                                                            {{ ($store_settings['offer_slider_style'] ?? '') === 'slider_style_3' ? 'selected' : '' }}>
                                                             Style 3</option>
                                                         <option value="slider_style_4"
-                                                            {{ $store_settings['offer_slider_style'] === 'slider_style_4' ? 'selected' : '' }}>
+                                                            {{ ($store_settings['offer_slider_style'] ?? '') === 'slider_style_4' ? 'selected' : '' }}>
                                                             Style 4</option>
                                                         <option value="slider_style_5"
-                                                            {{ $store_settings['offer_slider_style'] === 'slider_style_5' ? 'selected' : '' }}>
+                                                            {{ ($store_settings['offer_slider_style'] ?? '') === 'slider_style_5' ? 'selected' : '' }}>
                                                             Style 5</option>
                                                     </select>
                                                 </div>

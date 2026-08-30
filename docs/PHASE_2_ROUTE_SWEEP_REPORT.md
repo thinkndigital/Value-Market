@@ -206,3 +206,57 @@ so whoever picks this up next doesn't have to re-diagnose it.
 
 Full suite: 646 passing (645 before this batch — no new bugs *fixed* this batch, but 9 previously-unknown
 dead-route root causes newly documented), zero regressions.
+
+## Param-route sweep, batch 3 (admin: products, orders, combo products, settings)
+
+`tests/Feature/Phase2/ParamRouteSweepBatch3Test.php` closes out the scope batch 1 explicitly deferred:
+"admin routes needing richer, multi-model fixtures - products, combo products, orders, attributes, currency
+exchange-rate/language-locale routes, system users/permissions, sliders/offers/category-sliders,
+manage-stock." This is the last batch of the originally-scoped 107 param routes.
+
+**Four real, reachable bugs found and fixed:**
+
+1. **Every notification-triggering action app-wide 500'd whenever Firebase push isn't configured.**
+   `FirebaseNotificationService::sendNotification()` called `getAccessToken()` unguarded, which throws when
+   `service_account_file` was never uploaded. That one method is the choke point for ~30 call sites across
+   the whole app (order status changes, product/combo-product status toggles, return requests, tickets,
+   seller approval, cron jobs, chat) - so any merchant who never set up Firebase (an optional feature) could
+   not toggle a product's status, place certain orders, or approve a return without a 500, even though the
+   underlying action had already committed. Same "fresh-install crash class" shape as Category 4 above, just
+   with far bigger blast radius than the 5 originally found. Fixed with one `try/catch` at the single choke
+   point (`app/Services/FirebaseNotificationService.php`) instead of guarding all ~30 call sites individually
+   - a missing/unconfigured Firebase setup now degrades push notifications silently instead of blocking the
+   primary action.
+2. **`admin/combo_products/view_product/{id}` (reachable - the combo-products list's `operate` column links
+   to it) crashed on the FAQs tab**: `ProductService::getProductFaqs()`/`ComboProductService::
+   getComboProductFaqs()` both return each FAQ as a plain array (`['id' => ..., 'question' => ...]`), but
+   `combo_product.blade.php` accessed them as objects (`$faq->id`). The sibling `product.blade.php` view
+   (same data shape) already uses correct array access (`$faq['id']`) - `combo_product.blade.php` was
+   evidently copy-pasted without adjusting for it. Fixed to match.
+3. **`admin/store/edit/{id}` (reachable - the stores list's `operate` column links to it) crashed for any
+   store whose `store_settings` JSON column was never saved** (`Trying to access array offset on null`, then
+   `Undefined array key` once the top-level null was guarded). Fixed with `?? []`/`?? ''` defaults at every
+   `$store_settings[...]` read in `update_store.blade.php` - same defensive-default pattern as Category 4.
+4. Confirmed **not** a live bug: `admin/delivery_boys/{id}/edit` and `admin/order_items/destroy/{id}` are
+   both real crashes (a missing `$languages` view variable; an Eloquent Collection passed straight into
+   `array_column()`, a guaranteed TypeError on every call) but both confirmed unreachable - delivery boy
+   editing is actually a Bootstrap modal that AJAX-fetches `admin/delivery_boys?edit_id=`, not this page
+   route, and nothing anywhere links to the order-item-destroy route (order items are only ever removed by
+   destroying their whole order). Documented in `KNOWN_BROKEN_ROUTES`, not fixed, matching the same
+   "Category 1: dead route" pattern batch 2 found nine of.
+
+Also documented (already-known dead routes, confirmed via UI grep, not fixed): `admin/chat/{id}`/`{id}/edit`
+(Chatify has no show()/edit() - same gap batch 2 found on the seller side), `admin/attributes/{id}/edit` and
+`admin/payment_request/{id}/edit` (both already flagged as unreachable dead code in this repo's own
+`routes/admin_routes.php` comments, now with regression coverage), and `admin/settings/time_slot/destroy`/
+`update_status/{id}` (routed to controller methods that were never implemented; the time-slot settings table
+has no destroy/status-toggle UI action).
+
+Two routes deliberately excluded, not deferred - real live external dependencies unsuited to automated
+regression coverage: `admin/settings/get_exchange_rates/{appId}` and `update_exchange_rates/{app_id}` both
+make a real outbound HTTPS call to `openexchangerates.org` with no mock seam; `admin/media/destroy/{id}` and
+`admin/orders/generat_invoice_PDF/{id}` need a real uploaded Spatie Media file and real PDF rendering
+respectively, same reasoning batch 2 used to defer their seller-side equivalents.
+
+This closes out Phase 2's originally-scoped 107 param routes. Full suite: 647 passing (646 before this
+batch), verified stable across 2 repeat full-suite runs, zero regressions.

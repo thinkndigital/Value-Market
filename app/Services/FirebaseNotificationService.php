@@ -47,7 +47,15 @@ class FirebaseNotificationService
 
         $projectId = Setting::where('variable', 'firebase_project_id')->value('value');
         $url = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
-        $accessToken = $this->getAccessToken();
+        try {
+            $accessToken = $this->getAccessToken();
+        } catch (\Throwable $e) {
+            // Push notifications are an optional feature (Firebase is not required to place orders,
+            // change a status, etc.) - a merchant who never uploaded a service account file should not
+            // have every notification-triggering action in the app 500 on them. Fail soft here (the one
+            // choke point every caller already funnels through) instead of guarding all ~30 call sites.
+            return false;
+        }
         // dd($accessToken);
         foreach ($registrationIDsChunks as $registrationIDs) {
             foreach ($registrationIDs as $registrationID) {
