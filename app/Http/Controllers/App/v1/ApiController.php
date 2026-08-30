@@ -87,6 +87,7 @@ use App\Services\SettingService;
 use App\Services\OrderService;
 use App\Services\WalletService;
 use App\Services\PromoCodeService;
+use App\Services\SellerPaymentGatewayService;
 class ApiController extends Controller
 {
     use HandlesValidation;
@@ -7589,7 +7590,8 @@ Defined Methods:-
         if (!empty($order) && !empty($currency) && is_numeric($order_id)) {
             $price = $order['order_data'][0]->total_payable;
             $amount = intval($price * 100);
-            $razorpay = new Razorpay();
+            $seller_id = app(SellerPaymentGatewayService::class)->resolveSellerIdForOrder($order_id);
+            $razorpay = new Razorpay($seller_id);
             $create_order = $razorpay->create_order($amount, $order_id, $currency);
             if (!empty($create_order)) {
                 return response()->json([

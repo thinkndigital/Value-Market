@@ -39,8 +39,9 @@ class MigrationBaselineTest extends TestCase
         // `depreciation_schedules`, `liabilities`. Plus 4 more from Phase 11 (docs/PHASE_11_CRM.md):
         // `customer_notes`, `customer_tags`, `customer_tag_assignments`, `customer_segments`. Plus 1 more
         // from the seller-managed affiliate program (2025_02_09_000000 migration, extending Phase 7):
-        // `store_affiliate_requests`.
-        $this->assertSame(122, (int) $tables);
+        // `store_affiliate_requests`. Plus 1 more from the 32-phase SaaS brief's Phase 6
+        // (docs/PHASE_6_PAYMENT_GATEWAYS.md): `seller_payment_gateways`.
+        $this->assertSame(123, (int) $tables);
     }
 
     /** @dataProvider myisamTables */

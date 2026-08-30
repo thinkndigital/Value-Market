@@ -940,7 +940,8 @@ class CartController extends Controller
         // Payment method specific logic
         if ($request['payment_method'] == 'razorpay') {
 
-            $razorpay = new Razorpay();
+            $seller_id = app(\App\Services\SellerPaymentGatewayService::class)->resolveSellerIdForStore($store_id);
+            $razorpay = new Razorpay($seller_id);
             $order = $razorpay->create_order(($overall_amount));
 
             if (!isset($order['error'])) {

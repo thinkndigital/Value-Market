@@ -254,6 +254,15 @@
                     <span class="nav-link-text ">{{ labels('admin_labels.affiliate_program', 'Affiliate Program') }}</span>
                 </a>
             </li>
+            <li class="sidebar-title "><i class='bx bx-credit-card'></i>
+                {{ labels('admin_labels.payment_gateways', 'Payment Gateways') }}
+            </li>
+            <li class="nav-item ">
+                <a class="nav-link {{ Request::is('seller/payment_gateways') ? 'active' : '' }}"
+                    href="{{ route('seller.payment_gateways.index') }}">
+                    <span class="nav-link-text ">{{ labels('admin_labels.payment_gateways', 'Payment Gateways') }}</span>
+                </a>
+            </li>
             <li class="sidebar-title "><i
                     class='bx bx-tachometer'></i></i>{{ labels('admin_labels.location_management', 'Location Management') }}
             </li>

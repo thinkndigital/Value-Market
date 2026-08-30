@@ -2,6 +2,7 @@
 
 namespace App\Libraries;
 use App\Services\SettingService;
+use App\Services\SellerPaymentGatewayService;
 
 class Razorpay
 {
@@ -10,13 +11,22 @@ class Razorpay
     public $secret_key = "";
     public $secret_hash = "";
 
-    function __construct()
+    /**
+     * $sellerId: when given, a seller's own enabled razorpay credentials (app/Models/SellerPaymentGateway)
+     * take priority over the platform-global default for order creation. Every other caller (webhook
+     * verification, wallet-refill topups - see app/Http/Controllers/Admin/Webhook.php,
+     * App\v1\ApiController::razorpay_create_order()'s wallet-refill branch) has no order to resolve a
+     * seller from and correctly omits this, keeping today's platform-only behavior.
+     */
+    function __construct($sellerId = null)
     {
         $payment_method_settings = app(SettingService::class)->getSettings('payment_method', true);
         $payment_method_settings = json_decode($payment_method_settings, true);
 
-        $this->key_id = $payment_method_settings['razorpay_key_id'] ?? "";
-        $this->secret_key = $payment_method_settings['razorpay_secret_key'] ?? "";
+        $override = $sellerId ? app(SellerPaymentGatewayService::class)->credentialsFor($sellerId, 'razorpay') : null;
+
+        $this->key_id = $override['razorpay_key_id'] ?? $payment_method_settings['razorpay_key_id'] ?? "";
+        $this->secret_key = $override['razorpay_secret_key'] ?? $payment_method_settings['razorpay_secret_key'] ?? "";
         $this->secret_hash = $payment_method_settings['refund_webhook_secret_key'] ?? "";
     }
 

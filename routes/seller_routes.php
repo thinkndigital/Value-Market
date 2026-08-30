@@ -9,6 +9,7 @@ use App\Http\Controllers\Seller\PurchaseOrderController;
 use App\Http\Controllers\Seller\SupplierController;
 use App\Http\Controllers\Seller\ReturnRequestController;
 use App\Http\Controllers\Seller\AffiliateProgramController;
+use App\Http\Controllers\Seller\PaymentGatewayController;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -255,6 +256,11 @@ Route::group(
         //Transaction
         Route::get('seller/transaction/wallet_transactions', [TransactionController::class, 'wallet_transactions'])->name('seller.transaction.wallet_transactions');
         Route::get('seller/transaction/wallet_transactions_list', [TransactionController::class, 'wallet_transactions_list'])->name('seller.transaction.wallet_transactions_list');
+
+        //Payment Gateways (Phase 6 - docs/PHASE_6_PAYMENT_GATEWAYS.md)
+        Route::get('seller/payment_gateways', [PaymentGatewayController::class, 'index'])->name('seller.payment_gateways.index');
+        Route::put('seller/payment_gateways', [PaymentGatewayController::class, 'update'])->name('seller.payment_gateways.update')->middleware(['demo_restriction']);
+        Route::delete('seller/payment_gateways', [PaymentGatewayController::class, 'destroy'])->name('seller.payment_gateways.destroy')->middleware(['demo_restriction']);
 
         //Payment Request
         Route::get('seller/payment_request/withdrawal_requests', [PaymentRequestController::class, 'withdrawal_requests'])->name('seller.payment_request.withdrawal_requests');
