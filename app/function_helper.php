@@ -816,9 +816,23 @@ function createRow($product, $variant, $category_name, $from_seller = '')
 }
 
 
-function formatePriceDecimal($price)
+/**
+ * Phase 15 (32-phase SaaS brief - docs/TECHNICAL_DEBT.md): always showed exactly 2 decimals regardless of
+ * which currency was actually configured - wrong for JOD/KWD/BHD (need 3) and JPY (needs 0). $currencyCode
+ * defaults to the platform's own configured default currency (App\Services\CurrencyService::
+ * getDefaultCurrency()) when omitted, so every one of this function's ~20 existing call sites (none of
+ * which pass a currency code today) is automatically correct for whatever currency the installation
+ * actually runs, with no call-site changes needed.
+ */
+function formatePriceDecimal($price, $currencyCode = null)
 {
-    return number_format($price, 2);
+    if ($currencyCode === null) {
+        $currencyCode = app(\App\Services\CurrencyService::class)->getDefaultCurrency()->code ?? null;
+    }
+
+    $decimals = app(\App\Services\CurrencyService::class)->decimalPlacesFor($currencyCode);
+
+    return number_format($price, $decimals);
 }
 
 if (!function_exists('renderCategories')) {

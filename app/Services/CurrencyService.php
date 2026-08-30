@@ -6,6 +6,34 @@ use App\Models\Currency;
 use App\Services\SettingService;
 class CurrencyService
 {
+    /**
+     * Phase 15 (32-phase SaaS brief - docs/TECHNICAL_DEBT.md): ISO 4217's minor-unit exceptions - most
+     * currencies use 2 decimal places, but a real, fixed, well-known set don't. Zero-decimal currencies
+     * (JPY, KRW, ...) and three-decimal currencies (JOD, KWD, BHD, ... - directly relevant given this
+     * app's own Jordan/Gulf gateway work, Phase 6B) were previously always shown with exactly 2 decimals
+     * regardless of which currency was actually configured - wrong either way (extra false precision for
+     * JPY, a silently-rounded-off third digit for JOD/KWD/BHD). This is a static, well-known mapping - not
+     * a per-installation admin setting - so it lives in code, not a new currencies.decimal_places column.
+     */
+    private const ZERO_DECIMAL_CURRENCIES = [
+        'BIF', 'CLP', 'DJF', 'GNF', 'ISK', 'JPY', 'KMF', 'KRW', 'PYG', 'RWF', 'UGX', 'VND', 'VUV', 'XAF', 'XOF', 'XPF',
+    ];
+    private const THREE_DECIMAL_CURRENCIES = ['BHD', 'IQD', 'JOD', 'KWD', 'LYD', 'OMR', 'TND'];
+
+    public function decimalPlacesFor(?string $currencyCode): int
+    {
+        $code = strtoupper((string) $currencyCode);
+
+        if (in_array($code, self::ZERO_DECIMAL_CURRENCIES, true)) {
+            return 0;
+        }
+        if (in_array($code, self::THREE_DECIMAL_CURRENCIES, true)) {
+            return 3;
+        }
+
+        return 2;
+    }
+
     public function getDefaultCurrency()
     {
 
