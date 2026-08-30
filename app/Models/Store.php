@@ -30,6 +30,7 @@ class Store extends Model implements HasMedia
         'secondary_color',
         'hover_color',
         'active_color',
+        'background_color',
         'on_boarding_image',
         'on_boarding_video',
         'banner_image_for_most_selling_product',

@@ -406,7 +406,7 @@
                                                     {{ ($store_settings['web_home_page_theme'] ?? '') === 'web_home_page_theme_5' ? 'selected' : '' }}>
                                                     Theme 5
                                                 </option>
-                                                <option value="web_home_page_theme_5"
+                                                <option value="web_home_page_theme_6"
                                                     {{ ($store_settings['web_home_page_theme'] ?? '') === 'web_home_page_theme_6' ? 'selected' : '' }}>
                                                     Theme 6
                                                 </option>
