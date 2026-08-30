@@ -183,7 +183,7 @@
                                             <div class="form-check form-switch mx-5">
                                                 <input class="form-check-input" type="checkbox" id=""
                                                     name="version_system_status"
-                                                    <?= $settings['version_system_status'] != 'null' && $settings['version_system_status'] == 1 ? 'checked' : '' ?>>
+                                                    <?= isKeySetAndNotEmpty($settings, 'version_system_status') && $settings['version_system_status'] != 'null' && $settings['version_system_status'] == 1 ? 'checked' : '' ?>>
                                             </div>
                                         </div>
                                     </div>
@@ -539,7 +539,7 @@
                                             <div class="form-check form-switch mx-8">
                                                 <input class="form-check-input" type="checkbox" id=""
                                                     name="order_delivery_otp_system"
-                                                    <?= $settings['order_delivery_otp_system'] != 'null' && $settings['order_delivery_otp_system'] == 1 ? 'checked' : '' ?>>
+                                                    <?= isKeySetAndNotEmpty($settings, 'order_delivery_otp_system') && $settings['order_delivery_otp_system'] != 'null' && $settings['order_delivery_otp_system'] == 1 ? 'checked' : '' ?>>
                                             </div>
                                         </div>
                                         <div class="mb-3 col-md-6">
@@ -601,7 +601,7 @@
                                                         <input class="form-check-input" type="checkbox"
                                                             id="enable_cart_button_on_product_list_view"
                                                             name="enable_cart_button_on_product_list_view"
-                                                            <?= $settings['enable_cart_button_on_product_list_view'] != 'null' && $settings['enable_cart_button_on_product_list_view'] == 1 ? 'checked' : '' ?>>
+                                                            <?= isKeySetAndNotEmpty($settings, 'enable_cart_button_on_product_list_view') && $settings['enable_cart_button_on_product_list_view'] != 'null' && $settings['enable_cart_button_on_product_list_view'] == 1 ? 'checked' : '' ?>>
                                                     </div>
                                                 </div>
                                             </div>
@@ -618,7 +618,7 @@
                                                     <div class="form-check form-switch">
                                                         <input class="form-check-input" type="checkbox"
                                                             id="expand_product_image" name="expand_product_image"
-                                                            <?= $settings['expand_product_image'] != 'null' && $settings['expand_product_image'] == 1 ? 'checked' : '' ?>>
+                                                            <?= isKeySetAndNotEmpty($settings, 'expand_product_image') && $settings['expand_product_image'] != 'null' && $settings['expand_product_image'] == 1 ? 'checked' : '' ?>>
                                                     </div>
                                                 </div>
                                             </div>
@@ -640,7 +640,7 @@
                                                     <div class="form-check form-switch">
                                                         <input class="form-check-input mx-2" type="checkbox"
                                                             id="google" name="google"
-                                                            <?= $settings['google'] != 'null' && $settings['google'] == 1 ? 'checked' : '' ?>>
+                                                            <?= isKeySetAndNotEmpty($settings, 'google') && $settings['google'] != 'null' && $settings['google'] == 1 ? 'checked' : '' ?>>
                                                     </div>
                                                 </div>
                                             </div>
@@ -658,7 +658,7 @@
                                                     <div class="form-check form-switch">
                                                         <input class="form-check-input mx-2" type="checkbox"
                                                             id="facebook" name="facebook"
-                                                            <?= $settings['facebook'] != 'null' && $settings['facebook'] == 1 ? 'checked' : '' ?>>
+                                                            <?= isKeySetAndNotEmpty($settings, 'facebook') && $settings['facebook'] != 'null' && $settings['facebook'] == 1 ? 'checked' : '' ?>>
                                                     </div>
                                                 </div>
                                             </div>
@@ -675,7 +675,7 @@
                                                     <div class="form-check form-switch">
                                                         <input class="form-check-input mx-2" type="checkbox"
                                                             id="apple" name="apple"
-                                                            <?= $settings['apple'] != 'null' && $settings['apple'] == 1 ? 'checked' : '' ?>>
+                                                            <?= isKeySetAndNotEmpty($settings, 'apple') && $settings['apple'] != 'null' && $settings['apple'] == 1 ? 'checked' : '' ?>>
                                                     </div>
                                                 </div>
                                             </div>
@@ -760,7 +760,7 @@
                                                     <div class="form-check form-switch">
                                                         <input class="form-check-input" type="checkbox"
                                                             id="refer_and_earn_status" name="refer_and_earn_status"
-                                                            <?= $settings['refer_and_earn_status'] != 'null' && $settings['refer_and_earn_status'] == 1 ? 'checked' : '' ?>>
+                                                            <?= isKeySetAndNotEmpty($settings, 'refer_and_earn_status') && $settings['refer_and_earn_status'] != 'null' && $settings['refer_and_earn_status'] == 1 ? 'checked' : '' ?>>
                                                     </div>
                                                 </div>
                                             </div>
@@ -790,12 +790,12 @@
                                             <select class="form-select form-select-md mb-3"
                                                 aria-label=".form-select-md example" name="refer_and_earn_method">
                                                 <option
-                                                    <?= $settings['refer_and_earn_method'] != null && $settings['refer_and_earn_method'] == 'percentage' ? 'selected' : '' ?>
+                                                    <?= isKeySetAndNotEmpty($settings, 'refer_and_earn_method') && $settings['refer_and_earn_method'] != null && $settings['refer_and_earn_method'] == 'percentage' ? 'selected' : '' ?>
                                                     value="percentage">
                                                     Percentage
                                                 </option>
                                                 <option
-                                                    <?= $settings['refer_and_earn_method'] != null && $settings['refer_and_earn_method'] == 'amount' ? 'selected' : '' ?>
+                                                    <?= isKeySetAndNotEmpty($settings, 'refer_and_earn_method') && $settings['refer_and_earn_method'] != null && $settings['refer_and_earn_method'] == 'amount' ? 'selected' : '' ?>
                                                     value="amount">
                                                     {{ labels('admin_labels.amount', 'Amount') }}
                                                 </option>
@@ -848,7 +848,7 @@
                                                     <div class="form-check form-switch">
                                                         <input class="form-check-input" type="checkbox"
                                                             id="wallet_balance_status" name="wallet_balance_status"
-                                                            <?= $settings['wallet_balance_status'] != 'null' && $settings['wallet_balance_status'] == 1 ? 'checked' : '' ?>>
+                                                            <?= isKeySetAndNotEmpty($settings, 'wallet_balance_status') && $settings['wallet_balance_status'] != 'null' && $settings['wallet_balance_status'] == 1 ? 'checked' : '' ?>>
                                                     </div>
                                                 </div>
                                             </div>
@@ -888,7 +888,7 @@
                                                     <input class="form-check-input" type="checkbox"
                                                         id="customer_app_maintenance_status"
                                                         name="customer_app_maintenance_status"
-                                                        <?= $settings['customer_app_maintenance_status'] != 'null' && $settings['customer_app_maintenance_status'] == 1 ? 'checked' : '' ?>>
+                                                        <?= isKeySetAndNotEmpty($settings, 'customer_app_maintenance_status') && $settings['customer_app_maintenance_status'] != 'null' && $settings['customer_app_maintenance_status'] == 1 ? 'checked' : '' ?>>
                                                 </div>
                                             </div>
                                         </div>
@@ -901,7 +901,7 @@
                                                     <input class="form-check-input" type="checkbox"
                                                         id="seller_app_maintenance_status"
                                                         name="seller_app_maintenance_status"
-                                                        <?= $settings['seller_app_maintenance_status'] != 'null' && $settings['seller_app_maintenance_status'] == 1 ? 'checked' : '' ?>>
+                                                        <?= isKeySetAndNotEmpty($settings, 'seller_app_maintenance_status') && $settings['seller_app_maintenance_status'] != 'null' && $settings['seller_app_maintenance_status'] == 1 ? 'checked' : '' ?>>
                                                 </div>
                                             </div>
                                         </div>
@@ -916,7 +916,7 @@
                                                     <input class="form-check-input" type="checkbox"
                                                         id="delivery_boy_app_maintenance_status"
                                                         name="delivery_boy_app_maintenance_status"
-                                                        <?= $settings['delivery_boy_app_maintenance_status'] != 'null' && $settings['delivery_boy_app_maintenance_status'] == 1 ? 'checked' : '' ?>>
+                                                        <?= isKeySetAndNotEmpty($settings, 'delivery_boy_app_maintenance_status') && $settings['delivery_boy_app_maintenance_status'] != 'null' && $settings['delivery_boy_app_maintenance_status'] == 1 ? 'checked' : '' ?>>
                                                 </div>
                                             </div>
                                         </div>
@@ -963,7 +963,7 @@
                                                 <input class="form-check-input" type="radio"
                                                     name="authentication_method" value="firebase"
                                                     id="firebase_radio_button"
-                                                    <?= $settings['authentication_method'] == 'firebase' ? 'checked' : '' ?>>
+                                                    <?= isKeySetAndNotEmpty($settings, 'authentication_method') && $settings['authentication_method'] == 'firebase' ? 'checked' : '' ?>>
                                                 <label class="form-check-label" for="firebase_radio_button">
                                                     Firebase Authentication
                                                 </label>
@@ -973,7 +973,7 @@
                                             <div class="form-check">
                                                 <input class="form-check-input" type="radio"
                                                     name="authentication_method" value="sms" id="sms_radio_button"
-                                                    <?= $settings['authentication_method'] == 'sms' ? 'checked' : '' ?>>
+                                                    <?= isKeySetAndNotEmpty($settings, 'authentication_method') && $settings['authentication_method'] == 'sms' ? 'checked' : '' ?>>
                                                 <label class="form-check-label" for="sms_radio_button">
                                                     Custom SMS Gateway OTP based
                                                 </label>

@@ -51,10 +51,10 @@
  {{-- filepond  --}}
  <script src="{{ asset('assets/admin/js/filepond.js') }}"></script>
  <script src="/assets/filepond/dist/filepond.min.js"></script>
- <script src="/assets/filepond/dist/filepond-plugin-image-preview.min.js"></script>
+ <script src="/assets/admin/js/filepond-plugin-image-preview.js"></script>
  <script src="/assets/filepond/dist/filepond-plugin-pdf-preview.min.js"></script>
- <script src="/assets/filepond/dist/filepond-plugin-file-validate-size.js"></script>
- <script src="/assets/filepond/dist/filepond-plugin-file-validate-type.js"></script>
+ <script src="/assets/admin/js/filepond-plugin-file-validate-size.js"></script>
+ <script src="/assets/admin/js/filepond-plugin-file-validate-type.js"></script>
  <script src="/assets/filepond/dist/filepond-plugin-image-validate-size.js"></script>
  <script src="/assets/filepond/dist/filepond.jquery.js"></script>
 

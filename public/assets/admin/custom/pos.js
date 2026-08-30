@@ -2,7 +2,14 @@
 
 var session_user_id = $("#session_user_id").val();
 
+// Same trailing-slash normalization as custom.js's appUrl - every "appUrl + 'seller/...'" call below
+// needs this to already end in "/", which isn't guaranteed by APP_URL (Laravel's own .env.example ships
+// it without one), and silently glues into an invalid URL otherwise (e.g. getCustomerAddress/get_users
+// never come back).
 var appUrl = document.getElementById("app_url").dataset.appUrl;
+if (!appUrl.endsWith("/")) {
+    appUrl += "/";
+}
 
 // register user
 
@@ -1155,11 +1162,16 @@ function add_to_cart(e) {
     // console.log(shopItem);
     var variant_dropdown = shopItem.children[0].children[4];
     var display_price = button.dataset.price;
-    var product_id = $('input[name="shop_item_id"]').val();
+    // Scoped to this button's own card (same ancestor the title/image lookups below use) - the previous
+    // unscoped $('input[name="shop_item_id"]') always returned the FIRST matching element on the whole
+    // page, so every "Add" click after the first one recorded the first product's id instead of the one
+    // actually clicked (title/price still showed correctly since those were already scoped).
+    var shopItemCard = button.parentElement.parentElement.parentElement;
+    var product_id = $(shopItemCard).find('input[name="shop_item_id"]').val();
     // var product_type = $('input[name="pos_shop_item_product_type"]').val();
     // console.log(product_type);
     var variant_id = button.dataset.variant_id;
-    var seller_id = $('input[name="shop_item_seller_id"]').val();
+    var seller_id = $(shopItemCard).find('input[name="shop_item_seller_id"]').val();
 
     var variant_values = button.dataset.variant_value;
 
@@ -1214,7 +1226,7 @@ function display_cart() {
     var cart = localStorage.getItem("cart");
 
     // var session_user_id = 2;
-    cart = localStorage.getItem("cart") !== null ? JSON.parse(cart) : null;
+    cart = localStorage.getItem("cart") !== null ? JSON.parse(cart) : [];
     $(".total_product_cart_items").text(
         "(" + cart.length + ")" + " " + "Items in Cart"
     );

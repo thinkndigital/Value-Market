@@ -198,6 +198,12 @@ class CreateDemoSeller extends Command
                         'city_deliverable_type' => 1,
                         'deliverable_cities' => '',
                         'status' => 1,
+                        // stock_type 0 keeps its real stock on products.stock, not
+                        // product_variants.stock (see ProductService::getStock()/updateStock()) - without
+                        // this, availability checks everywhere (POS, storefront) read stock as NULL and
+                        // treat the product as unavailable/out of stock despite the variant row below.
+                        'stock' => 50,
+                        'availability' => 1,
                     ]);
 
                     Product_attributes::forceCreate([

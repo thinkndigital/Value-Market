@@ -8,6 +8,18 @@
     <script src="{{ asset('/assets/admin/js/jquery.min.js') }}"></script>
 
     {{--
+        assets/admin/custom/pos.js's very first executable line unconditionally reads
+        document.getElementById('app_url').dataset.appUrl - normally rendered by
+        components/seller/header.blade.php, which this stripped-down full-screen layout
+        deliberately doesn't include. Without it, that line throws on load and aborts every
+        line after it in the file - including the ready-block that fetches and renders the
+        product list - so the products panel stays empty and "Add" clicks have nothing to
+        click on. Reproduced live (Playwright) and confirmed as the root cause of "POS doesn't
+        respond to clicking products".
+    --}}
+    <div id="app_url" data-app-url="{{ config('app.url') }}"></div>
+
+    {{--
         32-phase SaaS brief, Phase 9/10 (docs/PHASE_9_10_POS_CONCURRENCY_AND_BRANCHES.md): a dedicated
         full-screen shell for the POS page - no sidebar/header chrome eating into a cashier's screen space,
         a slim top bar instead (store name + exit + fullscreen toggle), and the page itself fills the

@@ -146,7 +146,16 @@ iziToast.settings({
 // admin/seller/delivery_boy login pages, which use their own pre-auth layout without x-*.header. Falling
 // back to the browser's own origin keeps the rest of this file (form validation, media pickers, AJAX
 // endpoints used across authenticated pages) running everywhere instead of dying on load.
+// Every "appUrl + from + '/...'" call in this file (category/brand/pickup-location/attribute lookups,
+// etc.) relies on appUrl already ending in a slash - true when APP_URL has a trailing "/", but Laravel's
+// own .env.example ships it without one ("http://localhost"), which silently glues appUrl and from
+// together into an invalid URL (e.g. "http://localhostseller/categories/...") and breaks every one of
+// those AJAX calls with no visible error beyond a generic "Error loading..." fallback. Normalizing here,
+// at the single point this value is built, fixes it for every caller regardless of how APP_URL is set.
 var appUrl = document.getElementById("app_url")?.dataset.appUrl || (window.location.origin + "/");
+if (!appUrl.endsWith("/")) {
+    appUrl += "/";
+}
 var from = "admin";
 if (
     window.location.href.indexOf("seller/") > -1 &&
