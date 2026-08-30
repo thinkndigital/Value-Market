@@ -38,6 +38,15 @@
                                 <a class="nav-link border payment_method_title mt-2" id="" data-bs-toggle="pill"
                                     href="#stripe" role="tab" aria-controls="v-pills-profile" aria-selected="false"
                                     tabindex="-1">{{ labels('admin_labels.stripe', 'Stripe') }}</a>
+                                <a class="nav-link border payment_method_title mt-2" id="" data-bs-toggle="pill"
+                                    href="#hyperpay" role="tab" aria-controls="v-pills-profile" aria-selected="false"
+                                    tabindex="-1">{{ labels('admin_labels.hyperpay', 'HyperPay') }}</a>
+                                <a class="nav-link border payment_method_title mt-2" id="" data-bs-toggle="pill"
+                                    href="#paytabs" role="tab" aria-controls="v-pills-profile" aria-selected="false"
+                                    tabindex="-1">{{ labels('admin_labels.paytabs', 'PayTabs') }}</a>
+                                <a class="nav-link border payment_method_title mt-2" id="" data-bs-toggle="pill"
+                                    href="#tap" role="tab" aria-controls="v-pills-profile" aria-selected="false"
+                                    tabindex="-1">{{ labels('admin_labels.tap_payments', 'Tap Payments') }}</a>
 
                                 @if ($hide_unwanted_payment_gateway == true)
                                     <a class="nav-link border payment_method_title mt-2" id=""
@@ -663,6 +672,110 @@
                                 </div>
                             </div>
                         </div>
+
+                        {{-- Phase 6B (docs/PHASE_6B_JORDAN_GULF_GATEWAYS.md): platform-wide fallback config
+                            for HyperPay/PayTabs/Tap - a seller's own override (seller/payment_gateways)
+                            still takes priority when configured and enabled. --}}
+                        <div class="tab-pane fade" id="hyperpay" role="tabpanel" aria-labelledby="v-pills-profile-tab">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <h5 class="mb-0">{{ labels('admin_labels.hyperpay', 'HyperPay') }}</h5>
+                                </div>
+                                <select name="hyperpay_method"
+                                    class="form-select status_dropdown <?= @$settings['hyperpay_method'] == 1 ? 'active_status' : 'inactive_status' ?>">
+                                    <option value="1" <?= @$settings['hyperpay_method'] == '1' ? 'selected' : '' ?>>Active</option>
+                                    <option value="0" <?= @$settings['hyperpay_method'] == '0' ? 'selected' : '' ?>>Deactive</option>
+                                </select>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label" for="hyperpay_entity_id">{{ labels('admin_labels.hyperpay_entity_id', 'Entity ID') }}</label><span class="text-asterisks text-sm">*</span>
+                                        <input type="text" class="form-control" name="hyperpay_entity_id"
+                                            value="<?= isKeySetAndNotEmpty($settings, 'hyperpay_entity_id') ? $settings['hyperpay_entity_id'] : '' ?>" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label" for="hyperpay_access_token">{{ labels('admin_labels.hyperpay_access_token', 'Access Token') }}</label><span class="text-asterisks text-sm">*</span>
+                                        <input type="text" class="form-control" name="hyperpay_access_token"
+                                            value="<?= isKeySetAndNotEmpty($settings, 'hyperpay_access_token') ? $settings['hyperpay_access_token'] : '' ?>" />
+                                    </div>
+                                </div>
+                                <div class="row mt-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label" for="hyperpay_mode">{{ labels('admin_labels.mode', 'Mode') }}</label><span class="text-asterisks text-sm">*</span>
+                                        <select name="hyperpay_mode" class="form-select">
+                                            <option value="test" <?= @$settings['hyperpay_mode'] == 'test' ? 'selected' : '' ?>>Test</option>
+                                            <option value="live" <?= @$settings['hyperpay_mode'] == 'live' ? 'selected' : '' ?>>Live</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="paytabs" role="tabpanel" aria-labelledby="v-pills-profile-tab">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <h5 class="mb-0">{{ labels('admin_labels.paytabs', 'PayTabs') }}</h5>
+                                </div>
+                                <select name="paytabs_method"
+                                    class="form-select status_dropdown <?= @$settings['paytabs_method'] == 1 ? 'active_status' : 'inactive_status' ?>">
+                                    <option value="1" <?= @$settings['paytabs_method'] == '1' ? 'selected' : '' ?>>Active</option>
+                                    <option value="0" <?= @$settings['paytabs_method'] == '0' ? 'selected' : '' ?>>Deactive</option>
+                                </select>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label" for="paytabs_profile_id">{{ labels('admin_labels.paytabs_profile_id', 'Profile ID') }}</label><span class="text-asterisks text-sm">*</span>
+                                        <input type="text" class="form-control" name="paytabs_profile_id"
+                                            value="<?= isKeySetAndNotEmpty($settings, 'paytabs_profile_id') ? $settings['paytabs_profile_id'] : '' ?>" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label" for="paytabs_server_key">{{ labels('admin_labels.paytabs_server_key', 'Server Key') }}</label><span class="text-asterisks text-sm">*</span>
+                                        <input type="text" class="form-control" name="paytabs_server_key"
+                                            value="<?= isKeySetAndNotEmpty($settings, 'paytabs_server_key') ? $settings['paytabs_server_key'] : '' ?>" />
+                                    </div>
+                                </div>
+                                <div class="row mt-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label" for="paytabs_region">{{ labels('admin_labels.region', 'Region') }}</label><span class="text-asterisks text-sm">*</span>
+                                        <select name="paytabs_region" class="form-select">
+                                            @foreach (['JOR' => 'Jordan', 'SAU' => 'Saudi Arabia', 'ARE' => 'UAE', 'EGY' => 'Egypt', 'OMN' => 'Oman', 'GLOBAL' => 'Global'] as $code => $label)
+                                                <option value="{{ $code }}" <?= @$settings['paytabs_region'] == $code ? 'selected' : '' ?>>{{ $label }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="tap" role="tabpanel" aria-labelledby="v-pills-profile-tab">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <h5 class="mb-0">{{ labels('admin_labels.tap_payments', 'Tap Payments') }}</h5>
+                                </div>
+                                <select name="tap_method"
+                                    class="form-select status_dropdown <?= @$settings['tap_method'] == 1 ? 'active_status' : 'inactive_status' ?>">
+                                    <option value="1" <?= @$settings['tap_method'] == '1' ? 'selected' : '' ?>>Active</option>
+                                    <option value="0" <?= @$settings['tap_method'] == '0' ? 'selected' : '' ?>>Deactive</option>
+                                </select>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label" for="tap_secret_key">{{ labels('admin_labels.secret_key', 'Secret Key') }}</label><span class="text-asterisks text-sm">*</span>
+                                        <input type="text" class="form-control" name="tap_secret_key"
+                                            value="<?= isKeySetAndNotEmpty($settings, 'tap_secret_key') ? $settings['tap_secret_key'] : '' ?>" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label" for="tap_publishable_key">{{ labels('admin_labels.publishable_key', 'Publishable Key') }}</label><span class="text-asterisks text-sm">*</span>
+                                        <input type="text" class="form-control" name="tap_publishable_key"
+                                            value="<?= isKeySetAndNotEmpty($settings, 'tap_publishable_key') ? $settings['tap_publishable_key'] : '' ?>" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         @if ($hide_unwanted_payment_gateway == true)
                             <div class="tab-pane fade" id="flutterwave" role="tabpanel"
                                 aria-labelledby="v-pills-profile-tab">

@@ -633,6 +633,7 @@ class SettingController extends Controller
         if (
             $request->phonepe_method == '0' && $request->paypal_method == '0' && $request->razorpay_method == '0'
             && $request->paystack_method == '0' && $request->stripe_method == '0'
+            && $request->hyperpay_method == '0' && $request->paytabs_method == '0' && $request->tap_method == '0'
             && $request->cod_method == '0'
         ) {
             $response = [
@@ -706,6 +707,42 @@ class SettingController extends Controller
                 return $response;
             }
         }
+        // Phase 6B (docs/PHASE_6B_JORDAN_GULF_GATEWAYS.md): platform-wide fallback config for the 3
+        // Jordan/Gulf gateways - the constructors in app/Libraries/{HyperPay,PayTabs,TapPayments}.php
+        // already read these exact field names as their platform-default fallback (a seller's own
+        // override, when configured, still takes priority - unchanged by this admin form existing).
+        if ($request->hyperpay_method == '1') {
+            $rules = [
+                'hyperpay_entity_id' => 'required',
+                'hyperpay_access_token' => 'required',
+                'hyperpay_mode' => 'required|in:test,live',
+            ];
+            if ($response = $this->HandlesValidation($request, $rules)) {
+                return $response;
+            }
+        }
+
+        if ($request->paytabs_method == '1') {
+            $rules = [
+                'paytabs_profile_id' => 'required',
+                'paytabs_server_key' => 'required',
+                'paytabs_region' => 'required',
+            ];
+            if ($response = $this->HandlesValidation($request, $rules)) {
+                return $response;
+            }
+        }
+
+        if ($request->tap_method == '1') {
+            $rules = [
+                'tap_secret_key' => 'required',
+                'tap_publishable_key' => 'required',
+            ];
+            if ($response = $this->HandlesValidation($request, $rules)) {
+                return $response;
+            }
+        }
+
         if ($request->direct_bank_transfer_method == '1') {
             $rules = [
                 'account_name' => 'required',
@@ -749,6 +786,17 @@ class SettingController extends Controller
                 'stripe_secret_key' => $request->stripe_secret_key,
                 'stripe_webhook_secret_key' => $request->stripe_webhook_secret_key,
                 'stripe_currency_code' => $request->stripe_currency_code,
+                'hyperpay_method' => isset($request->hyperpay_method) && $request->hyperpay_method == "1" ? 1 : 0,
+                'hyperpay_entity_id' => $request->hyperpay_entity_id,
+                'hyperpay_access_token' => $request->hyperpay_access_token,
+                'hyperpay_mode' => $request->hyperpay_mode,
+                'paytabs_method' => isset($request->paytabs_method) && $request->paytabs_method == "1" ? 1 : 0,
+                'paytabs_profile_id' => $request->paytabs_profile_id,
+                'paytabs_server_key' => $request->paytabs_server_key,
+                'paytabs_region' => $request->paytabs_region,
+                'tap_method' => isset($request->tap_method) && $request->tap_method == "1" ? 1 : 0,
+                'tap_secret_key' => $request->tap_secret_key,
+                'tap_publishable_key' => $request->tap_publishable_key,
                 'notes' => $request->notes,
                 'cod_method' => isset($request->cod_method) && $request->cod_method == "1" ? 1 : 0,
                 'direct_bank_transfer_method' => isset($request->direct_bank_transfer_method) && $request->direct_bank_transfer_method == "1" ? 1 : 0,

@@ -59,13 +59,13 @@ All three constructors take an optional `$sellerId`, matching Razorpay's pattern
 
 ## What this deliberately leaves for later
 
-- **Admin platform-wide settings UI** for these three gateways was not built this pass. Each library's
-  constructor already reads a platform-default fallback from the `payment_method` setting (the same key
-  naming convention as `razorpay_key_id` etc.), so an admin-level fallback is architecturally supported the
-  moment that form exists — but no blade form or `SettingController` validation was added to populate it
-  yet. Per the product owner's own Phase 6 decision, per-seller keys are the primary model; sellers
-  configure these three fully today via the seller panel (`seller/payment_gateways`) with no platform
-  fallback required. Flagged explicitly rather than silently left half-wired.
+- ~~Admin platform-wide settings UI for these three gateways was not built this pass.~~ **Closed in a
+  follow-up pass** (same phase, next commit): `Admin\SettingController::storePaymentSetting()` validates
+  and saves all three gateways' fields (same required-field pattern as Razorpay/Stripe above it), and
+  `payment_settings.blade.php` gained 3 new tabs mirroring the existing Razorpay/Paystack ones exactly. A
+  seller's own override (`seller/payment_gateways`) still takes priority over this platform default when
+  configured and enabled — unchanged, just confirmed by a test now
+  (`AdminGatewaySettingsTest::test_a_sellers_own_override_still_wins_over_the_new_platform_hyperpay_default`).
 - **Asynchronous webhook/callback receivers** for these three gateways were not built. Order completion in
   this app's `CartController` checkout flow is already synchronous (`place_order()` verifies then creates
   the Order — the same bar Razorpay/Paystack meet today; Stripe/Phonepe/Paypal in this same flow don't even
@@ -81,5 +81,10 @@ All three constructors take an optional `$sellerId`, matching Razorpay's pattern
 and falling back to the platform default otherwise, each gateway's `is_successful()` logic, one IDOR check
 proving the shared CRUD's ownership scoping holds for the new gateways too, and the store→seller resolution
 `pre_payment_setup()` depends on for all three.
+
+`tests/Feature/Phase6/AdminGatewaySettingsTest.php` (6 tests, follow-up pass): saving each gateway's
+platform settings persists them and the library actually reads them back as its fallback, a required field
+missing is rejected, a seller's own override still wins over the new platform default, and the settings
+page renders all three new tabs.
 
 Full suite: **601 passing** (588 before this phase), zero regressions.
