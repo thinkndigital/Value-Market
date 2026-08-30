@@ -6,6 +6,7 @@ use App\Models\AffiliateLink;
 use App\Models\CommissionRule;
 use App\Models\PaymentRequest;
 use App\Models\Product;
+use App\Models\Product_variants;
 use App\Models\SellerStore;
 use App\Models\StoreAffiliateRequest;
 use App\Models\User;
@@ -16,6 +17,7 @@ use App\Traits\HandlesValidation;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 /**
@@ -107,6 +109,91 @@ class AffiliateController extends Controller
             'approvedCommission' => $conversions[\App\Models\ReferralConversion::STATUS_APPROVED] ?? 0,
             'pendingCommission' => $conversions[\App\Models\ReferralConversion::STATUS_PENDING] ?? 0,
             'balance' => Auth::user()->balance ?? 0,
+        ]);
+    }
+
+    /**
+     * Multi-page portal shell (matching the admin/seller/delivery_boy panels' own sidebar layout) - these
+     * five page methods just render the Blade shell; the JS inside each page fetches from the JSON
+     * endpoints below (availableProducts(), conversionsHistory(), withdrawalHistory(), browsableStores()).
+     */
+    public function productsPage()
+    {
+        return view('affiliate.products');
+    }
+
+    public function commissionsPage()
+    {
+        return view('affiliate.commissions');
+    }
+
+    public function withdrawalsPage()
+    {
+        return view('affiliate.withdrawals', ['balance' => Auth::user()->balance ?? 0]);
+    }
+
+    public function storesPage()
+    {
+        return view('affiliate.stores');
+    }
+
+    /**
+     * "شوف تفاصيل المنتج" - a real product detail page for the affiliate portal, not just a table row.
+     * Same visibility rule as availableProducts() (commission-enabled + public store or approved-private
+     * store) enforced here too - a 404 for anything the affiliate isn't actually eligible to promote, so
+     * this can't be used to browse products outside the catalog by guessing ids.
+     */
+    public function productShow(int $productId)
+    {
+        $userId = Auth::id();
+
+        $rule = CommissionRule::where('scope', CommissionRule::SCOPE_PRODUCT)
+            ->where('scope_id', $productId)
+            ->where('status', CommissionRule::STATUS_ACTIVE)
+            ->first();
+        $product = $rule ? Product::where('id', $productId)->where('status', 1)->first() : null;
+        if (!$product) {
+            abort(404);
+        }
+
+        $visible = SellerStore::where('store_id', $product->store_id)
+            ->where(function ($query) use ($userId) {
+                $query->where('affiliate_visibility', 'public')
+                    ->orWhereExists(function ($sub) use ($userId) {
+                        $sub->select(DB::raw(1))
+                            ->from('store_affiliate_requests')
+                            ->whereColumn('store_affiliate_requests.store_id', 'seller_store.store_id')
+                            ->where('store_affiliate_requests.user_id', $userId)
+                            ->where('store_affiliate_requests.status', StoreAffiliateRequest::STATUS_APPROVED);
+                    });
+            })
+            ->exists();
+        if (!$visible) {
+            abort(404);
+        }
+
+        $variant = Product_variants::where('product_id', $product->id)->where('status', 1)->orderBy('id')->first();
+        $link = app(AffiliateService::class)->getOrCreateProductLink($userId, $product->id);
+
+        return view('affiliate.product_detail', [
+            'productName' => json_decode($product->name, true)['en'] ?? '',
+            'imageUrl' => app(MediaService::class)->getMediaImageUrl($product->image),
+            'storeName' => SellerStore::where('store_id', $product->store_id)->value('store_name'),
+            'price' => $variant->price ?? null,
+            'shortDescription' => json_decode((string) $product->short_description, true)['en'] ?? null,
+            // description is a raw rich-text HTML string (not JSON-wrapped like name/short_description -
+            // see Seller\ProductController::store()) authored by the seller and shown to a different user
+            // (the affiliate), so it's sanitized before being rendered unescaped in the view - a plain
+            // escape would also kill the seller's own bold/list formatting. strip_tags() alone is NOT
+            // enough here: it only removes disallowed tag names, it leaves every attribute on an allowed
+            // tag intact (a kept <p onclick="..."> stays exploitable) - the second preg_replace strips all
+            // attributes from whatever tags survive, so nothing (onXXX, style, href, src...) gets through.
+            'description' => $product->description
+                ? preg_replace('/<(\/?\w+)[^>]*>/', '<$1>', strip_tags($product->description, '<b><strong><i><em><ul><ol><li><br><p>'))
+                : null,
+            'commissionRateType' => $rule->rate_type,
+            'commissionRateValue' => $rule->rate_value,
+            'linkUrl' => route('affiliate.track', ['code' => $link->code]),
         ]);
     }
 

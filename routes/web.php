@@ -201,6 +201,16 @@ Route::middleware(['CheckInstallation'])->group(function () {
         Route::get('affiliate/available_products', [AffiliateController::class, 'availableProducts'])->name('affiliate.available_products.list');
         Route::get('affiliate/stores', [AffiliateController::class, 'browsableStores'])->name('affiliate.stores.list');
         Route::post('affiliate/stores/request', [AffiliateController::class, 'requestStoreAccess'])->name('affiliate.stores.request')->middleware(['demo_restriction']);
+
+        // Multi-page portal shell (sidebar, matching the admin/seller/delivery_boy panels) - each of these
+        // just renders a Blade page; the JSON endpoints above feed them via fetch(). affiliate/products/
+        // {product} must stay registered after affiliate/products/search above, or "search" would match the
+        // {product} wildcard instead.
+        Route::get('affiliate/products', [AffiliateController::class, 'productsPage'])->name('affiliate.products.page');
+        Route::get('affiliate/products/{product}', [AffiliateController::class, 'productShow'])->name('affiliate.product.show');
+        Route::get('affiliate/commissions', [AffiliateController::class, 'commissionsPage'])->name('affiliate.commissions.page');
+        Route::get('affiliate/withdrawals', [AffiliateController::class, 'withdrawalsPage'])->name('affiliate.withdrawals.page');
+        Route::get('affiliate/private_stores', [AffiliateController::class, 'storesPage'])->name('affiliate.stores.page');
     });
 
     // Public - the link a visitor actually clicks, no account required to be tracked and redirected.
