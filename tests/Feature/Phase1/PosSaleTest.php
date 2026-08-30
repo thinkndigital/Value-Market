@@ -25,26 +25,25 @@ use Tests\TestCase;
  * Seller\PosController::place_order() end to end against the InnoDB-converted, DECIMAL-precision,
  * transaction-wrapped tables this phase produced.
  *
- * Writing this test surfaced two further real bugs beyond the ones already known
- * (docs/PHASE_1_TRANSACTION_BOUNDARIES.md §2), both confirmed by the actual exceptions/return values below,
- * not by reading the code:
+ * Writing this test originally surfaced two further real bugs beyond the ones already known
+ * (docs/PHASE_1_TRANSACTION_BOUNDARIES.md §2), confirmed by the actual exceptions/return values at the
+ * time, not by reading the code:
  *
- * 1. CartService::addToCart() only returns `true` when $fromApp is true, OR when the cart row already
- *    existed for that user+variant. PosController::place_order() always calls it with $fromApp left at its
- *    default (false). So for a genuinely new cart item - the normal case for a walk-in POS customer buying
- *    something for the first time - addToCart() falls through to `return false;`, and place_order()
- *    reports "Items are Not Added" for every first-time sale. Worked around in these tests by pre-seeding
- *    the Cart row (the "existing item" branch does return true unconditionally) so the rest of the flow -
- *    the part Phase 1 actually changed - can be exercised and verified.
- * 2. A cart with more than one product_variant_id crashes outright with an ErrorException
- *    ("Undefined array key 1") inside CartService::addToCart(), because PosController passes a single
- *    scalar store_id (from StoreService::getStoreId(), session-based) while addToCart() explodes it and
- *    indexes it per item (`$store_id[$index]`) - correct only when there's exactly one item. This happens
- *    BEFORE the order-item-loop bug docs/PHASE_1_TRANSACTION_BOUNDARIES.md already described, so in
- *    practice a real multi-item POS cart never reaches that second bug at all - it crashes here first.
+ * 1. CartService::addToCart() only returned `true` when $fromApp was true, OR when the cart row already
+ *    existed for that user+variant - and it `return`ed from *inside* its loop the moment either of those
+ *    happened, so even a correctly-updated existing item stopped the whole batch from processing any further
+ *    items. PosController::place_order() always calls it with $fromApp left at its default (false), so a
+ *    genuinely new cart item - the normal case for a walk-in POS customer buying something for the first
+ *    time - fell through to `return false;`, reporting "Items are Not Added" for every first-time sale.
+ * 2. A cart with more than one product_variant_id crashed outright with an ErrorException ("Undefined array
+ *    key 1") inside the same method, because PosController passes a single scalar store_id (from
+ *    StoreService::getStoreId(), session-based) while addToCart() exploded it and indexed it per item
+ *    (`$store_id[$index]`) - correct only when there's exactly one item.
  *
- * Both are pre-existing, out of Phase 1's scope (POS business-logic bugs belong to Phase 6), and are
- * proven here rather than asserted from reading, exactly so Phase 6 doesn't have to rediscover them.
+ * Both fixed now (docs/PHASE_9_POS_CART_FIX.md): addToCart() processes every item in the batch before
+ * returning once, and a store_id index that doesn't exist falls back to the first (shared) value instead of
+ * crashing. `test_a_brand_new_items_first_pos_sale_succeeds`/`test_a_multi_item_cart_of_new_items_succeeds`
+ * below now assert the corrected behavior instead of documenting the bugs.
  */
 class PosSaleTest extends TestCase
 {
@@ -129,10 +128,12 @@ class PosSaleTest extends TestCase
         ]);
     }
 
-    public function test_addtocart_returns_false_for_a_brand_new_item_known_bug(): void
+    public function test_a_brand_new_items_first_pos_sale_succeeds(): void
     {
         $this->seedCommonSettings();
-        [$customer, , $variant] = $this->seedSellerWithSellableProduct(stock: 10);
+        [$customer, $product, $variant] = $this->seedSellerWithSellableProduct(stock: 10);
+        // Deliberately no pre-seeded Cart row - this is the walk-in-customer, first-time-buying-this-item
+        // case CartService::addToCart() used to fail (see class docblock, bug 1).
 
         $request = new Request([
             'data' => json_encode([
@@ -147,9 +148,10 @@ class PosSaleTest extends TestCase
         $response = app(PosController::class)->place_order($request);
         $payload = json_decode($response->getContent(), true);
 
-        $this->assertTrue($payload['error'], 'Documents a known bug: the first sale of an item to a customer with no existing cart row for it fails with "Items are Not Added".');
-        $this->assertSame('Items are Not Added', $payload['message']);
-        $this->assertSame(0, Order::count());
+        $this->assertFalse($payload['error'] ?? true, 'place_order should succeed: ' . json_encode($payload));
+        $this->assertSame(1, Order::count());
+        $this->assertSame(1, OrderItems::count());
+        $this->assertSame(9, $product->fresh()->stock);
     }
 
     public function test_a_single_item_pos_sale_creates_an_order_and_decrements_stock(): void
@@ -211,19 +213,14 @@ class PosSaleTest extends TestCase
         $this->assertSame(0, OrderItems::count());
     }
 
-    public function test_a_multi_item_cart_of_new_items_crashes_known_bug(): void
+    public function test_a_multi_item_cart_of_new_items_succeeds(): void
     {
         $this->seedCommonSettings();
-        [$customer, , $variantA] = $this->seedSellerWithSellableProduct(stock: 10);
-        [, , $variantB] = $this->seedSellerWithSellableProduct(stock: 10);
-        // Deliberately NOT pre-seeding cart rows here (unlike the other tests in this class): both items
-        // must be genuinely new for addToCart()'s foreach to fall through past index 0 without an early
-        // `return true` (which is what the "existing cart item" branch does - see class docblock, bug 1)
-        // and reach the broken `$store_id[$index]` access at index 1 (bug 2). Pre-seeding either row would
-        // make the loop return early on it, silently hiding this crash and reproducing a different bug
-        // instead (the order-item loop only ever creating one row - covered by
-        // test_a_single_item_pos_sale_creates_an_order_and_decrements_stock's sibling scenario in
-        // docs/PHASE_1_TRANSACTION_BOUNDARIES.md §2). This test isolates the crash specifically.
+        [$customer, $productA, $variantA] = $this->seedSellerWithSellableProduct(stock: 10);
+        [, $productB, $variantB] = $this->seedSellerWithSellableProduct(stock: 10);
+        // Deliberately no pre-seeded cart rows - both items are genuinely new, the exact walk-in-customer
+        // scenario that used to crash CartService::addToCart() past the first item (see class docblock).
+
         $request = new Request([
             'data' => json_encode([
                 ['variant_id' => $variantA->id, 'quantity' => 1, 'product_type' => 'regular', 'title' => 'A'],
@@ -235,13 +232,13 @@ class PosSaleTest extends TestCase
             'discount' => 0,
         ]);
 
-        // Documents a known bug (see class docblock, bug 2): CartService::addToCart() indexes a
-        // single-element store_id array per cart item, so a walk-in customer's first-ever multi-item POS
-        // sale crashes outright rather than merely mishandling extra items. Should start failing -
-        // correctly - the moment a later phase fixes it.
-        $this->expectException(\ErrorException::class);
-        $this->expectExceptionMessage('Undefined array key 1');
+        $response = app(PosController::class)->place_order($request);
+        $payload = json_decode($response->getContent(), true);
 
-        app(PosController::class)->place_order($request);
+        $this->assertFalse($payload['error'] ?? true, 'place_order should succeed: ' . json_encode($payload));
+        $this->assertSame(1, Order::count());
+        $this->assertSame(2, OrderItems::count(), 'Both new items must be recorded, not just the first.');
+        $this->assertSame(9, $productA->fresh()->stock);
+        $this->assertSame(9, $productB->fresh()->stock);
     }
 }

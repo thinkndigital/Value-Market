@@ -15,6 +15,15 @@ use App\Services\CurrencyService;
 use App\Services\SettingService;
 class CartService
 {
+    /**
+     * Bug fix (docs/PHASE_6_POS.md §1's "related, separate bug... not fixed here"; TECHNICAL_DEBT.md): this
+     * used to `return true` from *inside* the loop the moment it processed any existing-item update, or any
+     * new item when $fromApp was true - so a multi-item cart only ever touched its first line, and a
+     * multi-item cart of genuinely new items (Seller\PosController never passes $fromApp=true) fell through
+     * to `return false` at the end even though every row it created succeeded. Now every item in the batch
+     * is always processed, and the method reports success once at the end - $fromApp no longer changes
+     * behavior (kept as a parameter since existing call sites still pass it positionally).
+     */
     public function addToCart($data, $check_status = true, $fromApp = false)
     {
         $data = array_map('htmlspecialchars', $data);
@@ -37,35 +46,28 @@ class CartService
                 'product_variant_id' => $product_variant_id,
                 'qty' => $qtys[$index],
                 'is_saved_for_later' => (isset($data['is_saved_for_later']) && !empty($data['is_saved_for_later']) && $data['is_saved_for_later'] == '1') ? $data['is_saved_for_later'] : '0',
-                'store_id' => (isset($store_id) && !empty($store_id)) ? $store_id[$index] : '',
+                // Bug fix: $store_id[$index] only ever exists for a caller that supplies one store_id per
+                // cart item (CartController's multi-vendor add-to-cart genuinely does this). A caller that
+                // shares one store_id across the whole cart (every POS sale belongs to one store) crashed
+                // here past the first item - falling back to the first value covers that case without
+                // changing the per-item one (all indices already exist there, so the fallback never fires).
+                'store_id' => $store_id[$index] ?? ($store_id[0] ?? ''),
                 'product_type' => (isset($product_type) && !empty($product_type)) ? $product_type[$index] : '',
             ];
             if ($qtys[$index] == 0) {
-
                 $this->removeFromCart($cart_data);
             } else {
                 $existing_cart_item = Cart::where(['user_id' => $data['user_id'], 'product_variant_id' => $product_variant_id])->first();
 
-
                 if (!empty($existing_cart_item) && $existing_cart_item != null) {
-
                     $existing_cart_item->update($cart_data);
-
-                    if ($fromApp == true) {
-
-                        return true;
-                    } else {
-                        return true;
-                    }
                 } else {
                     Cart::create($cart_data);
-                    if ($fromApp == true) {
-                        return true;
-                    }
                 }
             }
         }
-        return false;
+
+        return true;
     }
 
     public function removeFromCart($data)
