@@ -345,6 +345,45 @@ margin, since it's nested one level deeper rather than a page-level section divi
     position: absolute;
 }
 
+/* RTL: the fixed sidebar above only ever gets a bare `dir="rtl"` attribute (on `#db-wrapper` and the
+sidebar's own `<nav>`) - it never set `left`/`right` explicitly, so `position: fixed` always resolves to
+its LTR static position (pinned left) regardless of direction, and the icon/chevron cluster is hardcoded
+to `right: 1.5rem` (fine in LTR, where the label starts at the opposite, `padding-left`-reserved side and
+never reaches that far), which collides with the RTL-mirrored label once flexbox's `direction: rtl` pulls
+it flush against that same right edge instead. Mirror both explicitly for `#db-wrapper[dir="rtl"]`. */
+#db-wrapper[dir="rtl"] .navbar-vertical {
+    left: auto;
+    right: 0;
+    border-right: none !important;
+    border-left: 1px solid #28252540 !important;
+}
+
+#db-wrapper[dir="rtl"] #page-content {
+    margin-left: 0;
+    margin-right: 15.625rem;
+}
+
+#db-wrapper[dir="rtl"] .navbar-vertical .navbar-nav .nav-item .nav-link i {
+    right: auto;
+    left: 1.2rem;
+    margin-left: 0;
+}
+
+#db-wrapper[dir="rtl"] .navbar-vertical .navbar-nav .nav-item .nav-link.active {
+    border-right: none;
+    border-left: 3px solid var(--primary-theme-color);
+}
+
+#db-wrapper[dir="rtl"] .sidebar-title i {
+    margin-right: 0;
+    margin-left: 4px;
+}
+
+#db-wrapper[dir="rtl"] .navbar-nav .nav .nav-item .nav-link .nav-link-text::before {
+    left: auto;
+    right: 55px;
+}
+
 /* -------------------------------------------------------------------------------------------
 									End sidebar Styles
 ------------------------------------------------------------------------------------------- */

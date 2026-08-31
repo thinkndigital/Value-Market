@@ -12,7 +12,7 @@
     is already loaded breaks, including the dashboard's own rendering. Loading the local copy here
     guarantees $ / jQuery are always available first. --}}
     <script src="{{ asset('/assets/admin/js/jquery.min.js') }}"></script>
-    <div id="db-wrapper">
+    <div id="db-wrapper" {{ session()->get('is_rtl') == 1 ? 'dir=rtl' : '' }}>
         <!-- navbar vertical -->
         <x-seller.side-bar />
         <!-- Page content -->

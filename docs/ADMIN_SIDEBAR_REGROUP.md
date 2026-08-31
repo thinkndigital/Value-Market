@@ -87,10 +87,69 @@ Verified live: seller login → dashboard's stock widget loads without error →
 → navigating directly to `/seller/products` auto-expands Catalog and its Products Manage sub-dropdown.
 Full suite: 661 passing (up from 660 - the new regression test), zero regressions.
 
+## Delivery boy + Affiliate sidebars (same pass, follow-up commit)
+
+`resources/views/components/delivery_boy/side-bar.blade.php` (96 lines) and
+`resources/views/components/affiliate/side-bar.blade.php` (64 lines) regrouped the same way. Both were
+already small and mostly flat, so this pass is intentionally light:
+
+- **Delivery boy**: Dashboard (flat) + 2 groups - "Deliveries" (Orders Manage dropdown, Returned Orders),
+  "Finance" (Cash Collection, Fund Transfer, Wallet Transaction).
+- **Affiliate**: Dashboard (flat) + 2 groups - "Marketplace" (Available Products, Private Stores),
+  "Earnings" (Commission History, Withdrawals).
+
+Same discipline as admin/seller: every route/label unchanged, only re-nested; each group's active/expanded
+state computed from the same `Request::is(...)` patterns the individual links already used.
+
+Verified live: delivery_boy login (mobile `9990000003`) -> dashboard renders -> "Deliveries" group expands
+correctly. affiliate login (uses the seller's own credentials, mobile `9990000001` - `affiliate.login`
+accepts any active user, no separate affiliate account) -> dashboard renders -> "Marketplace" group expands
+correctly. No JS errors, no 500s. Full suite: 661 passing, same one pre-existing unrelated failure.
+
+## RTL sidebar layout fix (same pass, follow-up commit - real bug found via live use, not part of the regroup itself)
+
+Reported live by the product owner while reviewing the regrouped sidebars in Arabic: sidebar icons stayed
+on the left regardless of language direction, and the sidebar panel itself never moved to the right side of
+the screen in RTL - only the text inside flipped.
+
+Root cause (confirmed via computed-style inspection in a real browser, not guessed): the fixed sidebar
+(`.navbar-vertical`, from the vendored Argon Dashboard theme's `public/css/theme.css`) is `position: fixed`
+with no `left`/`right` set, so it always resolves to its LTR static position (pinned left) regardless of
+`dir`. `#page-content`'s `margin-left: 15.625rem` never had an RTL counterpart either. Worse, every nav
+link's icon (and its group-toggle chevron) is hardcoded `position: absolute; right: 1.5rem` in
+`custom.css` - harmless in LTR (the label starts at the opposite, `padding-left`-reserved side and never
+reaches that far right), but once flexbox's `direction: rtl` (inherited from the existing `dir="rtl"`
+attribute already on the sidebar's own `<nav>`) pulls the label flush against that same right edge, the
+icon lands directly on top of the label text - visually confirmed as garbled/overlapping group labels
+("Platform", "Catalog", etc.) in a live screenshot before this fix.
+
+Also: `resources/views/affiliate/layout.blade.php` never applied `dir="rtl"` anywhere at all (the other
+three panels did, on the sidebar `<nav>` and the content `.container-fluid`, just not on a shared ancestor
+the sidebar-positioning CSS could key off).
+
+Fix (`public/assets/admin/custom/custom.css`, `resources/views/{admin,seller,delivery_boy,affiliate}/layout.blade.php`):
+added the same `{{ session()->get('is_rtl') == 1 ? 'dir=rtl' : '' }}` attribute to the shared `#db-wrapper`
+element in all four layouts (affiliate's first `dir` attribute of any kind), then added
+`#db-wrapper[dir="rtl"]` overrides: sidebar moves to `right: 0` with its border flipped to the left edge,
+`#page-content` gets `margin-right` instead of `margin-left`, nav-link icons/chevrons move from
+`right: 1.5rem` to `left: 1.2rem` (landing inside the same padding gap the label already avoids, by
+construction - not just visually tuned), the active-state accent border flips from right to left, and the
+small sub-item bullet dot (`.nav-link-text::before`) flips from `left: 55px` to `right: 55px`.
+
+Verified live (Playwright, real login + real Arabic language switch via each panel's own
+`{panel}/settings/languages/change?lang=ar` route, not a mock): admin, seller, and delivery_boy dashboards
+all render with the sidebar correctly on the right, icons sitting cleanly next to their (mirrored) labels
+with zero overlap, and the "Platform"/"Catalog"/etc. groups no longer garbled. Affiliate has no language
+switcher wired up yet (pre-existing gap, not touched here) so RTL there is currently unreachable through
+the UI, but the same `dir="rtl"` plumbing is now in place for whenever that gap is closed. Full suite: 661
+passing, same one pre-existing unrelated failure - zero regressions from either this or the delivery_boy/
+affiliate regroup above.
+
 ## Next steps in this re-architecture (not started)
 
-Per the product owner's own prioritization: this sidebar/RBAC foundation work first (admin done, seller
-done), then delivery_boy/affiliate sidebars (smaller, lower priority - flagged but not yet requested), then
-(in order) the Wholesaler marketplace, Creator Marketplace, and the rest of the large brief (theme system,
-store domains, subscription/feature-flag enforcement, app-wide RTL verification). Each is its own
-multi-session effort - not attempted here.
+Per the product owner's own prioritization: this sidebar/RBAC foundation work is now done for all four
+panels (admin, seller, delivery_boy, affiliate), plus the RTL layout bug found along the way. Next up (in
+order): the Wholesaler marketplace, Creator Marketplace, and the rest of the large brief (theme system,
+store domains, subscription/feature-flag enforcement, app-wide RTL verification beyond just the sidebar -
+e.g. tables, forms, and modals were not audited here). Each is its own multi-session effort - not attempted
+here.

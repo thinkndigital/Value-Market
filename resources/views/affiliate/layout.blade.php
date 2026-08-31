@@ -120,7 +120,7 @@
 </head>
 
 <body>
-    <div id="db-wrapper">
+    <div id="db-wrapper" {{ session()->get('is_rtl') == 1 ? 'dir=rtl' : '' }}>
         <x-affiliate.side-bar />
         <div id="page-content">
             <div class="d-flex justify-content-end align-items-center p-3 border-bottom bg-white">

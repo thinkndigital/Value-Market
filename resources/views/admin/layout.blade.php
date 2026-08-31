@@ -14,7 +14,7 @@
     immediately, guarantees $ / jQuery are always available before any page content runs, regardless of any
     external CDN's reachability. --}}
     <script src="{{ asset('/assets/admin/js/jquery.min.js') }}"></script>
-    <div id="db-wrapper">
+    <div id="db-wrapper" {{ session()->get('is_rtl') == 1 ? 'dir=rtl' : '' }}>
 
         <x-admin.side-bar />
         <div id="page-content">

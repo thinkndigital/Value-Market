@@ -5,7 +5,7 @@
     @include('delivery_boy.include_css')
 
     <body>
-        <div id="db-wrapper">
+        <div id="db-wrapper" {{ session()->get('is_rtl') == 1 ? 'dir=rtl' : '' }}>
 
             <x-delivery_boy.side-bar />
             <!-- Page content -->
