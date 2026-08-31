@@ -51,13 +51,17 @@ class StockController extends Controller
 
 
         foreach ($products['product'] as $product) {
-            $category_id = $product->category_id;
+            // Bug fix: $product here is an array (matching createRow()'s own array-access reads of it just
+            // below, and the identical Admin\ManageStockController::get_stock_List() call site) - object
+            // access crashed with "Attempt to read property on array" the moment a seller with any stock
+            // opened their dashboard.
+            $category_id = $product['category_id'];
             $category_name = fetchDetails(Category::class, ['id' => $category_id], ['name', 'id']);
 
-            $variants = app(ProductService::class)->getVariantsValuesByPid($product->id);
+            $variants = app(ProductService::class)->getVariantsValuesByPid($product['id']);
             // dd($variants);
             // Handle the case when the stock type is 2 (multiple variants)
-            if ($product->stock_type == 2) {
+            if ($product['stock_type'] == 2) {
                 foreach ($variants as $variant) {
                     $tempRow = createRow($product, $variant, $category_name, '1');
                     $rows[] = $tempRow;

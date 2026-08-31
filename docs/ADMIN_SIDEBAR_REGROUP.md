@@ -61,9 +61,36 @@ component since it's shared across the whole admin panel) still pass unchanged. 
 pre-existing, unrelated failure - see `docs/STOREFRONT_V1.md`'s commit history for context - not touched by
 this change).
 
+## Seller sidebar (same pass, follow-up commit)
+
+`resources/views/components/seller/side-bar.blade.php` - the seller panel's sidebar (324 lines, 12 flat
+sections) regrouped the same way, into: Dashboard, Sales (Orders/POS/Stock/Deliverability/Return Requests),
+Catalog (Categories/Brands/Tax/Attributes/Products/Combo Products), Website (Media - same "no theme system
+yet" caveat as admin's group), Marketing (Affiliate Program), Finance (Wallet/Withdrawals/Payment Gateways),
+My Subscription, Communication (Chat), Locations, Languages (Bulk Translation Upload), Reports. Same
+discipline: every route/label unchanged, only re-nested.
+
+**Real bug found and fixed while live-testing this** (unrelated to the sidebar itself - discovered because
+this was the first time this session actually loaded the seller dashboard *with real product data* rather
+than an empty fixture): `Seller\StockController::get_stock_List()` - the AJAX call the seller dashboard's
+own stock widget makes on every page load - crashed with "Attempt to read property category_id on array"
+for any seller with a real product. `$product` from `ProductService::fetchProduct()`'s `'product'` key is
+an array (confirmed by `createRow()`, which the same method calls right after and which reads `$product`
+with array syntax throughout, and by `Admin\ManageStockController::get_stock_List()`'s identical call site,
+which already used the correct array access) - but this method read it with object syntax
+(`$product->category_id`, `$product->stock_type`, `$product->id`). `RouteSweepTest.php` already flagged
+this exact route as broken (`KNOWN_BROKEN_ROUTES`, "Category 5 - needs deeper individual investigation")
+but its no-product fixture can never reach this crash path; fixed here and covered by a new
+`tests/Feature/Seller/StockListDashboardTest.php` with a real product fixture that does.
+
+Verified live: seller login → dashboard's stock widget loads without error → Sales group expands correctly
+→ navigating directly to `/seller/products` auto-expands Catalog and its Products Manage sub-dropdown.
+Full suite: 661 passing (up from 660 - the new regression test), zero regressions.
+
 ## Next steps in this re-architecture (not started)
 
-Per the product owner's own prioritization: this sidebar/RBAC foundation work first, then (in order) the
-Wholesaler marketplace, Creator Marketplace, and the rest of the large brief (theme system, store domains,
-subscription/feature-flag enforcement, app-wide RTL verification, seller/delivery/affiliate sidebar
-regroups matching this same pattern). Each is its own multi-session effort - not attempted here.
+Per the product owner's own prioritization: this sidebar/RBAC foundation work first (admin done, seller
+done), then delivery_boy/affiliate sidebars (smaller, lower priority - flagged but not yet requested), then
+(in order) the Wholesaler marketplace, Creator Marketplace, and the rest of the large brief (theme system,
+store domains, subscription/feature-flag enforcement, app-wide RTL verification). Each is its own
+multi-session effort - not attempted here.
