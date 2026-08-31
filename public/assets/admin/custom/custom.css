@@ -347,10 +347,7 @@ margin, since it's nested one level deeper rather than a page-level section divi
 
 /* RTL: the fixed sidebar above only ever gets a bare `dir="rtl"` attribute (on `#db-wrapper` and the
 sidebar's own `<nav>`) - it never set `left`/`right` explicitly, so `position: fixed` always resolves to
-its LTR static position (pinned left) regardless of direction, and the icon/chevron cluster is hardcoded
-to `right: 1.5rem` (fine in LTR, where the label starts at the opposite, `padding-left`-reserved side and
-never reaches that far), which collides with the RTL-mirrored label once flexbox's `direction: rtl` pulls
-it flush against that same right edge instead. Mirror both explicitly for `#db-wrapper[dir="rtl"]`. */
+its LTR static position (pinned left) regardless of direction. Mirror explicitly for `#db-wrapper[dir="rtl"]`. */
 #db-wrapper[dir="rtl"] .navbar-vertical {
     left: auto;
     right: 0;
@@ -363,10 +360,30 @@ it flush against that same right edge instead. Mirror both explicitly for `#db-w
     margin-right: 15.625rem;
 }
 
+/* The icon/chevron cluster is `position: absolute; right: 1.5rem` in LTR - both the leading icon AND the
+trailing chevron land on that exact same spot (harmless in LTR, since the label sits far away at the
+opposite, `padding-left`-reserved side and never reaches that far), which once flexbox's `direction: rtl`
+pulls the label flush against that same right edge, (a) puts the icon *after* the label in reading order
+instead of before it, and (b) stacks the icon directly on top of the chevron. Fixed properly for RTL by
+taking both out of absolute positioning entirely and letting them sit in normal flex flow instead -
+`direction: rtl` then automatically reorders the row so the leading icon lands first/rightmost (immediately
+before the label, matching reading order), the label follows, and the chevron (pushed to the far end via
+its own margin) lands last/leftmost, with no overlap by construction. */
+#db-wrapper[dir="rtl"] .navbar-nav .nav-item > .nav-link {
+    padding: 10px 16px !important;
+}
+
 #db-wrapper[dir="rtl"] .navbar-vertical .navbar-nav .nav-item .nav-link i {
+    position: static;
     right: auto;
-    left: 1.2rem;
+    left: auto;
     margin-left: 0;
+    margin-inline-end: 10px;
+}
+
+#db-wrapper[dir="rtl"] .navbar-vertical .navbar-nav .nav-item .nav-link .fa-angle-down {
+    margin-inline-start: auto;
+    margin-inline-end: 0;
 }
 
 #db-wrapper[dir="rtl"] .navbar-vertical .navbar-nav .nav-item .nav-link.active {

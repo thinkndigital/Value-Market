@@ -61,10 +61,13 @@ existence check from the exact string saved in the DB column, so that string mus
 The first live-QA pass (real image upload through the wholesaler product form) stored just `/{filename}`
 (copying the pattern used elsewhere in this app, e.g. `Admin\SellerController::store()`'s seller-logo
 upload) - which resolves to the *wrong* disk path and silently falls back to the generic "no image"
-placeholder. Fixed in `Wholesaler\ProductController::store()` to store `/wholesaler_products/{filename}`,
-confirmed correct via a direct `curl` of the resulting URL (200, real file). Not fixed elsewhere in the
-app (out of scope for this pass - flagging that the same latent bug likely affects other panels' own
-direct-upload flows, e.g. seller onboarding documents, as a follow-up worth a dedicated look).
+placeholder. `Wholesaler\ProductController::store()` now stores `$uploaded->getFullUrl()` instead - Spatie's
+own fully-qualified URL for the file it just stored, correct for both the `public` and `s3` disks without
+having to hand-build a path at all, the same approach `GeneratesDemoImages::uploadDemoImage()` (used by
+every `demo:create-*` command) already relies on for exactly this reason. Confirmed correct via a direct
+`curl` of the resulting URL (200, real file). Not fixed elsewhere in the app (out of scope for this pass -
+flagging that the same latent bug likely affects other panels' own hand-built-path upload flows, e.g. seller
+onboarding documents, as a follow-up worth a dedicated look).
 
 Also fixed defensively while writing regression tests: `Seller\WholesalerMarketplaceController::import()`
 copied `wholesaler_products.image` (nullable at the DB level) straight into the new `products.image` column,
@@ -113,6 +116,36 @@ listing's status. `tests/Feature/Phase1/MigrationBaselineTest.php`'s table-count
 Full suite: 671 passing (one pre-existing, unrelated failure - `AdminHomePerformanceTest`, real leftover
 demo/QA accounts predating this session's work - see `docs/ADMIN_SIDEBAR_REGROUP.md`'s commit history for
 the same note), zero regressions from this change.
+
+## Demo account (same pass, follow-up commit)
+
+Product owner asked for a real wholesaler account they could log into themselves, matching the demo-account
+pattern already established for the other three roles. New `app/Console/Commands/CreateDemoWholesaler.php`
+(`php artisan demo:create-wholesaler --mobile=... --password=...`), mirroring
+`CreateDemoDeliveryBoy`/`CreateDemoSeller`'s exact structure: creates an active `User` + `Wholesaler` row
+(no admin-approval gate on the account itself, matching this module's own design - see "Wholesaler KYC/
+documents" above), plus two already-approved (`status = 1`) sample `wholesaler_products` rows with real
+placeholder images, so the account is immediately useful for demoing both halves of the module - not just an
+empty dashboard. Also wired into `demo:seed-all` (mobile `9990000004`), so the existing one-shot "create
+every demo account" command now creates this one too. Verified live: the command runs cleanly, both sample
+products' images resolve (200, confirmed via `curl`), and `RouteSweepTest`'s own `demo:seed-all` call (used
+to seed its own fixtures) still passes with the new account folded in.
+
+## Landing page (same pass, follow-up commit)
+
+`resources/views/customer/home.blade.php`'s existing "Join Our Platform" section (Seller/Delivery Partner/
+Affiliate/Admin cards, built earlier this session) now has a fifth "For Wholesalers" card with both a
+"Become a Wholesaler" (`wholesaler.register`) and "Wholesaler Login" (`wholesaler.login`) CTA, matching the
+Seller card's pattern exactly (the only other role with a real public self-registration route). The grid's
+column class changed from `col-md-3` (4 even columns) to `col-md-4` (3 per row, since 5 cards no longer
+divide evenly into 4) - a 3+2 layout, applied to all five cards for a consistent look.
+
+## Sidebar RTL correction (same pass, follow-up commit)
+
+Unrelated to the Wholesaler module itself, but reported by the product owner while reviewing this pass live:
+a follow-up correction to the RTL sidebar fix from `docs/ADMIN_SIDEBAR_REGROUP.md` (icon/chevron order and a
+remaining icon-vs-chevron overlap) - see that doc's own "RTL icon order correction" section for the full
+root cause and fix.
 
 ## Next steps in this re-architecture
 

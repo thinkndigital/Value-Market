@@ -155,7 +155,7 @@
             <h2 class="h4 text-center mb-2">{{ labels('front_messages.join_platform_title', 'Join Our Platform') }}</h2>
             <p class="text-muted text-center mb-4">{{ labels('front_messages.join_platform_subtitle', 'Whether you sell, deliver, or promote - there is a place for you here.') }}</p>
             <div class="row g-3">
-                <div class="col-6 col-md-3">
+                <div class="col-6 col-md-4">
                     <div class="cust-portal-card border rounded p-4 text-center h-100 d-flex flex-column">
                         <i class="anm anm-shopping-cart4 fs-2 d-block mb-2"></i>
                         <h3 class="h6">{{ labels('front_messages.for_sellers', 'For Sellers') }}</h3>
@@ -166,7 +166,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-6 col-md-3">
+                <div class="col-6 col-md-4">
                     <div class="cust-portal-card border rounded p-4 text-center h-100 d-flex flex-column">
                         <i class="anm anm-free-delivery fs-2 d-block mb-2"></i>
                         <h3 class="h6">{{ labels('front_messages.for_delivery_partners', 'For Delivery Partners') }}</h3>
@@ -176,7 +176,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-6 col-md-3">
+                <div class="col-6 col-md-4">
                     <div class="cust-portal-card border rounded p-4 text-center h-100 d-flex flex-column">
                         <i class="anm anm-users-l fs-2 d-block mb-2"></i>
                         <h3 class="h6">{{ labels('front_messages.for_affiliates', 'For Affiliates') }}</h3>
@@ -186,7 +186,21 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-6 col-md-3">
+                {{-- Wholesaler Marketplace module (docs/WHOLESALER_MODULE.md) - the platform-level "sell into
+                the marketplace" role, distinct from a seller's own private Supplier procurement contacts.
+                Has a real public self-registration route (wholesaler.register), same as Seller. --}}
+                <div class="col-6 col-md-4">
+                    <div class="cust-portal-card border rounded p-4 text-center h-100 d-flex flex-column">
+                        <i class="anm anm-gift-box fs-2 d-block mb-2"></i>
+                        <h3 class="h6">{{ labels('front_messages.for_wholesalers', 'For Wholesalers') }}</h3>
+                        <p class="small text-muted flex-grow-1">{{ labels('front_messages.for_wholesalers_desc', 'List your wholesale catalog for sellers on the platform to browse and import.') }}</p>
+                        <div class="d-grid gap-2">
+                            <a href="{{ route('wholesaler.register') }}" class="btn btn-brand btn-sm">{{ labels('front_messages.become_a_wholesaler', 'Become a Wholesaler') }}</a>
+                            <a href="{{ route('wholesaler.login') }}" class="btn btn-outline-dark btn-sm">{{ labels('front_messages.wholesaler_login', 'Wholesaler Login') }}</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4">
                     <div class="cust-portal-card border rounded p-4 text-center h-100 d-flex flex-column">
                         <i class="anm anm-cogs fs-2 d-block mb-2"></i>
                         <h3 class="h6">{{ labels('front_messages.for_admins', 'Platform Admin') }}</h3>

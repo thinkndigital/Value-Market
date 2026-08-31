@@ -115,11 +115,13 @@ class ProductController extends Controller
                 })
                 ->toMediaCollection('wholesaler_products', $disk);
 
-            // Live QA finding: App\Services\CustomPathGenerator stores every media collection's files under
-            // a `{collection_name}/` subfolder on disk - MediaService::getMediaImageUrl() checks for the
-            // exact stored string under public_path('storage/'), so it must include that subfolder too, or
-            // the file 404s and silently falls back to the generic "no image" placeholder.
-            $product->image = $disk === 's3' ? $uploaded->getUrl() : '/wholesaler_products/' . $uploaded->file_name;
+            // Live QA finding: App\Services\CustomPathGenerator nests every media collection's files under a
+            // `{collection_name}/` subfolder, so a hand-built '/' . file_name string (the pattern used
+            // elsewhere in this app, e.g. Admin\SellerController::store()) resolves to the wrong disk path
+            // and MediaService::getMediaImageUrl() silently falls back to the generic "no image" placeholder.
+            // getFullUrl() asks Spatie for the real stored location directly - correct for both disks, same
+            // as App\Console\Commands\Concerns\GeneratesDemoImages::uploadDemoImage() already relies on.
+            $product->image = $uploaded->getFullUrl();
         }
 
         $product->wholesaler_id = $wholesaler->id;

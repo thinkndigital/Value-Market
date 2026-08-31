@@ -145,6 +145,29 @@ the UI, but the same `dir="rtl"` plumbing is now in place for whenever that gap 
 passing, same one pre-existing unrelated failure - zero regressions from either this or the delivery_boy/
 affiliate regroup above.
 
+### RTL icon order correction (follow-up, same pass)
+
+The fix above moved the icon/chevron cluster from `right: 1.5rem` to `left: 1.2rem` for RTL, which stopped
+the overlap but put both the icon and the chevron on the *wrong* side: since the label sits flush against
+the sidebar's right edge (RTL flexbox's own automatic mirroring), the icon at the far left ended up landing
+*after* the label in reading order instead of before it, and the icon and chevron still shared the same
+single absolute anchor point as each other (no longer overlapping the label, but still overlapping *each
+other*). Reported live by the product owner testing the corrected sidebar.
+
+Real fix: stopped anchoring the icon/chevron with `position: absolute` for RTL entirely and let them
+participate in the `.nav-link`'s own flex row instead. `direction: rtl` (already applied via the `dir`
+attribute) automatically reverses flex item order, so the DOM order icon → label → chevron now renders
+correctly as icon (rightmost, immediately before the label) → label → chevron (pushed to the far left via
+its own `margin-inline-start: auto`, which resolves to the *logical* end of the row in either direction) -
+no absolute positioning, no shared anchor point, no possible overlap by construction. The nav-link's own
+one-sided `padding-left: 46px` (needed only to reserve room for the old absolutely-positioned label) is
+replaced with a small symmetric `padding: 10px 16px` for RTL, since the icon now takes its own real space in
+flow instead of floating over reserved padding.
+
+Verified the same way as the original fix (live Playwright, real Arabic session) across admin/seller/
+delivery_boy: each sidebar row now reads icon → label → chevron in that order, right-to-left, with clean
+adjacent spacing and zero overlap anywhere.
+
 ## Next steps in this re-architecture (not started)
 
 Per the product owner's own prioritization: this sidebar/RBAC foundation work is now done for all four
