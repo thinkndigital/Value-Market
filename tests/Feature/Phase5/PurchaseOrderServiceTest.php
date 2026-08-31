@@ -10,7 +10,7 @@ use App\Models\PurchaseOrder;
 use App\Models\Role;
 use App\Models\Seller;
 use App\Models\StockMovement;
-use App\Models\Supplier;
+use App\Models\ProcurementVendor;
 use App\Models\User;
 use App\Services\PurchaseOrderService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -27,7 +27,7 @@ class PurchaseOrderServiceTest extends TestCase
             'serviceable_cities' => '', 'type' => 'phone', 'role_id' => Role::SELLER,
         ]);
         $seller = Seller::forceCreate(['user_id' => $user->id, 'disk' => 'public', 'status' => 1]);
-        $supplier = Supplier::forceCreate(['seller_id' => $seller->id, 'name' => 'Acme Supplier', 'status' => Supplier::STATUS_ACTIVE]);
+        $supplier = ProcurementVendor::forceCreate(['seller_id' => $seller->id, 'name' => 'Acme Supplier', 'status' => ProcurementVendor::STATUS_ACTIVE]);
         $branch = Branch::forceCreate(['seller_id' => $seller->id, 'name' => 'Main Branch', 'status' => Branch::STATUS_ACTIVE]);
 
         $category = Category::forceCreate([

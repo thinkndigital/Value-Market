@@ -9,7 +9,7 @@ use App\Models\Branch;
 use App\Models\OrderItems;
 use App\Models\Role;
 use App\Models\Seller;
-use App\Models\Supplier;
+use App\Models\ProcurementVendor;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -73,7 +73,7 @@ class LowSeverityFixesTest extends TestCase
     public function test_supplier_update_rejects_a_malformed_email(): void
     {
         $seller = $this->makeSeller();
-        $supplier = Supplier::forceCreate(['seller_id' => $seller->id, 'name' => 'Acme', 'status' => Supplier::STATUS_ACTIVE]);
+        $supplier = ProcurementVendor::forceCreate(['seller_id' => $seller->id, 'name' => 'Acme', 'status' => ProcurementVendor::STATUS_ACTIVE]);
         Auth::login(User::find($seller->user_id));
 
         $response = app(SupplierController::class)->update(new Request(['email' => 'not-an-email']), $supplier->id);
@@ -85,20 +85,20 @@ class LowSeverityFixesTest extends TestCase
     public function test_supplier_update_rejects_a_status_outside_the_enum(): void
     {
         $seller = $this->makeSeller();
-        $supplier = Supplier::forceCreate(['seller_id' => $seller->id, 'name' => 'Acme', 'status' => Supplier::STATUS_ACTIVE]);
+        $supplier = ProcurementVendor::forceCreate(['seller_id' => $seller->id, 'name' => 'Acme', 'status' => ProcurementVendor::STATUS_ACTIVE]);
         Auth::login(User::find($seller->user_id));
 
         $response = app(SupplierController::class)->update(new Request(['status' => 99]), $supplier->id);
         $data = json_decode($response->getContent(), true);
 
         $this->assertTrue($data['error']);
-        $this->assertSame(Supplier::STATUS_ACTIVE, $supplier->fresh()->status);
+        $this->assertSame(ProcurementVendor::STATUS_ACTIVE, $supplier->fresh()->status);
     }
 
     public function test_supplier_update_still_accepts_a_valid_change(): void
     {
         $seller = $this->makeSeller();
-        $supplier = Supplier::forceCreate(['seller_id' => $seller->id, 'name' => 'Acme', 'status' => Supplier::STATUS_ACTIVE]);
+        $supplier = ProcurementVendor::forceCreate(['seller_id' => $seller->id, 'name' => 'Acme', 'status' => ProcurementVendor::STATUS_ACTIVE]);
         Auth::login(User::find($seller->user_id));
 
         $response = app(SupplierController::class)->update(new Request(['name' => 'Acme Renamed']), $supplier->id);

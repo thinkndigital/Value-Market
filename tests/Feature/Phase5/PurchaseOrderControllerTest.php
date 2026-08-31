@@ -10,7 +10,7 @@ use App\Models\Product_variants;
 use App\Models\PurchaseOrder;
 use App\Models\Role;
 use App\Models\Seller;
-use App\Models\Supplier;
+use App\Models\ProcurementVendor;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -49,7 +49,7 @@ class PurchaseOrderControllerTest extends TestCase
     {
         $seller = $this->makeSeller();
         $stranger = $this->makeSeller();
-        $strangerSupplier = Supplier::forceCreate(['seller_id' => $stranger->id, 'name' => 'Stranger Supplier', 'status' => Supplier::STATUS_ACTIVE]);
+        $strangerSupplier = ProcurementVendor::forceCreate(['seller_id' => $stranger->id, 'name' => 'Stranger Supplier', 'status' => ProcurementVendor::STATUS_ACTIVE]);
         $variant = $this->makeVariant($seller);
 
         Auth::login(User::find($seller->user_id));
@@ -74,7 +74,7 @@ class PurchaseOrderControllerTest extends TestCase
     {
         $seller = $this->makeSeller();
         $stranger = $this->makeSeller();
-        $supplier = Supplier::forceCreate(['seller_id' => $seller->id, 'name' => 'Supplier', 'status' => Supplier::STATUS_ACTIVE]);
+        $supplier = ProcurementVendor::forceCreate(['seller_id' => $seller->id, 'name' => 'Supplier', 'status' => ProcurementVendor::STATUS_ACTIVE]);
         $strangerVariant = $this->makeVariant($stranger);
 
         Auth::login(User::find($seller->user_id));
@@ -94,7 +94,7 @@ class PurchaseOrderControllerTest extends TestCase
     {
         $owner = $this->makeSeller();
         $stranger = $this->makeSeller();
-        $supplier = Supplier::forceCreate(['seller_id' => $owner->id, 'name' => 'Supplier', 'status' => Supplier::STATUS_ACTIVE]);
+        $supplier = ProcurementVendor::forceCreate(['seller_id' => $owner->id, 'name' => 'Supplier', 'status' => ProcurementVendor::STATUS_ACTIVE]);
         $variant = $this->makeVariant($owner);
 
         Auth::login(User::find($owner->user_id));
@@ -118,7 +118,7 @@ class PurchaseOrderControllerTest extends TestCase
     public function test_the_owning_seller_can_create_and_receive_a_purchase_order_end_to_end(): void
     {
         $seller = $this->makeSeller();
-        $supplier = Supplier::forceCreate(['seller_id' => $seller->id, 'name' => 'Supplier', 'status' => Supplier::STATUS_ACTIVE]);
+        $supplier = ProcurementVendor::forceCreate(['seller_id' => $seller->id, 'name' => 'Supplier', 'status' => ProcurementVendor::STATUS_ACTIVE]);
         $branch = Branch::forceCreate(['seller_id' => $seller->id, 'name' => 'Branch', 'status' => Branch::STATUS_ACTIVE]);
         $variant = $this->makeVariant($seller);
 

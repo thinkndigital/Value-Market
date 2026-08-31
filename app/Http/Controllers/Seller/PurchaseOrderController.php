@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Seller;
 use App\Models\Branch;
 use App\Models\Product_variants;
 use App\Models\PurchaseOrder;
-use App\Models\Supplier;
+use App\Models\ProcurementVendor;
 use App\Services\PurchaseOrderService;
 use App\Services\TenantContext;
 use Illuminate\Http\Request;
@@ -46,7 +46,7 @@ class PurchaseOrderController extends Controller
             return response()->json(['error' => true, 'message' => $validator->errors()->first()]);
         }
 
-        $ownsSupplier = Supplier::where('id', $request->input('supplier_id'))->where('seller_id', $sellerId)->exists();
+        $ownsSupplier = ProcurementVendor::where('id', $request->input('supplier_id'))->where('seller_id', $sellerId)->exists();
         if (!$ownsSupplier) {
             return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
         }

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Seller;
 
-use App\Models\Supplier;
+use App\Models\ProcurementVendor;
 use App\Services\TenantContext;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -15,7 +15,7 @@ class SupplierController extends Controller
     {
         $sellerId = app(TenantContext::class)->currentSellerId();
 
-        $suppliers = Supplier::where('seller_id', $sellerId)->orderByDesc('id')->get();
+        $suppliers = ProcurementVendor::where('seller_id', $sellerId)->orderByDesc('id')->get();
 
         return response()->json(['error' => false, 'data' => $suppliers]);
     }
@@ -38,14 +38,14 @@ class SupplierController extends Controller
             return response()->json(['error' => true, 'message' => $validator->errors()->first()]);
         }
 
-        $supplier = Supplier::forceCreate([
+        $supplier = ProcurementVendor::forceCreate([
             'seller_id' => $sellerId,
             'name' => $request->input('name'),
             'contact_person' => $request->input('contact_person'),
             'phone' => $request->input('phone'),
             'email' => $request->input('email'),
             'address' => $request->input('address'),
-            'status' => Supplier::STATUS_ACTIVE,
+            'status' => ProcurementVendor::STATUS_ACTIVE,
         ]);
 
         return response()->json(['error' => false, 'message' => labels('seller.supplier_added', 'Supplier Added Successfully'), 'data' => $supplier]);
@@ -55,7 +55,7 @@ class SupplierController extends Controller
     {
         $sellerId = app(TenantContext::class)->currentSellerId();
 
-        $supplier = Supplier::where('id', $id)->where('seller_id', $sellerId)->first();
+        $supplier = ProcurementVendor::where('id', $id)->where('seller_id', $sellerId)->first();
         if (!$supplier) {
             return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
         }
@@ -69,7 +69,7 @@ class SupplierController extends Controller
             'phone' => 'nullable|string|max:32',
             'email' => 'nullable|email|max:256',
             'address' => 'nullable|string|max:512',
-            'status' => ['sometimes', Rule::in([Supplier::STATUS_ACTIVE, Supplier::STATUS_INACTIVE])],
+            'status' => ['sometimes', Rule::in([ProcurementVendor::STATUS_ACTIVE, ProcurementVendor::STATUS_INACTIVE])],
         ]);
         if ($validator->fails()) {
             return response()->json(['error' => true, 'message' => $validator->errors()->first()]);
@@ -85,7 +85,7 @@ class SupplierController extends Controller
     {
         $sellerId = app(TenantContext::class)->currentSellerId();
 
-        $supplier = Supplier::where('id', $id)->where('seller_id', $sellerId)->first();
+        $supplier = ProcurementVendor::where('id', $id)->where('seller_id', $sellerId)->first();
         if (!$supplier) {
             return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
         }

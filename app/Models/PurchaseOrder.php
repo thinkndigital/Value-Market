@@ -23,7 +23,7 @@ class PurchaseOrder extends Model
 
     public function supplier()
     {
-        return $this->belongsTo(Supplier::class, 'supplier_id');
+        return $this->belongsTo(ProcurementVendor::class, 'supplier_id');
     }
 
     public function branch()
