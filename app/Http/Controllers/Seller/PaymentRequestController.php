@@ -101,7 +101,14 @@ class PaymentRequestController extends Controller
     }
 
 
-    public function add_withdrawal_request(Request $request, $fromDeliveryBoyApp = false)
+    /**
+     * $fromDeliveryBoyApp kept for the existing delivery_boy call sites (App\Http\Controllers\Delivery_boy\
+     * v1\ApiController and routes/delivery_boy_routes.php's closure both pass `true`); $paymentType lets a
+     * newer caller (e.g. routes/wholesaler_routes.php) name its own `payment_requests.payment_type` value
+     * directly instead of overloading the boolean - Admin\PaymentRequestController::update() already
+     * refunds/approves purely by user_id, so any payment_type string works with zero admin-side change.
+     */
+    public function add_withdrawal_request(Request $request, $fromDeliveryBoyApp = false, ?string $paymentType = null)
     {
 
         $rules = [
@@ -127,7 +134,7 @@ class PaymentRequestController extends Controller
         $userData = fetchDetails(User::class, ['id' => $user_id], 'balance');
         if (!empty($userData)) {
             if ($amount <= $userData[0]->balance) {
-                $payment_type = $fromDeliveryBoyApp == true ? 'delivery_boy' : 'seller';
+                $payment_type = $paymentType ?? ($fromDeliveryBoyApp == true ? 'delivery_boy' : 'seller');
                 $data = [
                     'user_id' => $user_id,
                     'payment_address' => $payment_address,

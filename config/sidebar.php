@@ -476,6 +476,10 @@ return [
             'key' => 'clients', 'label_key' => 'wholesaler_labels.my_buyers', 'label_fallback' => 'My Buyers',
             'icon' => 'bx bx-group', 'route' => 'wholesaler.clients.index', 'match' => ['wholesaler/clients*'],
         ],
+        [
+            'key' => 'wallet', 'label_key' => 'wholesaler_labels.wallet', 'label_fallback' => 'Wallet',
+            'icon' => 'bx bx-wallet', 'route' => 'wholesaler.wallet.index', 'match' => ['wholesaler/wallet*'],
+        ],
     ],
 
 ];

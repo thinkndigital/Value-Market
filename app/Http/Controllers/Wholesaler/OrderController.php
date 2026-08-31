@@ -6,6 +6,7 @@ use App\Models\SellerStore;
 use App\Models\WholesaleOrder;
 use App\Models\Wholesaler;
 use App\Models\WholesalerProduct;
+use App\Services\WalletService;
 use App\Services\WholesaleOrderService;
 use App\Traits\HandlesValidation;
 use Illuminate\Http\Request;
@@ -131,7 +132,10 @@ class OrderController extends Controller
         return response()->json(['message' => labels('wholesaler_labels.order_updated', 'Order updated successfully.')]);
     }
 
-    public function markPaid($id)
+    /** Marking an order paid is the actual "I received this money" moment for a wholesaler, so this is
+     *  where the wallet gets credited (master architecture Phase 6 finance) - reuses the same
+     *  App\Services\WalletService every other role's wallet already runs on, rather than a new ledger. */
+    public function markPaid($id, WalletService $walletService)
     {
         $wholesaler = $this->currentWholesaler();
         $order = WholesaleOrder::where('wholesaler_id', $wholesaler->id)->find($id);
@@ -139,8 +143,22 @@ class OrderController extends Controller
             return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')], 404);
         }
 
+        if ((int) $order->payment_status === 1) {
+            return response()->json(['error' => true, 'message' => labels('wholesaler_labels.already_marked_paid', 'This order is already marked as paid.')], 422);
+        }
+
         $order->payment_status = 1;
         $order->save();
+
+        $walletService->updateWalletBalance(
+            'credit',
+            $wholesaler->user_id,
+            $order->total_amount,
+            labels('wholesaler_labels.wallet_credit_message', 'Payment received for wholesale order') . ' #' . $order->id,
+            $order->id,
+            0,
+            'wholesale_order'
+        );
 
         return response()->json(['message' => labels('wholesaler_labels.marked_paid', 'Order marked as paid.')]);
     }
@@ -180,14 +198,18 @@ class OrderController extends Controller
             return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')], 404);
         }
 
+        // Same pricing resolver the marketplace order flow uses (master architecture Phase 6) - a POS
+        // order logged on a specific seller's behalf still honors that seller's negotiated tier, if any.
+        $unitPrice = $product->priceFor($sellerStore->seller_id, (int) $request->quantity);
+
         WholesaleOrder::create([
             'wholesaler_id' => $wholesaler->id,
             'wholesaler_product_id' => $product->id,
             'seller_id' => $sellerStore->seller_id,
             'store_id' => $sellerStore->store_id,
             'quantity' => $request->quantity,
-            'unit_price' => $product->wholesale_price,
-            'total_amount' => $product->wholesale_price * $request->quantity,
+            'unit_price' => $unitPrice,
+            'total_amount' => round($unitPrice * $request->quantity, 4),
             'retail_price' => $request->retail_price,
             'status' => WholesaleOrder::STATUS_ACCEPTED,
             'wholesaler_note' => $request->wholesaler_note,

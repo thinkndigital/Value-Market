@@ -284,15 +284,54 @@ bar. Full suite: 687 passing (the same one pre-existing, date-dependent `AdminHo
 - confirmed via `git stash` unrelated to any change in this session), zero regressions.
 `MigrationBaselineTest`'s table count updated (127 -> 128).
 
+## Phase 6 (master architecture prompt): Wallet / Finance
+
+Section 65 ("Finance") asks for a Wholesaler wallet, transactions, and withdrawals - explicitly: "Reuse
+existing wallet/transaction infrastructure. Do not create unnecessary duplicate finance systems." This pass
+does exactly that rather than inventing a parallel ledger:
+
+- **`Wholesaler\OrderController::markPaid()`** now credits the wholesaler's wallet
+  (`App\Services\WalletService::updateWalletBalance('credit', ...)`, the same service every other role's
+  wallet already runs on) the moment an order is marked paid - that's the actual "I received this money"
+  event, not delivery. Guarded against double-crediting: marking an already-paid order paid again returns
+  422 instead of crediting twice.
+- **`Wholesaler\FinanceController`** - `wallet()` (balance + transaction history, mirroring
+  `Delivery_boy\UserController::walletTransaction()`'s exact pattern) and `transactionList()` (the same
+  `Transaction::where('user_id', ...)->whereIn('type', ['credit','debit'])` query every other role's wallet
+  page runs).
+- **Withdrawals reuse `Seller\PaymentRequestController::add_withdrawal_request()`** directly - the same
+  controller Delivery Boy already shares with Seller (`routes/delivery_boy_routes.php`'s own route closure
+  calls into it). Added an optional `$paymentType` parameter so a caller can name its own
+  `payment_requests.payment_type` value (`'wholesaler'`) instead of overloading the existing
+  `$fromDeliveryBoyApp` boolean; `Admin\PaymentRequestController::update()` approves/refunds purely by
+  `user_id` already, so this needed zero admin-side changes.
+- Also fixed while touching this code: `Wholesaler\OrderController::store()` (the POS-style quick order
+  entry) was still pricing off the flat `wholesale_price` instead of the Phase 6 pricing-tier resolver added
+  earlier in this same phase - now consistent with the marketplace order flow.
+- Sidebar: a new "Wallet" item in the Wholesaler panel.
+
+### Verification
+
+`tests/Feature/Wholesaler/WholesalerFinanceTest.php` (5 tests): marking an order paid credits the correct
+amount and logs a `Transaction` row; marking it paid twice does not double-credit; the wallet page renders
+the real balance; the transaction list is scoped to the logged-in wholesaler only (a second wholesaler's
+credit doesn't leak in); a withdrawal request is recorded with `payment_type = 'wholesaler'` and correctly
+reserves the balance. Re-ran the existing Seller/Delivery Boy/Affiliate withdrawal test suites to confirm
+the `add_withdrawal_request()` signature change didn't regress any existing caller - all still pass. Live-QA'd
+via Playwright: the Wallet page and its Withdraw Money modal both render correctly for the demo wholesaler.
+Full suite: 692 passing (the same one pre-existing, date-dependent `AdminHomePerformanceTest` failure),
+zero regressions.
+
 ## Next steps in this re-architecture
 
 Per the master architecture prompt's own phase order (confirmed with the product owner): Unified Dynamic
 Sidebar Engine (done, `docs/SIDEBAR_ENGINE.md`) -> Admin/Seller navigation audit (done - the existing
 structure already matches the target spec; the real gaps found are backend features, not nav wiring - see
-that doc) -> **Supplier architecture (in progress - pricing tiers this pass; MOQ enforcement, the order
-lifecycle, and "My Buyers" already existed from v1/v2 above; still open: a Wholesaler-owned POS terminal,
-Explore/Request/Approve seller relationship workflow, a wholesaler's own delivery boys, marketing tools, and
-a full finance ledger beyond the sales report - each its own scoped follow-up)** -> Affiliate architecture
--> Creator Module inside Affiliate -> Theme System -> Domain/Subdomain -> Subscription/Feature Controls ->
-app-wide RTL audit -> Responsive UI -> Performance -> regression testing. Each remaining phase is its own
-multi-session effort.
+that doc) -> **Supplier architecture (in progress - pricing tiers and wallet/finance done this phase; MOQ
+enforcement, the order lifecycle, and "My Buyers" already existed from v1/v2 above; still open: a
+Wholesaler-owned POS terminal beyond the existing quick-order entry, an Explore/Request/Approve seller
+relationship workflow (today any seller can order from any approved wholesaler with no gate), a wholesaler's
+own delivery boys, and marketing tools - each its own scoped follow-up)** -> Affiliate architecture -> Creator
+Module inside Affiliate -> Theme System -> Domain/Subdomain -> Subscription/Feature Controls -> app-wide RTL
+audit -> Responsive UI -> Performance -> regression testing. Each remaining phase is its own multi-session
+effort.

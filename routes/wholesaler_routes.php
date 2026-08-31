@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Seller\PaymentRequestController;
 use App\Http\Controllers\Wholesaler\ClientController;
+use App\Http\Controllers\Wholesaler\FinanceController;
 use App\Http\Controllers\Wholesaler\HomeController;
 use App\Http\Controllers\Wholesaler\OrderController;
 use App\Http\Controllers\Wholesaler\PricingController;
@@ -44,6 +46,16 @@ Route::group(
 
         // Sales report ("مبيعات")
         Route::get('wholesaler/reports/sales', [ReportController::class, 'index'])->name('wholesaler.reports.sales');
+
+        // Wallet / Finance (master architecture Phase 6, section 65) - the wallet is credited when an
+        // order is marked paid (OrderController::markPaid()); withdrawal reuses the exact same
+        // PaymentRequest flow Seller/Delivery Boy already share, same pattern delivery_boy's own routes
+        // use to call into Seller\PaymentRequestController.
+        Route::get('wholesaler/wallet', [FinanceController::class, 'wallet'])->name('wholesaler.wallet.index');
+        Route::get('wholesaler/wallet/transactions', [FinanceController::class, 'transactionList'])->name('wholesaler.wallet.transactions');
+        Route::put('wholesaler/wallet/withdraw', function (\Illuminate\Http\Request $request) {
+            return app(PaymentRequestController::class)->add_withdrawal_request($request, false, 'wholesaler');
+        })->name('wholesaler.wallet.withdraw')->middleware(['demo_restriction']);
 
         // My Buyers ("عملاء" / CRM)
         Route::get('wholesaler/clients', [ClientController::class, 'index'])->name('wholesaler.clients.index');
