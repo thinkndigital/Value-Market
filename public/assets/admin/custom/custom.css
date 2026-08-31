@@ -299,6 +299,27 @@ h6 {
     margin-right: 4px;
 }
 
+/* Sidebar regroup (32-phase SaaS brief): sub-headings inside a collapsible top-level group (e.g. "Stores",
+"Sellers" within the "Platform" group) - same look as .sidebar-title but lighter weight and less vertical
+margin, since it's nested one level deeper rather than a page-level section divider. */
+.sidebar-subtitle {
+    color: var(--gray-gray-600, #747070);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 16px;
+    text-transform: uppercase;
+    padding: 0 12px;
+    margin: 12px 0 4px 0 !important;
+}
+
+.sidebar-group-toggle .fa-angle-down {
+    transition: transform 0.2s ease;
+}
+
+.sidebar-group-toggle:not(.collapsed) .fa-angle-down {
+    transform: rotate(180deg);
+}
+
 .nav-item .nav {
     display: block !important;
     margin-top: 8px;
