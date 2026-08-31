@@ -124,6 +124,17 @@ Route::middleware(['CheckInstallation'])->group(function () {
     Route::get('delivery_boy/login', [UserController::class, 'delivery_boy_login'])->name('delivery_boy.login');
     Route::get('delivery_boy/logout', [UserController::class, 'delivery_boy_logout'])->name('delivery_boy.logout');
 
+    // wholesaler routes (SaaS re-architecture brief - see database/migrations/2025_02_21_000000_create_wholesaler_module.php)
+    Route::get('/wholesaler', function () {
+        return redirect()->route('wholesaler.login');
+    });
+
+    Route::get('wholesaler/login', [\App\Http\Controllers\Wholesaler\AuthController::class, 'login'])->name('wholesaler.login');
+    Route::get('wholesaler/register', [\App\Http\Controllers\Wholesaler\AuthController::class, 'register'])->name('wholesaler.register');
+    Route::post('wholesaler/authenticate', [\App\Http\Controllers\Wholesaler\AuthController::class, 'authenticate'])->name('wholesaler.authenticate');
+    Route::post('wholesaler/store', [\App\Http\Controllers\Wholesaler\AuthController::class, 'store'])->name('wholesaler.register.store')->middleware(['demo_restriction']);
+    Route::get('wholesaler/logout', [\App\Http\Controllers\Wholesaler\AuthController::class, 'logout'])->name('wholesaler.logout');
+
     // affiliate portal - unlike the panels above, open to any active user (a customer or a seller can both
     // be an affiliate), so its own AffiliateAuthController::authenticate() doesn't branch on role.
     Route::get('affiliate/login', [\App\Http\Controllers\AffiliateAuthController::class, 'login'])->name('affiliate.login');
@@ -171,6 +182,7 @@ Route::middleware(['CheckInstallation'])->group(function () {
         include("admin_routes.php");
         include("seller_routes.php");
         include("delivery_boy_routes.php");
+        include("wholesaler_routes.php");
 
         // Phase 7 (docs/PHASE_7_AFFILIATE_ENGINE.md): self-service affiliate links - any authenticated
         // user, not scoped to one panel the way the includes above are.

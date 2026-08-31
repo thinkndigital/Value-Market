@@ -166,6 +166,9 @@ if (
 if (window.location.href.indexOf("delivery_boy/") > -1) {
     from = "delivery_boy";
 }
+if (window.location.href.indexOf("wholesaler/") > -1) {
+    from = "wholesaler";
+}
 $("#validationForm").submit(function (e) {
     e.preventDefault(); // Prevent form submission
 

@@ -24,6 +24,7 @@ class Role extends Model
     public const SELLER = 4;
     public const ADMIN = 5;
     public const EDITOR = 6;
+    public const WHOLESALER = 7; // SaaS re-architecture brief - see 2025_02_21_000000_create_wholesaler_module.php
 
     public function users()
     {

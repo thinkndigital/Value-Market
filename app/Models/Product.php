@@ -20,6 +20,7 @@ class Product extends Model
         'tax',
         'category_id',
         'seller_id',
+        'wholesaler_product_id',
         'made_in',
         'brand',
         'indicator',
@@ -77,6 +78,12 @@ class Product extends Model
     public function sellerData()
     {
         return $this->belongsTo(Seller::class, 'seller_id');
+    }
+
+    /** Set when this product was created by a seller importing a Wholesaler's catalog listing. */
+    public function wholesalerProduct()
+    {
+        return $this->belongsTo(WholesalerProduct::class);
     }
 
     public function user()

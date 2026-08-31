@@ -513,6 +513,14 @@ Route::group(
         Route::post('seller/suppliers/{id}', [SupplierController::class, 'update'])->middleware(['demo_restriction'])->name('seller.suppliers.update');
         Route::delete('seller/suppliers/{id}', [SupplierController::class, 'destroy'])->middleware(['demo_restriction'])->name('seller.suppliers.destroy');
 
+        // Wholesaler Marketplace (SaaS re-architecture brief) - browse admin-approved wholesaler listings
+        // and import them into this seller's own catalog. Distinct from the Supplier routes just above:
+        // a Supplier is this seller's own private procurement contact, a Wholesaler is a platform-wide
+        // marketplace entity any seller can browse (see App\Models\Wholesaler's own doc comment).
+        Route::get('seller/wholesaler_marketplace', [\App\Http\Controllers\Seller\WholesalerMarketplaceController::class, 'index'])->name('seller.wholesaler_marketplace.index');
+        Route::get('seller/wholesaler_marketplace/list', [\App\Http\Controllers\Seller\WholesalerMarketplaceController::class, 'list'])->name('seller.wholesaler_marketplace.list');
+        Route::post('seller/wholesaler_marketplace/{id}/import', [\App\Http\Controllers\Seller\WholesalerMarketplaceController::class, 'import'])->middleware(['demo_restriction'])->name('seller.wholesaler_marketplace.import');
+
         Route::get('seller/purchase_orders', [PurchaseOrderController::class, 'list'])->name('seller.purchase_orders.list');
         Route::post('seller/purchase_orders', [PurchaseOrderController::class, 'store'])->middleware(['demo_restriction'])->name('seller.purchase_orders.store');
         Route::post('seller/purchase_orders/{id}/receive', [PurchaseOrderController::class, 'receive'])->middleware(['demo_restriction'])->name('seller.purchase_orders.receive');

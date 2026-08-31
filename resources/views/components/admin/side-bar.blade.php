@@ -18,7 +18,7 @@
              // a collapsible group wrapper around related sections, computed from the same Request::is()
              // patterns each item already checked individually, so a group auto-expands when any page inside
              // it is the current page. No functionality was removed or relocated to a different route.
-             $group_platform_active = Request::is('admin/store*') || Request::is('admin/stores*') || Request::is('admin/seller*') || Request::is('admin/sellers*') || Request::is('admin/customers*') || Request::is('admin/delivery_boys*');
+             $group_platform_active = Request::is('admin/store*') || Request::is('admin/stores*') || Request::is('admin/seller*') || Request::is('admin/sellers*') || Request::is('admin/customers*') || Request::is('admin/delivery_boys*') || Request::is('admin/wholesalers*');
              $group_catalog_active = Request::is('admin/categories*') || Request::is('admin/brands*') || Request::is('admin/taxes*') || Request::is('admin/attributes*') || Request::is('admin/products*') || Request::is('admin/product_faqs*') || Request::is('admin/product/*') || Request::is('admin/combo_product*');
              $group_orders_active = Request::is('admin/orders*') || Request::is('admin/order_items*') || Request::is('admin/manage_stock*') || Request::is('admin/manage_combo_stock*') || Request::is('admin/return_request*');
              $group_finance_active = Request::is('admin/payment_request*') || Request::is('admin/sellers/seller_wallet_transaction*');
@@ -116,6 +116,20 @@
                                  </a>
                              </li>
                          @endif
+
+                         <li class="sidebar-subtitle ms-3">{{ labels('wholesaler_labels.wholesalers', 'Wholesalers') }}</li>
+                         <li class="nav-item ms-3">
+                             <a class="nav-link {{ Request::is('admin/wholesalers') ? 'active' : '' }}"
+                                 href="{{ route('admin.wholesalers.index') }}">
+                                 <span class="nav-link-text ms-1">{{ labels('wholesaler_labels.wholesalers', 'Wholesalers') }}</span>
+                             </a>
+                         </li>
+                         <li class="nav-item ms-3">
+                             <a class="nav-link {{ Request::is('admin/wholesalers/products_queue') ? 'active' : '' }}"
+                                 href="{{ route('admin.wholesalers.products_queue') }}">
+                                 <span class="nav-link-text ms-1">{{ labels('wholesaler_labels.products_approval_queue', 'Products Approval Queue') }}</span>
+                             </a>
+                         </li>
 
                          <li class="sidebar-subtitle ms-3">{{ labels('admin_labels.customers', 'Customers') }}</li>
                          @if ($user_role == 'super_admin' || $logged_in_user->hasPermissionTo('view customers'))

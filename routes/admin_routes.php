@@ -511,6 +511,15 @@ Route::group(
 
         Route::get("admin/seller/get_seller_deliverable_type", [SellerController::class, 'get_seller_deliverable_type'])->name('admin.sellers.get_seller_deliverable_type');
 
+        // Wholesalers (SaaS re-architecture brief) - account moderation + the per-listing approval queue.
+        Route::get('admin/wholesalers', [\App\Http\Controllers\Admin\WholesalerController::class, 'index'])->name('admin.wholesalers.index');
+        Route::get('admin/wholesalers/list', [\App\Http\Controllers\Admin\WholesalerController::class, 'list'])->name('admin.wholesalers.list');
+        Route::get('admin/wholesalers/{id}/toggle_status', [\App\Http\Controllers\Admin\WholesalerController::class, 'toggleStatus'])->name('admin.wholesalers.toggle_status')->middleware(['demo_restriction']);
+        Route::get('admin/wholesalers/products_queue', [\App\Http\Controllers\Admin\WholesalerController::class, 'productsQueue'])->name('admin.wholesalers.products_queue');
+        Route::get('admin/wholesalers/products/list', [\App\Http\Controllers\Admin\WholesalerController::class, 'productsList'])->name('admin.wholesalers.products.list');
+        Route::get('admin/wholesalers/products/{id}/approve', [\App\Http\Controllers\Admin\WholesalerController::class, 'approveProduct'])->name('admin.wholesalers.products.approve')->middleware(['demo_restriction']);
+        Route::get('admin/wholesalers/products/{id}/reject', [\App\Http\Controllers\Admin\WholesalerController::class, 'rejectProduct'])->name('admin.wholesalers.products.reject')->middleware(['demo_restriction']);
+
         // Feature Section
     
         // 'update'/'destroy' excepted: the legacy routes below already claim 'feature_section.update'/

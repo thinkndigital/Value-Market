@@ -21,7 +21,7 @@
             // collapsible group wrapper around related sections, auto-expanded from the same Request::is()
             // patterns each item already checked individually.
             $group_sales_active = Request::is('seller/orders*') || Request::is('seller/point_of_sale*') || Request::is('seller/manage_stock*') || Request::is('seller/manage_combo_stock*') || Request::is('seller/manage_product_deliverability*') || Request::is('seller/manage_combo_product_deliverability*') || Request::is('seller/return_request*');
-            $group_catalog_active = Request::is('seller/categories*') || Request::is('seller/brands*') || Request::is('seller/tax*') || Request::is('seller/products/attributes*') || Request::is('seller/products*') || Request::is('seller/product_faqs*') || Request::is('seller/product/*') || Request::is('seller/combo_product*') || Request::is('seller/combo_products*');
+            $group_catalog_active = Request::is('seller/categories*') || Request::is('seller/brands*') || Request::is('seller/tax*') || Request::is('seller/products/attributes*') || Request::is('seller/products*') || Request::is('seller/product_faqs*') || Request::is('seller/product/*') || Request::is('seller/combo_product*') || Request::is('seller/combo_products*') || Request::is('seller/wholesaler_marketplace*');
             $group_website_active = Request::is('seller/media*');
             $group_marketing_active = Request::is('seller/affiliate_program*');
             $group_finance_active = Request::is('seller/transaction/wallet_transactions*') || Request::is('seller/payment_request*') || Request::is('seller/payment_gateways*');
@@ -207,6 +207,14 @@
                                     </li>
                                 </ul>
                             </div>
+                        </li>
+
+                        <li class="sidebar-subtitle ms-3">{{ labels('wholesaler_labels.wholesaler_marketplace', 'Wholesaler Marketplace') }}</li>
+                        <li class="nav-item ">
+                            <a class="nav-link {{ Request::is('seller/wholesaler_marketplace') ? 'active' : '' }}"
+                                href="{{ route('seller.wholesaler_marketplace.index') }}">
+                                <span class="sidenav-normal"> {{ labels('wholesaler_labels.browse_import', 'Browse & Import') }} </span>
+                            </a>
                         </li>
 
                         <li class="sidebar-subtitle ms-3">{{ labels('admin_labels.combo_products_manage', 'Combo Products Manage') }}</li>

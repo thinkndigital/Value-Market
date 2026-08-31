@@ -115,6 +115,11 @@ class User extends Authenticatable implements HasMedia
         return (int) $this->role_id === Role::DELIVERY_BOY;
     }
 
+    public function isWholesaler(): bool
+    {
+        return (int) $this->role_id === Role::WHOLESALER;
+    }
+
     public function isCustomer(): bool
     {
         return (int) $this->role_id === Role::CUSTOMER;
