@@ -3,6 +3,7 @@
 use App\Http\Controllers\Wholesaler\ClientController;
 use App\Http\Controllers\Wholesaler\HomeController;
 use App\Http\Controllers\Wholesaler\OrderController;
+use App\Http\Controllers\Wholesaler\PricingController;
 use App\Http\Controllers\Wholesaler\ProductController;
 use App\Http\Controllers\Wholesaler\ReportController;
 use App\Http\Controllers\Wholesaler\StockController;
@@ -28,6 +29,13 @@ Route::group(
         Route::get('wholesaler/orders/{id}/mark_paid', [OrderController::class, 'markPaid'])->name('wholesaler.orders.mark_paid')->middleware(['demo_restriction']);
         Route::get('wholesaler/orders/create', [OrderController::class, 'createPage'])->name('wholesaler.orders.create');
         Route::post('wholesaler/orders', [OrderController::class, 'store'])->name('wholesaler.orders.store')->middleware(['demo_restriction']);
+
+        // Wholesale Pricing (master architecture Phase 6, section 18): quantity-break / seller-specific
+        // pricing tiers on the wholesaler's own listings - see WholesalerProduct::priceFor().
+        Route::get('wholesaler/pricing', [PricingController::class, 'index'])->name('wholesaler.pricing.index');
+        Route::get('wholesaler/pricing/{productId}/tiers', [PricingController::class, 'tiersList'])->name('wholesaler.pricing.tiers.list');
+        Route::post('wholesaler/pricing/{productId}/tiers', [PricingController::class, 'store'])->name('wholesaler.pricing.tiers.store')->middleware(['demo_restriction']);
+        Route::delete('wholesaler/pricing/{productId}/tiers/{tierId}', [PricingController::class, 'destroy'])->name('wholesaler.pricing.tiers.destroy')->middleware(['demo_restriction']);
 
         // Stock ("مخزون")
         Route::get('wholesaler/stock', [StockController::class, 'index'])->name('wholesaler.stock.index');

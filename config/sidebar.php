@@ -457,6 +457,10 @@ return [
             'icon' => 'bx bx-package', 'route' => 'wholesaler.products.index', 'match' => ['wholesaler/products*'],
         ],
         [
+            'key' => 'pricing', 'label_key' => 'wholesaler_labels.wholesale_pricing', 'label_fallback' => 'Wholesale Pricing',
+            'icon' => 'bx bx-purchase-tag-alt', 'route' => 'wholesaler.pricing.index', 'match' => ['wholesaler/pricing*'],
+        ],
+        [
             'key' => 'orders', 'label_key' => 'wholesaler_labels.orders', 'label_fallback' => 'Orders',
             'icon' => 'bx bx-cart', 'route' => 'wholesaler.orders.index', 'match' => ['wholesaler/orders*'],
         ],

@@ -42,6 +42,7 @@ class WholesalerMarketplaceController extends Controller
         $offset = (int) $request->input('offset', 0);
         $limit = (int) $request->input('limit', 12);
         $search = trim((string) $request->input('search', ''));
+        $seller = $this->currentSeller();
 
         $query = WholesalerProduct::with('wholesaler')
             ->where('status', 1) // admin-approved only
@@ -52,22 +53,45 @@ class WholesalerMarketplaceController extends Controller
         $total = $query->count();
         $products = $query->orderBy('id', 'DESC')->skip($offset)->take($limit)->get();
 
-        $rows = $products->map(function ($p) {
+        $rows = $products->map(function ($p) use ($seller) {
             $name = json_decode($p->name, true);
+            // The price shown/pre-filled at the listing's own minimum quantity - master architecture Phase
+            // 6 pricing tiers (WholesalerProduct::priceFor()) may make this lower than wholesale_price;
+            // the authoritative per-quantity price is always recomputed server-side at order time.
+            $priceAtMoq = $p->priceFor($seller?->id ?? 0, (int) $p->min_order_qty);
 
             return [
                 'id' => $p->id,
                 'image' => '<img src="' . app(MediaService::class)->getMediaImageUrl($p->image) . '" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">',
                 'name' => $name['en'] ?? '',
                 'wholesaler' => optional($p->wholesaler)->business_name,
-                'wholesale_price' => $p->wholesale_price,
+                'wholesale_price' => $priceAtMoq,
                 'min_order_qty' => $p->min_order_qty,
                 'stock' => $p->stock,
-                'operate' => '<button type="button" class="btn btn-sm btn-primary place-wholesale-order" data-id="' . $p->id . '" data-price="' . $p->wholesale_price . '" data-min-qty="' . $p->min_order_qty . '">' . labels('wholesaler_labels.place_order', 'Place Order') . '</button>',
+                'operate' => '<button type="button" class="btn btn-sm btn-primary place-wholesale-order" data-id="' . $p->id . '" data-price="' . $priceAtMoq . '" data-min-qty="' . $p->min_order_qty . '">' . labels('wholesaler_labels.place_order', 'Place Order') . '</button>',
             ];
         });
 
         return response()->json(['rows' => $rows, 'total' => $total]);
+    }
+
+    /** Live price preview as the seller changes quantity in the order modal (master architecture Phase 6
+     *  pricing tiers) - the client-side number is just a preview; placeOrder() recomputes authoritatively. */
+    public function previewPrice(Request $request, $id)
+    {
+        $wholesalerProduct = WholesalerProduct::where('status', 1)->find($id);
+        if (!$wholesalerProduct) {
+            return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')], 404);
+        }
+
+        $quantity = max(1, (int) $request->input('quantity', $wholesalerProduct->min_order_qty));
+        $seller = $this->currentSeller();
+        $unitPrice = $wholesalerProduct->priceFor($seller?->id ?? 0, $quantity);
+
+        return response()->json([
+            'unit_price' => $unitPrice,
+            'total_amount' => round($unitPrice * $quantity, 4),
+        ]);
     }
 
     public function placeOrder(Request $request, $id)
@@ -91,6 +115,7 @@ class WholesalerMarketplaceController extends Controller
             return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')], 404);
         }
         $seller = $this->currentSeller();
+        $unitPrice = $wholesalerProduct->priceFor($seller->id, (int) $request->quantity);
 
         $order = WholesaleOrder::create([
             'wholesaler_id' => $wholesalerProduct->wholesaler_id,
@@ -98,8 +123,8 @@ class WholesalerMarketplaceController extends Controller
             'seller_id' => $seller->id,
             'store_id' => $storeId,
             'quantity' => $request->quantity,
-            'unit_price' => $wholesalerProduct->wholesale_price,
-            'total_amount' => $wholesalerProduct->wholesale_price * $request->quantity,
+            'unit_price' => $unitPrice,
+            'total_amount' => round($unitPrice * $request->quantity, 4),
             'retail_price' => $request->retail_price,
             'status' => WholesaleOrder::STATUS_PENDING,
             'seller_note' => $request->seller_note,

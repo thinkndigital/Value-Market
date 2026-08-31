@@ -44,8 +44,10 @@ class MigrationBaselineTest extends TestCase
         // (docs/PHASE_11_SUBSCRIPTIONS.md): `subscription_plans`. Plus 2 more from the SaaS re-architecture
         // brief's Wholesaler module (2025_02_21_000000_create_wholesaler_module.php): `wholesalers`,
         // `wholesaler_products`. Plus 1 more from that module's v2 order workflow
-        // (2025_02_22_000000_create_wholesale_orders.php): `wholesale_orders`.
-        $this->assertSame(127, (int) $tables);
+        // (2025_02_22_000000_create_wholesale_orders.php): `wholesale_orders`. Plus 1 more from the master
+        // architecture prompt's Phase 6 (Supplier pricing tiers,
+        // 2025_02_23_000000_create_wholesaler_product_price_tiers.php): `wholesaler_product_price_tiers`.
+        $this->assertSame(128, (int) $tables);
     }
 
     /** @dataProvider myisamTables */

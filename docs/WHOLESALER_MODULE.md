@@ -239,9 +239,60 @@ delivered order, "Demo Seller" listed as a buyer) after fulfillment ran.
 Full suite: 680 passing (one pre-existing, unrelated failure - `AdminHomePerformanceTest`), zero
 regressions.
 
+## Phase 6 (master architecture prompt): Wholesale Pricing
+
+The 81-section "VALUE MARKET — COMPLETE MASTER ARCHITECTURE & RESTRUCTURING PROMPT" reframes this whole
+module as the platform's **Supplier** role (section 18) - confirmed with the product owner: the code stays
+`wholesaler_*` (tables/models/routes/permissions unchanged, already in production), only user-facing labels
+now read "Supplier" (see `docs/SIDEBAR_ENGINE.md`'s "Supplier vs Wholesaler naming" section for the full
+decision, including the unrelated `App\Models\Supplier` procurement-vendor model being renamed to
+`ProcurementVendor` to remove the name collision).
+
+Section 18's "Wholesale" group asks for Wholesale Pricing / MOQ / Bulk Pricing / Seller Pricing /
+Seller-Specific Pricing / Quantity Discounts. MOQ already existed (`wholesaler_products.min_order_qty`,
+enforced since v2's order-placement validation) - what was missing was *how much per unit*, which this pass
+adds:
+
+- **`wholesaler_product_price_tiers`** (`database/migrations/2025_02_23_000000_create_wholesaler_product_price_tiers.php`)
+  - one table covers every case in the brief: `seller_id = null` is a generic quantity-break price open to
+  every seller; `seller_id` set is a negotiated price for that one seller only.
+- **`WholesalerProduct::priceFor(int $sellerId, int $quantity): float`** - picks the tier with the highest
+  `min_quantity` the requested quantity still satisfies, preferring a seller-specific tier over a generic
+  one at the same threshold, falling back to the listing's flat `wholesale_price` when nothing matches.
+- **`Wholesaler\PricingController`** (new) - a wholesaler manages tiers on their own listings only
+  (`index`/`tiersList`/`store`/`destroy`, all ownership-checked the same way `ProductController` already
+  is); only sellers who have actually ordered from this wholesaler are offered for a seller-specific tier
+  (reuses `WholesaleOrder` the same way `ClientController`'s "My Buyers" does), rather than a free-text
+  seller id field.
+- **`Seller\WholesalerMarketplaceController::previewPrice()`** (new) - a live AJAX price preview as the
+  seller changes quantity in the order modal; `list()` and `placeOrder()` now resolve the real price via
+  `priceFor()` instead of the flat `wholesale_price` - the client never computes or is trusted for the
+  price, matching how every other priced action in this app works.
+- Sidebar: a new "Wholesale Pricing" item in the Wholesaler panel (`config/sidebar.php`).
+
+### Verification
+
+`tests/Feature/Wholesaler/WholesalePricingTest.php` (7 tests): flat-price fallback with no tiers, correct
+tier selection across multiple quantity thresholds, a seller-specific tier winning over a generic one at
+the same quantity (and NOT applying to a different seller), an order placed at a tiered quantity storing
+the resolved price (not the flat one), the price-preview endpoint reflecting a seller-specific tier, and
+ownership enforcement on both adding and deleting a tier (a different wholesaler gets 404, not the tier).
+Also live-QA'd via Playwright: added a tier as the demo wholesaler, watched it appear in the tiers table;
+opened the seller's order modal and confirmed the "Unit Price / Total Amount" line updates from a real AJAX
+call as quantity changes (not a client-side calculation), matching the network request visible in the debug
+bar. Full suite: 687 passing (the same one pre-existing, date-dependent `AdminHomePerformanceTest` failure
+- confirmed via `git stash` unrelated to any change in this session), zero regressions.
+`MigrationBaselineTest`'s table count updated (127 -> 128).
+
 ## Next steps in this re-architecture
 
-Per the established order: Wholesaler module (this pass, including its v2 order workflow) -> Creator
-Marketplace (entirely new, most complex remaining piece) -> theme system -> store domains -> subscription/
-feature-flag enforcement -> app-wide RTL verification beyond the sidebar. Each is its own multi-session
-effort.
+Per the master architecture prompt's own phase order (confirmed with the product owner): Unified Dynamic
+Sidebar Engine (done, `docs/SIDEBAR_ENGINE.md`) -> Admin/Seller navigation audit (done - the existing
+structure already matches the target spec; the real gaps found are backend features, not nav wiring - see
+that doc) -> **Supplier architecture (in progress - pricing tiers this pass; MOQ enforcement, the order
+lifecycle, and "My Buyers" already existed from v1/v2 above; still open: a Wholesaler-owned POS terminal,
+Explore/Request/Approve seller relationship workflow, a wholesaler's own delivery boys, marketing tools, and
+a full finance ledger beyond the sales report - each its own scoped follow-up)** -> Affiliate architecture
+-> Creator Module inside Affiliate -> Theme System -> Domain/Subdomain -> Subscription/Feature Controls ->
+app-wide RTL audit -> Responsive UI -> Performance -> regression testing. Each remaining phase is its own
+multi-session effort.

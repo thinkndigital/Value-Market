@@ -520,6 +520,7 @@ Route::group(
         // seller can browse (see App\Models\Wholesaler's own doc comment).
         Route::get('seller/wholesaler_marketplace', [\App\Http\Controllers\Seller\WholesalerMarketplaceController::class, 'index'])->name('seller.wholesaler_marketplace.index');
         Route::get('seller/wholesaler_marketplace/list', [\App\Http\Controllers\Seller\WholesalerMarketplaceController::class, 'list'])->name('seller.wholesaler_marketplace.list');
+        Route::get('seller/wholesaler_marketplace/{id}/price', [\App\Http\Controllers\Seller\WholesalerMarketplaceController::class, 'previewPrice'])->name('seller.wholesaler_marketplace.price_preview');
         Route::post('seller/wholesaler_marketplace/{id}/order', [\App\Http\Controllers\Seller\WholesalerMarketplaceController::class, 'placeOrder'])->middleware(['demo_restriction'])->name('seller.wholesaler_marketplace.place_order');
         Route::get('seller/wholesaler_marketplace/orders', [\App\Http\Controllers\Seller\WholesalerMarketplaceController::class, 'myOrdersPage'])->name('seller.wholesaler_marketplace.orders.index');
         Route::get('seller/wholesaler_marketplace/orders/list', [\App\Http\Controllers\Seller\WholesalerMarketplaceController::class, 'myOrdersList'])->name('seller.wholesaler_marketplace.orders.list');

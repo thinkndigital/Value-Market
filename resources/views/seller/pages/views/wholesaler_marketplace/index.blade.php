@@ -76,19 +76,29 @@
 
     <script>
         var currentOrderId = null;
-        var currentOrderPrice = 0;
+        var priceRequestSeq = 0;
 
+        // Master architecture Phase 6 pricing tiers (WholesalerProduct::priceFor()) mean the real
+        // per-unit price can depend on quantity/seller - so the total shown here is always fetched from
+        // the server (never computed from a client-held flat price), same authority placeOrder() uses.
         function orderUpdateTotal() {
+            if (!currentOrderId) return;
             var qty = parseInt($('#order_quantity').val()) || 0;
-            $('#order_total').text(currentOrderPrice && qty
-                ? "{{ labels('wholesaler_labels.total_amount', 'Total Amount') }}: " + (currentOrderPrice * qty).toFixed(2)
-                : '');
+            if (!qty) { $('#order_total').text(''); return; }
+
+            var seq = ++priceRequestSeq;
+            $.get("{{ url('seller/wholesaler_marketplace') }}/" + currentOrderId + "/price", { quantity: qty }, function (res) {
+                if (seq !== priceRequestSeq) return; // a newer request already superseded this one
+                $('#order_total').text(
+                    "{{ labels('wholesaler_labels.unit_price', 'Unit Price') }}: " + res.unit_price
+                    + " | {{ labels('wholesaler_labels.total_amount', 'Total Amount') }}: " + res.total_amount
+                );
+            });
         }
         $(document).on('input', '#order_quantity', orderUpdateTotal);
 
         $(document).on('click', '.place-wholesale-order', function () {
             currentOrderId = $(this).data('id');
-            currentOrderPrice = parseFloat($(this).data('price')) || 0;
             var minQty = parseInt($(this).data('min-qty')) || 1;
             $('#wholesalerOrderForm')[0].reset();
             $('#order_quantity').attr('min', minQty).val(minQty);
