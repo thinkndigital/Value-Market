@@ -41,13 +41,68 @@
         </section>
     @endif
 
-    {{-- About / what this platform is - Admin > General Settings > Short Description, the same field the
-    old (never-wired) header component read as $settings->app_short_description. --}}
-    @if (!empty($web_settings['app_short_description']) && $sliders->isNotEmpty())
-        <section class="container py-4 text-center">
-            <p class="fs-5 mx-auto text-muted" style="max-width:700px">{{ $web_settings['app_short_description'] }}</p>
-        </section>
-    @endif
+    {{-- Why Choose Us / About - Admin > General Settings > Short Description as the intro line, plus a
+    standard 4-point value-prop grid every marketplace-style storefront uses (delivery/payment/selection/
+    support) - no per-feature admin setting exists for these, so the copy is static, only the intro is
+    data-driven. --}}
+    <section class="container py-5">
+        <h2 class="h3 text-center mb-2">{{ labels('front_messages.why_choose_us', 'Why Choose Us') }}</h2>
+        @if (!empty($web_settings['app_short_description']))
+            <p class="text-muted text-center mx-auto mb-4" style="max-width:700px">{{ $web_settings['app_short_description'] }}</p>
+        @endif
+        <div class="row g-4 text-center">
+            <div class="col-6 col-md-3">
+                <i class="anm anm-free-delivery fs-1" style="color:var(--brand-primary)"></i>
+                <h3 class="h6 mt-2 mb-1">{{ labels('front_messages.fast_delivery', 'Fast Delivery') }}</h3>
+                <p class="small text-muted mb-0">{{ labels('front_messages.fast_delivery_desc', 'Get your orders delivered quickly to your door.') }}</p>
+            </div>
+            <div class="col-6 col-md-3">
+                <i class="anm anm-lock fs-1" style="color:var(--brand-primary)"></i>
+                <h3 class="h6 mt-2 mb-1">{{ labels('front_messages.secure_payments', 'Secure Payments') }}</h3>
+                <p class="small text-muted mb-0">{{ labels('front_messages.secure_payments_desc', 'Shop with confidence using trusted payment methods.') }}</p>
+            </div>
+            <div class="col-6 col-md-3">
+                <i class="anm anm-basket fs-1" style="color:var(--brand-primary)"></i>
+                <h3 class="h6 mt-2 mb-1">{{ labels('front_messages.wide_selection', 'Wide Selection') }}</h3>
+                <p class="small text-muted mb-0">{{ labels('front_messages.wide_selection_desc', 'Thousands of products from trusted sellers.') }}</p>
+            </div>
+            <div class="col-6 col-md-3">
+                <i class="anm anm-chat fs-1" style="color:var(--brand-primary)"></i>
+                <h3 class="h6 mt-2 mb-1">{{ labels('front_messages.support_247', '24/7 Support') }}</h3>
+                <p class="small text-muted mb-0">{{ labels('front_messages.support_247_desc', "We're here to help whenever you need us.") }}</p>
+            </div>
+        </div>
+    </section>
+
+    {{-- How It Works - a plain, static 4-step explainer (browse -> cart -> checkout -> delivery); no admin
+    setting backs this, it's the same flow for every visitor. --}}
+    <section class="bg-light py-5">
+        <div class="container">
+            <h2 class="h3 text-center mb-4">{{ labels('front_messages.how_it_works', 'How It Works') }}</h2>
+            <div class="row g-4 text-center">
+                <div class="col-6 col-md-3">
+                    <div class="cust-step-number mx-auto mb-2">1</div>
+                    <i class="anm anm-search-l fs-2 d-block mb-2" style="color:var(--brand-primary)"></i>
+                    <h3 class="h6">{{ labels('front_messages.step_browse', 'Browse Products') }}</h3>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="cust-step-number mx-auto mb-2">2</div>
+                    <i class="anm anm-cart-l fs-2 d-block mb-2" style="color:var(--brand-primary)"></i>
+                    <h3 class="h6">{{ labels('front_messages.step_add_to_cart', 'Add To Cart') }}</h3>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="cust-step-number mx-auto mb-2">3</div>
+                    <i class="anm anm-check-circle fs-2 d-block mb-2" style="color:var(--brand-primary)"></i>
+                    <h3 class="h6">{{ labels('front_messages.step_checkout', 'Checkout Securely') }}</h3>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="cust-step-number mx-auto mb-2">4</div>
+                    <i class="anm anm-free-delivery fs-2 d-block mb-2" style="color:var(--brand-primary)"></i>
+                    <h3 class="h6">{{ labels('front_messages.step_delivery', 'Get It Delivered') }}</h3>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <section class="container py-4">
         <h2 class="h3 mb-4">{{ labels('front_messages.shop_by_category', 'Shop by Category') }}</h2>
@@ -89,35 +144,57 @@
 @endsection
 
 @push('home_extra')
-    {{-- "Login to every dashboard" - every panel (admin/seller/delivery_boy/affiliate) already has its own
-    real login route; the storefront never linked to any of them. Customer login is already in the header. --}}
+    {{-- "Join our platform" - every panel (seller/delivery_boy/affiliate/admin) already has its own real
+    login route; the storefront never linked to any of them. Seller is the only one with a real public
+    self-registration route (seller.register) - delivery boys and affiliates use their existing account
+    credentials (affiliate.login accepts any active user; delivery-boy accounts are provisioned by admin/
+    seller, not self-registered), so those two only get a login CTA, not a register one. Customer login
+    already lives in the header, so it isn't repeated here. --}}
     <section class="cust-portals bg-light border-top py-5">
         <div class="container">
-            <h2 class="h4 text-center mb-4">{{ labels('front_messages.login_portals_title', 'Sign In To Your Dashboard') }}</h2>
-            <div class="row g-3 text-center">
+            <h2 class="h4 text-center mb-2">{{ labels('front_messages.join_platform_title', 'Join Our Platform') }}</h2>
+            <p class="text-muted text-center mb-4">{{ labels('front_messages.join_platform_subtitle', 'Whether you sell, deliver, or promote - there is a place for you here.') }}</p>
+            <div class="row g-3">
                 <div class="col-6 col-md-3">
-                    <a href="{{ route('seller.login') }}" class="cust-portal-card d-block border rounded p-4 text-decoration-none text-dark h-100">
+                    <div class="cust-portal-card border rounded p-4 text-center h-100 d-flex flex-column">
                         <i class="anm anm-shopping-cart4 fs-2 d-block mb-2"></i>
-                        {{ labels('front_messages.seller_login', 'Seller Login') }}
-                    </a>
+                        <h3 class="h6">{{ labels('front_messages.for_sellers', 'For Sellers') }}</h3>
+                        <p class="small text-muted flex-grow-1">{{ labels('front_messages.for_sellers_desc', 'Open your own store and start selling to thousands of customers.') }}</p>
+                        <div class="d-grid gap-2">
+                            <a href="{{ route('seller.register') }}" class="btn btn-brand btn-sm">{{ labels('front_messages.become_a_seller', 'Become a Seller') }}</a>
+                            <a href="{{ route('seller.login') }}" class="btn btn-outline-dark btn-sm">{{ labels('front_messages.seller_login', 'Seller Login') }}</a>
+                        </div>
+                    </div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <a href="{{ route('delivery_boy.login') }}" class="cust-portal-card d-block border rounded p-4 text-decoration-none text-dark h-100">
+                    <div class="cust-portal-card border rounded p-4 text-center h-100 d-flex flex-column">
                         <i class="anm anm-free-delivery fs-2 d-block mb-2"></i>
-                        {{ labels('front_messages.delivery_boy_login', 'Delivery Partner Login') }}
-                    </a>
+                        <h3 class="h6">{{ labels('front_messages.for_delivery_partners', 'For Delivery Partners') }}</h3>
+                        <p class="small text-muted flex-grow-1">{{ labels('front_messages.for_delivery_partners_desc', 'Deliver orders and earn on your own schedule.') }}</p>
+                        <div class="d-grid gap-2">
+                            <a href="{{ route('delivery_boy.login') }}" class="btn btn-outline-dark btn-sm">{{ labels('front_messages.delivery_boy_login', 'Delivery Partner Login') }}</a>
+                        </div>
+                    </div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <a href="{{ route('affiliate.login') }}" class="cust-portal-card d-block border rounded p-4 text-decoration-none text-dark h-100">
+                    <div class="cust-portal-card border rounded p-4 text-center h-100 d-flex flex-column">
                         <i class="anm anm-users-l fs-2 d-block mb-2"></i>
-                        {{ labels('front_messages.affiliate_login', 'Affiliate Login') }}
-                    </a>
+                        <h3 class="h6">{{ labels('front_messages.for_affiliates', 'For Affiliates') }}</h3>
+                        <p class="small text-muted flex-grow-1">{{ labels('front_messages.for_affiliates_desc', 'Share product links and earn commission on every sale.') }}</p>
+                        <div class="d-grid gap-2">
+                            <a href="{{ route('affiliate.login') }}" class="btn btn-outline-dark btn-sm">{{ labels('front_messages.affiliate_login', 'Affiliate Login') }}</a>
+                        </div>
+                    </div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <a href="{{ route('admin.login') }}" class="cust-portal-card d-block border rounded p-4 text-decoration-none text-dark h-100">
+                    <div class="cust-portal-card border rounded p-4 text-center h-100 d-flex flex-column">
                         <i class="anm anm-cogs fs-2 d-block mb-2"></i>
-                        {{ labels('front_messages.admin_login', 'Admin Login') }}
-                    </a>
+                        <h3 class="h6">{{ labels('front_messages.for_admins', 'Platform Admin') }}</h3>
+                        <p class="small text-muted flex-grow-1">{{ labels('front_messages.for_admins_desc', 'Manage the platform from the admin dashboard.') }}</p>
+                        <div class="d-grid gap-2">
+                            <a href="{{ route('admin.login') }}" class="btn btn-outline-dark btn-sm">{{ labels('front_messages.admin_login', 'Admin Login') }}</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

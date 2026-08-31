@@ -89,6 +89,18 @@
         .cust-app-download p {
             color: #fff;
         }
+
+        .cust-step-number {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--brand-secondary);
+            color: #212529;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
     </style>
     @stack('styles')
 </head>
