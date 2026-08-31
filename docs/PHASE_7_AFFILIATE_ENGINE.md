@@ -196,11 +196,44 @@ real storefront too. Live-QA'd via Playwright: minted a real product link for th
 it, confirmed it lands on the actual product page (200, not 404) with the code intact in the URL. Full
 suite: 709 passing (the same one pre-existing, unrelated failure), zero regressions.
 
-Still open from the master prompt's Phase 7 spec, each substantial enough to be its own follow-up: **Affiliate
-Store** (section 26 - a real mini-store/landing page builder: product selection, logo/colors/banner,
-preview, publish, a public-facing rendering page - comparable in scope to this engagement's earlier Customer
-Storefront work, not something to build ad-hoc alongside a small item like this one) and a dedicated
-**Marketing** tools hub (section 28 - QR codes, banners, downloadable social media assets; link/click history
-already exists via `AffiliateController::conversionsHistory()`/the dashboard, just not gathered under one
-page). Creator (section 29-43) is explicitly its own later phase per the prompt itself, living inside the
-Affiliate account rather than as a separate role.
+## Affiliate Store (section 26): a mini-store/landing page
+
+Section 80's final acceptance criteria states this plainly: "Affiliate can create a mini-store/landing
+page." Built as its own small, self-contained pass rather than folded into a bigger one:
+
+- **`affiliate_stores`** (one per user - `user_id` unique) + **`affiliate_store_products`**
+  (`2025_02_25_000000_create_affiliate_stores.php`) - a featured "product" is really a reference to an
+  existing `AffiliateLink` row, not a raw product id. That's deliberate: the store can only ever feature
+  something the affiliate has already generated a link for (their "My Products" list above), so a click on
+  the public store page reuses the exact same tracked `/r/{code}` redirect every other link in this engine
+  uses - no parallel tracking mechanism, no separate commission-calculation path.
+- **`AffiliateStoreController`** (flat namespace, matching `AffiliateController`/`AffiliateAuthController`'s
+  existing convention rather than starting a new `Affiliate\` subdirectory) - `manage()`/`update()` (name,
+  description, logo/banner upload reusing `Wholesaler\ProductController`'s exact `StorageType::addMedia()` +
+  `getFullUrl()` pattern), `togglePublish()`, `addFeatured()`/`removeFeatured()` (ownership-checked: only a
+  link the affiliate itself generated can be featured, so a store page can never misattribute someone else's
+  clicks), and a public `show($slug)`.
+- **Public page** (`GET /affiliate-store/{slug}`, no auth) extends `customer.layout` - the same header/
+  footer/brand-color CSS the real Customer Storefront already uses, not a new page shell. A draft store
+  404s identically to a nonexistent slug (no leaking which slugs exist). Uses a distinct `/affiliate-store/`
+  prefix, not `/store/{id}` - that's `trackAndRedirect()`'s (still-unbuilt) per-seller-store destination;
+  the two must never collide.
+- Sidebar: "My Store" positioned between Marketplace and Creator, per the master prompt's own section 23
+  ordering.
+
+**Verification**: `tests/Feature/AffiliateStoreTest.php` (7 tests) - saving settings creates a draft with a
+generated slug; a draft store 404s publicly even at the right slug; publishing makes it reachable with its
+featured product's real name/link visible; a different affiliate's link cannot be featured (ownership
+check); toggling publish only touches the caller's own store; removing a featured product takes it off the
+public page immediately; the management page renders with no store yet (a brand-new affiliate). Live-QA'd
+via Playwright end to end: created a store as the demo affiliate, added a tracked product, published it,
+then visited the public URL as a fresh guest (cookies cleared) and confirmed the real page - banner,
+description, and a working "View Product" button that routes through the tracked redirect - matching what
+the automated tests already proved. Full suite: 716 passing (the same one pre-existing, unrelated failure),
+zero regressions. `MigrationBaselineTest`'s table count updated (129 -> 131).
+
+Still open from the master prompt's Phase 7 spec: a dedicated **Marketing** tools hub (section 28 - QR
+codes, banners, downloadable social media assets; link/click history already exists via
+`AffiliateController::conversionsHistory()`/the dashboard, just not gathered under one page). Creator
+(section 29-43) is explicitly its own later phase per the prompt itself, living inside the Affiliate account
+rather than as a separate role.

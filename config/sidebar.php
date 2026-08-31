@@ -431,6 +431,10 @@ return [
             ],
         ],
         [
+            'key' => 'my_store', 'label_key' => 'admin_labels.my_store', 'label_fallback' => 'My Store',
+            'icon' => 'bx bx-store', 'route' => 'affiliate.my_store.page', 'match' => ['affiliate/my_store*'],
+        ],
+        [
             'key' => 'group_creator', 'label_key' => 'admin_labels.group_creator', 'label_fallback' => 'Creator',
             'icon' => 'bx bx-camera-movie', 'match' => ['affiliate/creator*'], 'feature_flag' => 'creator_marketplace',
             'children' => [

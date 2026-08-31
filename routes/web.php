@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\Webhook;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\InstallerController;
 use App\Http\Controllers\AffiliateController;
+use App\Http\Controllers\AffiliateStoreController;
 use App\Http\Controllers\Seller\MediaController as SellerMediaController;
 use App\Http\Controllers\Seller\AreaController;
 use App\Http\Controllers\Admin\OrderController;
@@ -221,6 +222,14 @@ Route::middleware(['CheckInstallation'])->group(function () {
         Route::get('affiliate/commissions', [AffiliateController::class, 'commissionsPage'])->name('affiliate.commissions.page');
         Route::get('affiliate/withdrawals', [AffiliateController::class, 'withdrawalsPage'])->name('affiliate.withdrawals.page');
         Route::get('affiliate/private_stores', [AffiliateController::class, 'storesPage'])->name('affiliate.stores.page');
+
+        // My Store (master architecture Phase 7, section 26): a publishable mini-store landing page
+        // featuring a curated set of this affiliate's already-tracked product links.
+        Route::get('affiliate/my_store', [AffiliateStoreController::class, 'manage'])->name('affiliate.my_store.page');
+        Route::post('affiliate/my_store', [AffiliateStoreController::class, 'update'])->name('affiliate.my_store.update')->middleware(['demo_restriction']);
+        Route::put('affiliate/my_store/publish', [AffiliateStoreController::class, 'togglePublish'])->name('affiliate.my_store.publish')->middleware(['demo_restriction']);
+        Route::post('affiliate/my_store/products', [AffiliateStoreController::class, 'addFeatured'])->name('affiliate.my_store.products.add')->middleware(['demo_restriction']);
+        Route::delete('affiliate/my_store/products', [AffiliateStoreController::class, 'removeFeatured'])->name('affiliate.my_store.products.remove')->middleware(['demo_restriction']);
     });
 
     // Public - the link a visitor actually clicks, no account required to be tracked and redirected.
@@ -229,6 +238,11 @@ Route::middleware(['CheckInstallation'])->group(function () {
     // link_clicks without bound. 60/minute per IP is generous for a real visitor clicking a link, not for a
     // script.
     Route::get('r/{code}', [AffiliateController::class, 'trackAndRedirect'])->name('affiliate.track')->middleware('throttle:60,1');
+
+    // Public affiliate mini-store (master architecture Phase 7, section 26) - a distinct prefix from
+    // AffiliateController::trackAndRedirect()'s TARGET_STORE destination ('/store/{id}', a still-unbuilt
+    // per-SELLER-store browse page - see docs/PHASE_7_AFFILIATE_ENGINE.md) so the two can never collide.
+    Route::get('affiliate-store/{slug}', [AffiliateStoreController::class, 'show'])->name('affiliate.store.show');
 
     Route::get('admin/media/image', [MediaController::class, 'dynamic_image'])->name('admin.dynamic_image');
     Route::get('/media/image', [MediaController::class, 'dynamic_image'])->name('front_end.dynamic_image');
