@@ -127,3 +127,41 @@ catalog, duplicate-request prevention). `MigrationBaselineTest.php`'s table coun
 `store_affiliate_requests`.
 
 Full suite: **563 passing**, zero regressions.
+
+## Master architecture prompt Phase 7: "My Products"
+
+The 81-section "VALUE MARKET — COMPLETE MASTER ARCHITECTURE & RESTRUCTURING PROMPT" (see
+`docs/SIDEBAR_ENGINE.md` for the engagement-wide context) reframes this engine's own sidebar around its
+section 23-28 spec. Section 24 ("Affiliate My Products") describes a saved/curated list, distinct from
+browsing the live catalog - "products the Affiliate has added/saved" via either Copy Link or the
+Marketplace.
+
+Auditing this before building anything found it already fully exists at the data layer: both paths already
+call `AffiliateService::getOrCreateProductLink()`, which persists exactly one `AffiliateLink` row per
+`(user_id, product_id)` the first time a link is generated - `clicks_count`/`conversions_count` already
+live on that same row. So "My Products" needed zero new schema or save action, just a dedicated view onto
+data this app has tracked since the original Phase 7 pass above:
+
+- `AffiliateController::myProductsPage()`/`myProductsList()` - queries `AffiliateLink` scoped to the logged-in
+  user and `target_type = TARGET_PRODUCT`, joins in the product's current name/image/store (a product can
+  disappear or be disabled after a link was generated - handled with a "no longer available" fallback rather
+  than dropping the row, so the affiliate's tracked history is never silently lost).
+- New sidebar entry, positioned above "Marketplace" per the prompt's own section 23 ordering.
+
+**Verification**: `tests/Feature/AffiliateMyProductsTest.php` (5 tests) - generating a link makes it appear;
+scoped to the logged-in affiliate only (another affiliate's link doesn't leak in); click/conversion counts
+already on the link are reflected as-is; a platform-level link (not a product one) is correctly excluded;
+the page itself renders. Live-QA'd via Playwright: confirmed the empty state's copy is correct with no
+links yet, then (after minting one directly, since the demo seed data has no commission-enabled products to
+click through in the UI) confirmed the real row renders with the product's name/store/image and a working
+Copy button. Full suite: 706 passing (the same one pre-existing, date-dependent failure noted throughout
+this engagement), zero regressions.
+
+Still open from the master prompt's Phase 7 spec, each substantial enough to be its own follow-up: **Affiliate
+Store** (section 26 - a real mini-store/landing page builder: product selection, logo/colors/banner,
+preview, publish, a public-facing rendering page - comparable in scope to this engagement's earlier Customer
+Storefront work, not something to build ad-hoc alongside a small item like this one) and a dedicated
+**Marketing** tools hub (section 28 - QR codes, banners, downloadable social media assets; link/click history
+already exists via `AffiliateController::conversionsHistory()`/the dashboard, just not gathered under one
+page). Creator (section 29-43) is explicitly its own later phase per the prompt itself, living inside the
+Affiliate account rather than as a separate role.

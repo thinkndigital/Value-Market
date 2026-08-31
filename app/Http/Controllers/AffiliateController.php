@@ -122,6 +122,49 @@ class AffiliateController extends Controller
         return view('affiliate.products');
     }
 
+    public function myProductsPage()
+    {
+        return view('affiliate.my_products');
+    }
+
+    /**
+     * Master architecture prompt Phase 7 (section 24 "Affiliate My Products"): "products the Affiliate has
+     * added/saved" via Copy Link or the Marketplace - both paths already go through
+     * AffiliateService::getOrCreateProductLink(), which persists one AffiliateLink row per (user, product)
+     * the very first time a link is generated. So "My Products" needed no new schema or save action at
+     * all - it's just a dedicated view onto the `affiliate_links` rows this user already has, complete
+     * with the click/conversion counts every link already tracks.
+     */
+    public function myProductsList()
+    {
+        $userId = Auth::id();
+
+        $links = AffiliateLink::where('user_id', $userId)
+            ->where('target_type', AffiliateLink::TARGET_PRODUCT)
+            ->orderByDesc('id')
+            ->get();
+
+        $products = Product::whereIn('id', $links->pluck('target_id'))->get(['id', 'name', 'image', 'store_id'])->keyBy('id');
+        $storeNames = SellerStore::whereIn('store_id', $products->pluck('store_id')->unique())->pluck('store_name', 'store_id');
+
+        $data = $links->map(function ($link) use ($products, $storeNames) {
+            $product = $products->get($link->target_id);
+
+            return [
+                'id' => $link->id,
+                'product_id' => $link->target_id,
+                'name' => $product ? (json_decode($product->name, true)['en'] ?? '') : labels('admin_labels.product_unavailable', 'Product no longer available'),
+                'image' => $product ? app(MediaService::class)->getMediaImageUrl($product->image) : '',
+                'store_name' => $product ? $storeNames->get($product->store_id) : '',
+                'clicks_count' => $link->clicks_count,
+                'conversions_count' => $link->conversions_count,
+                'link_url' => route('affiliate.track', ['code' => $link->code]),
+            ];
+        })->values();
+
+        return response()->json(['error' => false, 'data' => $data]);
+    }
+
     public function commissionsPage()
     {
         return view('affiliate.commissions');

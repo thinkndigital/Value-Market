@@ -419,6 +419,10 @@ return [
             'icon' => 'bx bx-tachometer', 'route' => 'affiliate.dashboard', 'match' => ['affiliate/dashboard'],
         ],
         [
+            'key' => 'my_products', 'label_key' => 'admin_labels.my_products', 'label_fallback' => 'My Products',
+            'icon' => 'bx bx-heart', 'route' => 'affiliate.my_products.page', 'match' => ['affiliate/my_products*'],
+        ],
+        [
             'key' => 'group_marketplace', 'label_key' => 'admin_labels.group_marketplace', 'label_fallback' => 'Marketplace',
             'icon' => 'bx bx-package', 'match' => ['affiliate/products*', 'affiliate/private_stores*'],
             'children' => [

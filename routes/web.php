@@ -215,6 +215,8 @@ Route::middleware(['CheckInstallation'])->group(function () {
         // {product} must stay registered after affiliate/products/search above, or "search" would match the
         // {product} wildcard instead.
         Route::get('affiliate/products', [AffiliateController::class, 'productsPage'])->name('affiliate.products.page');
+        Route::get('affiliate/my_products', [AffiliateController::class, 'myProductsPage'])->name('affiliate.my_products.page');
+        Route::get('affiliate/my_products/list', [AffiliateController::class, 'myProductsList'])->name('affiliate.my_products.list');
         Route::get('affiliate/products/{product}', [AffiliateController::class, 'productShow'])->name('affiliate.product.show');
         Route::get('affiliate/commissions', [AffiliateController::class, 'commissionsPage'])->name('affiliate.commissions.page');
         Route::get('affiliate/withdrawals', [AffiliateController::class, 'withdrawalsPage'])->name('affiliate.withdrawals.page');
