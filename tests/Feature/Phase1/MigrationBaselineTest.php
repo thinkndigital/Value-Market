@@ -47,7 +47,10 @@ class MigrationBaselineTest extends TestCase
         // (2025_02_22_000000_create_wholesale_orders.php): `wholesale_orders`. Plus 1 more from the master
         // architecture prompt's Phase 6 (Supplier pricing tiers,
         // 2025_02_23_000000_create_wholesaler_product_price_tiers.php): `wholesaler_product_price_tiers`.
-        $this->assertSame(128, (int) $tables);
+        // Plus 1 more from that same phase's seller-request gating
+        // (2025_02_24_000000_create_wholesaler_seller_requests.php): `wholesaler_seller_requests`
+        // (`wholesalers.buyer_visibility` is a new column on an existing table, not a new one).
+        $this->assertSame(129, (int) $tables);
     }
 
     /** @dataProvider myisamTables */

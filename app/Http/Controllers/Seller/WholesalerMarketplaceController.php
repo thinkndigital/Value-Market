@@ -5,13 +5,16 @@ namespace App\Http\Controllers\Seller;
 use App\Models\Seller;
 use App\Models\SellerStore;
 use App\Models\WholesaleOrder;
+use App\Models\Wholesaler;
 use App\Models\WholesalerProduct;
+use App\Models\WholesalerSellerRequest;
 use App\Services\MediaService;
 use App\Services\StoreService;
 use App\Traits\HandlesValidation;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * "Browse/order" half of the Wholesaler Marketplace (see docs/WHOLESALER_MODULE.md v2): a seller browses
@@ -32,6 +35,30 @@ class WholesalerMarketplaceController extends Controller
         return Seller::where('user_id', Auth::id())->first();
     }
 
+    /** Master architecture Phase 6 (section 18 "Sellers" group): wholesaler_ids this seller is allowed to
+     *  buy from beyond the always-open public ones - either it hasn't gone private, or it has and this
+     *  seller's request was approved. */
+    private function approvedWholesalerIds(?Seller $seller)
+    {
+        if (!$seller) {
+            return collect();
+        }
+
+        return WholesalerSellerRequest::where('seller_id', $seller->id)
+            ->where('status', WholesalerSellerRequest::STATUS_APPROVED)
+            ->pluck('wholesaler_id');
+    }
+
+    private function canBuyFrom(int $wholesalerId, ?Seller $seller): bool
+    {
+        $wholesaler = Wholesaler::find($wholesalerId);
+        if (!$wholesaler || !$wholesaler->isPrivate()) {
+            return true;
+        }
+
+        return $this->approvedWholesalerIds($seller)->contains($wholesalerId);
+    }
+
     public function index()
     {
         return view('seller.pages.views.wholesaler_marketplace.index');
@@ -43,9 +70,13 @@ class WholesalerMarketplaceController extends Controller
         $limit = (int) $request->input('limit', 12);
         $search = trim((string) $request->input('search', ''));
         $seller = $this->currentSeller();
+        $approvedWholesalerIds = $this->approvedWholesalerIds($seller);
 
         $query = WholesalerProduct::with('wholesaler')
             ->where('status', 1) // admin-approved only
+            ->whereHas('wholesaler', function ($q) use ($approvedWholesalerIds) {
+                $q->where('buyer_visibility', 'public')->orWhereIn('id', $approvedWholesalerIds);
+            })
             ->when($search !== '', function ($q) use ($search) {
                 $q->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(name, '$.en')) like ?", ["%$search%"]);
             });
@@ -80,12 +111,12 @@ class WholesalerMarketplaceController extends Controller
     public function previewPrice(Request $request, $id)
     {
         $wholesalerProduct = WholesalerProduct::where('status', 1)->find($id);
-        if (!$wholesalerProduct) {
+        $seller = $this->currentSeller();
+        if (!$wholesalerProduct || !$this->canBuyFrom($wholesalerProduct->wholesaler_id, $seller)) {
             return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')], 404);
         }
 
         $quantity = max(1, (int) $request->input('quantity', $wholesalerProduct->min_order_qty));
-        $seller = $this->currentSeller();
         $unitPrice = $wholesalerProduct->priceFor($seller?->id ?? 0, $quantity);
 
         return response()->json([
@@ -97,7 +128,8 @@ class WholesalerMarketplaceController extends Controller
     public function placeOrder(Request $request, $id)
     {
         $wholesalerProduct = WholesalerProduct::where('status', 1)->find($id);
-        if (!$wholesalerProduct) {
+        $seller = $this->currentSeller();
+        if (!$wholesalerProduct || !$this->canBuyFrom($wholesalerProduct->wholesaler_id, $seller)) {
             return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')], 404);
         }
 
@@ -114,7 +146,6 @@ class WholesalerMarketplaceController extends Controller
         if (!SellerStore::where('user_id', Auth::id())->where('store_id', $storeId)->exists()) {
             return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')], 404);
         }
-        $seller = $this->currentSeller();
         $unitPrice = $wholesalerProduct->priceFor($seller->id, (int) $request->quantity);
 
         $order = WholesaleOrder::create([
@@ -189,5 +220,67 @@ class WholesalerMarketplaceController extends Controller
         $order->save();
 
         return response()->json(['message' => labels('wholesaler_labels.order_cancelled', 'Order cancelled.')]);
+    }
+
+    /** "Supplier Requests" page (master architecture Phase 6, section 15): every private wholesaler and
+     *  this seller's own request status against it, if any - mirrors AffiliateController::browsableStores(). */
+    public function requestsPage()
+    {
+        return view('seller.pages.views.wholesaler_marketplace.requests');
+    }
+
+    public function browsableWholesalers()
+    {
+        $seller = $this->currentSeller();
+        $myRequests = $seller
+            ? WholesalerSellerRequest::where('seller_id', $seller->id)->get()->keyBy('wholesaler_id')
+            : collect();
+
+        $wholesalers = Wholesaler::where('buyer_visibility', 'private')->where('status', 1)->get(['id', 'business_name']);
+
+        $data = $wholesalers->map(fn ($w) => [
+            'wholesaler_id' => $w->id,
+            'business_name' => $w->business_name,
+            'request_status' => optional($myRequests->get($w->id))->status,
+        ]);
+
+        return response()->json(['error' => false, 'data' => $data]);
+    }
+
+    /** Mirrors AffiliateController::requestStoreAccess() exactly: a previously-rejected request can be
+     *  re-sent (flipped back to pending), an approved/pending one is left alone (no duplicate spam). */
+    public function requestAccess(Request $request)
+    {
+        $validator = Validator::make($request->all(), ['wholesaler_id' => 'required|integer']);
+        if ($validator->fails()) {
+            return response()->json(['error' => true, 'message' => $validator->errors()->first()]);
+        }
+
+        $wholesalerId = (int) $request->input('wholesaler_id');
+        $wholesaler = Wholesaler::where('id', $wholesalerId)->where('buyer_visibility', 'private')->first();
+        if (!$wholesaler) {
+            return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
+        }
+
+        $seller = $this->currentSeller();
+        if (!$seller) {
+            return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')]);
+        }
+
+        $existing = WholesalerSellerRequest::where('wholesaler_id', $wholesalerId)->where('seller_id', $seller->id)->first();
+        if ($existing) {
+            if ($existing->status === WholesalerSellerRequest::STATUS_REJECTED) {
+                $existing->status = WholesalerSellerRequest::STATUS_PENDING;
+                $existing->save();
+            }
+        } else {
+            WholesalerSellerRequest::forceCreate([
+                'wholesaler_id' => $wholesalerId,
+                'seller_id' => $seller->id,
+                'status' => WholesalerSellerRequest::STATUS_PENDING,
+            ]);
+        }
+
+        return response()->json(['error' => false, 'message' => labels('wholesaler_labels.request_sent', 'Request sent - you will be able to order once the supplier approves it.')]);
     }
 }

@@ -64,6 +64,18 @@ dashboard) was renamed to **`App\Models\ProcurementVendor`** to remove the name 
 a class rename only: the `suppliers` table and its columns (including `purchase_orders.supplier_id`)
 are untouched — `ProcurementVendor::$table = 'suppliers'`.
 
+## Known failure mode: a bad route name is silent
+
+`SidebarService`'s `Route::has()` guard drops a node whose route doesn't resolve, on purpose - it's what
+lets a future-phase placeholder (e.g. Creator Marketplace) sit in `config/sidebar.php` ahead of time and
+appear automatically once built. The cost is that a *typo'd or renamed* route name fails exactly the same
+way: no error anywhere, the item is just permanently missing. This actually happened -
+`seller.wholesaler_marketplace.orders` was missing its `.index` suffix from the moment this engine was
+first built, silently hiding "My Supplier Orders," and was only caught by accident during unrelated work.
+`tests/Feature/SidebarEngineTest.php` now asserts every configured route name resolves except an explicit,
+documented allow-list of not-yet-built ones - run it (or extend its allow-list) whenever a new sidebar node
+references a route that doesn't exist yet.
+
 ## Adding a new sidebar item
 
 Add a node to the relevant role array in `config/sidebar.php` (see the schema comment at the top of

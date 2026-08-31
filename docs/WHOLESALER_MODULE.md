@@ -322,16 +322,61 @@ via Playwright: the Wallet page and its Withdraw Money modal both render correct
 Full suite: 692 passing (the same one pre-existing, date-dependent `AdminHomePerformanceTest` failure),
 zero regressions.
 
+## Phase 6 (master architecture prompt): Seller Requests / marketplace visibility
+
+Section 18's "Sellers" group asks for Explore Sellers / Seller Requests / Approved Sellers / Pending
+Sellers - until this pass, any seller could order from any admin-approved wholesaler product with zero
+relationship gate. This mirrors the existing seller-managed affiliate program's private-store request flow
+(`seller_store.affiliate_visibility` + `store_affiliate_requests`,
+`2025_02_09_000000_add_seller_affiliate_program.php`) one level up, rather than inventing a new pattern:
+
+- **`wholesalers.buyer_visibility`** ('public'/'private', defaults to 'public') + **`wholesaler_seller_requests`**
+  (`wholesaler_id`, `seller_id`, `status`: pending/approved/rejected) - `2025_02_24_000000_create_wholesaler_seller_requests.php`.
+  Defaulting to 'public' means every wholesaler already in production (and every earlier test in this suite)
+  keeps today's fully-open behavior unless it explicitly switches to private - additive, not a behavior
+  change.
+- **`Wholesaler\SellerRequestController`** (new "Seller Requests" panel page) - toggle public/private, list
+  and approve/reject incoming requests, scoped to the wholesaler's own id the same way every other
+  ownership-checked wholesaler controller is.
+- **`Seller\WholesalerMarketplaceController`** gates `list()`/`previewPrice()`/`placeOrder()` on a new
+  `canBuyFrom()` check (public wholesaler, or an approved request); a new "Supplier Requests" page lets a
+  seller browse private wholesalers and request access, mirroring `AffiliateController::browsableStores()`/
+  `requestStoreAccess()` exactly.
+- Sidebar: "Seller Requests" (Wholesaler panel), "Supplier Requests" (Seller panel, under the existing
+  Supplier Marketplace group).
+
+**Bug caught and fixed while building this**: auditing every `route` name in `config/sidebar.php` against
+`Route::has()` found `seller.wholesaler_marketplace.orders` was missing its `.index` suffix - since
+`SidebarService` silently drops a node whose route doesn't resolve (by design, so future-phase placeholders
+like Creator Marketplace don't 500), this had hidden the seller's "My Supplier Orders" link since the
+Sidebar Engine was first built in this same phase, with no error anywhere to catch it. Fixed, and now
+guarded permanently by `tests/Feature/SidebarEngineTest.php`, which asserts every sidebar route name
+resolves except an explicit, documented allow-list of not-yet-built ones.
+
+### Verification
+
+`tests/Feature/Wholesaler/WholesalerSellerRequestTest.php` (6 tests): a public wholesaler's products stay
+visible/orderable with no request (the unchanged default); a private wholesaler's products are hidden from
+the list and order placement 404s for an unapproved seller; both become visible/orderable once approved; a
+seller can send a request (starts pending); a wholesaler can approve a request scoped to its own id only (a
+different wholesaler gets a clean error, not a 500); a wholesaler can toggle its own visibility.
+`tests/Feature/SidebarEngineTest.php` (3 tests, new): every configured route resolves except the documented
+Creator Marketplace placeholders; those placeholders are still actually unbuilt (so the allow-list itself
+doesn't silently rot); an end-to-end check that the engine resolves real Wholesaler routes for a real user.
+Live-QA'd via Playwright: set the demo wholesaler to private, confirmed its products vanished from the
+seller's browse list, sent a request, watched it show "Pending" on both sides, and confirmed the wholesaler
+could see it with Approve/Reject buttons. Full suite: 701 passing (the same one pre-existing, unrelated
+failure), zero regressions. `MigrationBaselineTest`'s table count updated (128 -> 129).
+
 ## Next steps in this re-architecture
 
 Per the master architecture prompt's own phase order (confirmed with the product owner): Unified Dynamic
 Sidebar Engine (done, `docs/SIDEBAR_ENGINE.md`) -> Admin/Seller navigation audit (done - the existing
 structure already matches the target spec; the real gaps found are backend features, not nav wiring - see
-that doc) -> **Supplier architecture (in progress - pricing tiers and wallet/finance done this phase; MOQ
-enforcement, the order lifecycle, and "My Buyers" already existed from v1/v2 above; still open: a
-Wholesaler-owned POS terminal beyond the existing quick-order entry, an Explore/Request/Approve seller
-relationship workflow (today any seller can order from any approved wholesaler with no gate), a wholesaler's
-own delivery boys, and marketing tools - each its own scoped follow-up)** -> Affiliate architecture -> Creator
+that doc) -> **Supplier architecture (in progress - pricing tiers, wallet/finance, and seller-request gating
+done this phase; MOQ enforcement, the order lifecycle, and "My Buyers" already existed from v1/v2 above;
+still open: a Wholesaler-owned POS terminal beyond the existing quick-order entry, a wholesaler's own
+delivery boys, and marketing tools - each its own scoped follow-up)** -> Affiliate architecture -> Creator
 Module inside Affiliate -> Theme System -> Domain/Subdomain -> Subscription/Feature Controls -> app-wide RTL
 audit -> Responsive UI -> Performance -> regression testing. Each remaining phase is its own multi-session
 effort.

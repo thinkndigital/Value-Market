@@ -4,6 +4,7 @@ use App\Http\Controllers\Seller\PaymentRequestController;
 use App\Http\Controllers\Wholesaler\ClientController;
 use App\Http\Controllers\Wholesaler\FinanceController;
 use App\Http\Controllers\Wholesaler\HomeController;
+use App\Http\Controllers\Wholesaler\SellerRequestController;
 use App\Http\Controllers\Wholesaler\OrderController;
 use App\Http\Controllers\Wholesaler\PricingController;
 use App\Http\Controllers\Wholesaler\ProductController;
@@ -56,6 +57,13 @@ Route::group(
         Route::put('wholesaler/wallet/withdraw', function (\Illuminate\Http\Request $request) {
             return app(PaymentRequestController::class)->add_withdrawal_request($request, false, 'wholesaler');
         })->name('wholesaler.wallet.withdraw')->middleware(['demo_restriction']);
+
+        // Seller Requests / marketplace visibility (master architecture Phase 6, section 18 "Sellers"
+        // group) - a wholesaler can gate its marketplace listing behind approval, mirroring the seller's
+        // own private-affiliate-store request flow one level up.
+        Route::get('wholesaler/seller_requests', [SellerRequestController::class, 'index'])->name('wholesaler.seller_requests.index');
+        Route::put('wholesaler/seller_requests/visibility', [SellerRequestController::class, 'updateVisibility'])->name('wholesaler.seller_requests.visibility')->middleware(['demo_restriction']);
+        Route::put('wholesaler/seller_requests/respond', [SellerRequestController::class, 'respond'])->name('wholesaler.seller_requests.respond')->middleware(['demo_restriction']);
 
         // My Buyers ("عملاء" / CRM)
         Route::get('wholesaler/clients', [ClientController::class, 'index'])->name('wholesaler.clients.index');

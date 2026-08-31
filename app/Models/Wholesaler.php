@@ -19,6 +19,7 @@ class Wholesaler extends Model
         'address',
         'commission_rate',
         'status',
+        'buyer_visibility',
         'disk',
     ];
 
@@ -30,5 +31,15 @@ class Wholesaler extends Model
     public function products()
     {
         return $this->hasMany(WholesalerProduct::class);
+    }
+
+    public function sellerRequests()
+    {
+        return $this->hasMany(WholesalerSellerRequest::class);
+    }
+
+    public function isPrivate(): bool
+    {
+        return $this->buyer_visibility === 'private';
     }
 }

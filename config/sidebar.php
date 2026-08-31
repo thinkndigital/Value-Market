@@ -310,7 +310,8 @@ return [
 
                 ['key' => 'supplier_marketplace_title', 'is_subtitle' => true, 'label_key' => 'wholesaler_labels.wholesaler_marketplace', 'label_fallback' => 'Supplier Marketplace'],
                 ['key' => 'supplier_marketplace_browse', 'label_key' => 'wholesaler_labels.browse_import', 'label_fallback' => 'Browse & Import', 'route' => 'seller.wholesaler_marketplace.index', 'match' => ['seller/wholesaler_marketplace']],
-                ['key' => 'supplier_marketplace_orders', 'label_key' => 'wholesaler_labels.my_supplier_orders', 'label_fallback' => 'My Supplier Orders', 'route' => 'seller.wholesaler_marketplace.orders', 'match' => ['seller/wholesaler_marketplace/orders']],
+                ['key' => 'supplier_marketplace_orders', 'label_key' => 'wholesaler_labels.my_supplier_orders', 'label_fallback' => 'My Supplier Orders', 'route' => 'seller.wholesaler_marketplace.orders.index', 'match' => ['seller/wholesaler_marketplace/orders']],
+                ['key' => 'supplier_marketplace_requests', 'label_key' => 'wholesaler_labels.supplier_requests', 'label_fallback' => 'Supplier Requests', 'route' => 'seller.wholesaler_marketplace.requests.index', 'match' => ['seller/wholesaler_marketplace/requests']],
 
                 ['key' => 'combo_title', 'is_subtitle' => true, 'label_key' => 'admin_labels.combo_products_manage', 'label_fallback' => 'Combo Products Manage'],
                 ['key' => 'combo_attributes', 'label_key' => 'admin_labels.attributes', 'label_fallback' => 'Attributes', 'route' => 'seller.combo_product_attributes.index', 'match' => ['seller/combo_product_attributes']],
@@ -479,6 +480,10 @@ return [
         [
             'key' => 'wallet', 'label_key' => 'wholesaler_labels.wallet', 'label_fallback' => 'Wallet',
             'icon' => 'bx bx-wallet', 'route' => 'wholesaler.wallet.index', 'match' => ['wholesaler/wallet*'],
+        ],
+        [
+            'key' => 'seller_requests', 'label_key' => 'wholesaler_labels.seller_requests', 'label_fallback' => 'Seller Requests',
+            'icon' => 'bx bx-user-check', 'route' => 'wholesaler.seller_requests.index', 'match' => ['wholesaler/seller_requests*'],
         ],
     ],
 

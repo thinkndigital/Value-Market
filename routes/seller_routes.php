@@ -526,6 +526,12 @@ Route::group(
         Route::get('seller/wholesaler_marketplace/orders/list', [\App\Http\Controllers\Seller\WholesalerMarketplaceController::class, 'myOrdersList'])->name('seller.wholesaler_marketplace.orders.list');
         Route::get('seller/wholesaler_marketplace/orders/{id}/cancel', [\App\Http\Controllers\Seller\WholesalerMarketplaceController::class, 'cancelOrder'])->middleware(['demo_restriction'])->name('seller.wholesaler_marketplace.orders.cancel');
 
+        // Supplier Requests (master architecture Phase 6, section 15/18): browse private wholesalers and
+        // request buying access - public wholesalers (the default) need none of this, unchanged above.
+        Route::get('seller/wholesaler_marketplace/requests', [\App\Http\Controllers\Seller\WholesalerMarketplaceController::class, 'requestsPage'])->name('seller.wholesaler_marketplace.requests.index');
+        Route::get('seller/wholesaler_marketplace/requests/browse', [\App\Http\Controllers\Seller\WholesalerMarketplaceController::class, 'browsableWholesalers'])->name('seller.wholesaler_marketplace.requests.browse');
+        Route::post('seller/wholesaler_marketplace/requests', [\App\Http\Controllers\Seller\WholesalerMarketplaceController::class, 'requestAccess'])->middleware(['demo_restriction'])->name('seller.wholesaler_marketplace.requests.store');
+
         Route::get('seller/purchase_orders', [PurchaseOrderController::class, 'list'])->name('seller.purchase_orders.list');
         Route::post('seller/purchase_orders', [PurchaseOrderController::class, 'store'])->middleware(['demo_restriction'])->name('seller.purchase_orders.store');
         Route::post('seller/purchase_orders/{id}/receive', [PurchaseOrderController::class, 'receive'])->middleware(['demo_restriction'])->name('seller.purchase_orders.receive');
