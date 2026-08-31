@@ -16,11 +16,80 @@
     on every storefront page as unstyled plain text (confirmed live: no header layout, no button styling,
     no form styling) - matches app.blade.php's own asset order, which loads this first for the same reason. --}}
     <link rel="stylesheet" href="{{ asset('frontend/elegant/css/plugins.css') }}">
-    <link rel="stylesheet" href="{{ asset('frontend/elegant/css/bootstrap-icons.css') }}">
     <link rel="stylesheet" href="{{ asset('frontend/elegant/css/swiper-bundle.min.css') }}">
     <link rel="stylesheet" href="{{ asset('frontend/elegant/css/style.css') }}">
     <link rel="stylesheet" href="{{ asset('frontend/elegant/css/theme.css') }}">
     <link rel="stylesheet" href="{{ asset('frontend/elegant/css/responsive.css') }}">
+
+    @php
+        // Real store branding (Admin > Stores > primary/secondary/active/hover color) applied as CSS custom
+        // properties, matching the values components/header/header.blade.php originally exposed the same
+        // way (#store-primary-color etc. hidden inputs) - here as actual page color, not just JS hooks.
+        $storeDetails = app(\App\Services\StoreService::class)->getCurrentStoreData(session('store_id'));
+        $storeDetails = json_decode($storeDetails ?? '[]');
+        $brandPrimary = $storeDetails[0]->primary_color ?? '#041632';
+        $brandSecondary = $storeDetails[0]->secondary_color ?? '#f4a51c';
+        $brandActive = $storeDetails[0]->active_color ?? $brandPrimary;
+        $brandHover = $storeDetails[0]->hover_color ?? $brandSecondary;
+    @endphp
+    <style>
+        :root {
+            --brand-primary: {{ $brandPrimary }};
+            --brand-secondary: {{ $brandSecondary }};
+            --brand-active: {{ $brandActive }};
+            --brand-hover: {{ $brandHover }};
+        }
+
+        .cust-header {
+            background: var(--brand-primary);
+        }
+
+        .cust-header .cust-logo,
+        .cust-header .cust-nav a,
+        .cust-header .cust-actions a,
+        .cust-header .cust-actions .btn-link {
+            color: #fff;
+        }
+
+        .cust-header .cust-nav a:hover,
+        .cust-header .cust-actions a:hover {
+            color: var(--brand-secondary);
+        }
+
+        .btn-brand {
+            background: var(--brand-secondary);
+            border-color: var(--brand-secondary);
+            color: #212529;
+        }
+
+        .btn-brand:hover {
+            background: var(--brand-hover);
+            border-color: var(--brand-hover);
+            color: #212529;
+        }
+
+        .cust-hero {
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-active));
+        }
+
+        /* style.css/theme.css set their own color directly on h1/p, which beats a merely-inherited value
+        regardless of specificity - targeted explicitly here instead of relying on inheritance from .cust-hero. */
+        .cust-hero,
+        .cust-hero h1,
+        .cust-hero p {
+            color: #fff;
+        }
+
+        .cust-portal-card:hover {
+            border-color: var(--brand-secondary) !important;
+        }
+
+        .cust-app-download,
+        .cust-app-download h2,
+        .cust-app-download p {
+            color: #fff;
+        }
+    </style>
     @stack('styles')
 </head>
 
@@ -28,7 +97,7 @@
     <!-- Storefront header (Phase 21 storefront build: adapted from components/header/header.blade.php -
     stripped of the Livewire wiring header.blade.php assumed, since app/Livewire/ doesn't exist in this
     codebase; kept the same nav shape - home/products/cart/account - with plain <a href> links instead). -->
-    <header class="cust-header border-bottom">
+    <header class="cust-header">
         <div class="container d-flex align-items-center justify-content-between py-3">
             <a href="{{ route('home') }}" class="cust-logo text-decoration-none fw-bold fs-4">
                 @if (!empty($web_settings['logo']))
@@ -43,7 +112,7 @@
             </nav>
             <div class="cust-actions d-flex align-items-center gap-3">
                 <a href="{{ route('customer.cart') }}" class="position-relative">
-                    <i class="bi bi-cart3 fs-5"></i>
+                    <i class="anm anm-cart-l fs-5"></i>
                 </a>
                 @auth('web')
                     @if ((int) auth('web')->user()->role_id === \App\Models\Role::CUSTOMER)
@@ -57,7 +126,7 @@
                     @endif
                 @else
                     <a href="{{ route('customer.login') }}">{{ labels('front_messages.sign_in', 'Sign In') }}</a>
-                    <a href="{{ route('customer.register') }}">{{ labels('front_messages.register', 'Register') }}</a>
+                    <a href="{{ route('customer.register') }}" class="btn btn-brand btn-sm">{{ labels('front_messages.register', 'Register') }}</a>
                 @endauth
             </div>
         </div>
@@ -86,9 +155,13 @@
             </div>
         @endif
         @yield('content')
+        {{-- "Login to every dashboard" and the App Download section are home-page-only marketing content
+        (@stack('home_extra')) - showing a full portals/app-download block mid-checkout or on every product
+        page would be clutter; the home page pushes its own copy of these via @push('home_extra'). --}}
+        @stack('home_extra')
     </main>
 
-    <footer class="cust-footer border-top mt-5 py-4">
+    <footer class="cust-footer border-top mt-0 py-4">
         <div class="container d-flex flex-wrap justify-content-between align-items-center">
             <div>&copy; {{ date('Y') }} {{ $system_settings['app_name'] ?? 'Store' }}</div>
             <div class="d-flex gap-3">
