@@ -45,14 +45,18 @@ class CheckoutController extends Controller
         $storeId = app(StoreService::class)->getStoreId();
         $currencyCode = app(CurrencyService::class)->getDefaultCurrency()->code ?? 'USD';
 
-        $apiRequest = new Request([
+        $apiRequest = new Request(array_filter([
             'is_wallet_used' => 0,
             'store_id' => $storeId,
             'order_payment_currency_code' => $currencyCode,
             'status' => 'awaiting',
             'address_id' => $request->input('address_id'),
             'payment_method' => 'cod',
-        ]);
+            // Master architecture prompt Phase 7 bug fix: the "last touch" affiliate_code
+            // Customer\ProductController::show() stashed in session, so OrderService::placeOrder() can
+            // attribute this sale - see that controller's own comment for why session, not query string.
+            'affiliate_code' => session('affiliate_code'),
+        ], fn ($value) => $value !== null));
         $apiRequest->attributes->set('language_code', app(TranslationService::class)->getLanguageCode());
 
         $original = app('request');

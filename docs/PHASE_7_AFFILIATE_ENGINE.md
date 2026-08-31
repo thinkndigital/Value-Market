@@ -157,6 +157,45 @@ click through in the UI) confirmed the real row renders with the product's name/
 Copy button. Full suite: 706 passing (the same one pre-existing, date-dependent failure noted throughout
 this engagement), zero regressions.
 
+## Bug found and fixed: affiliate links were dead on the real Customer Storefront
+
+While scoping the next Phase 7 piece, tracing what actually happens when a visitor clicks an affiliate link
+found this had been silently broken since the Customer Storefront was built (`docs/STOREFRONT_V1.md`,
+built in a later session than the original affiliate engine above, with no bridging done between the two):
+
+1. `AffiliateController::trackAndRedirect()` sent a product-link visitor to `/product/{id}` and a
+   category-link visitor to `/category/{id}` - neither route exists (confirmed via `route:list`); the
+   storefront's real routes are slug-based (`/products/{slug}`, `customer.products`). Every such click 404'd.
+2. Even with that fixed, the `?affiliate_code=...` query string it appends dies the instant the visitor
+   navigates anywhere else - `Customer\ProductController::show()` never captured it, and
+   `Customer\CheckoutController::store()` never forwarded anything into
+   `OrderService::placeOrder()`'s `affiliate_code` key (the one thing that actually attributes a sale -
+   see `OrderPlacementAffiliateAttributionTest` above, which only ever exercised the mobile API path).
+
+Net effect: an affiliate could generate links and see clicks tracked, but **any order placed through the
+real storefront could never be attributed** - zero commission, silently, for the entire lifetime of the
+Customer Storefront feature. The mobile API path (this doc's original Phase 7 work) was never affected.
+
+Fixed with the minimum needed, reusing what already existed rather than adding a new mechanism:
+
+- `trackAndRedirect()` now resolves a product link's real slug and uses `route('customer.product.show', ...)`;
+  a category link uses `route('customer.products') . '?category_id=...'`. `TARGET_STORE` is left as-is - the
+  storefront has no per-seller-store public browse page at all yet, a separate, real gap, not something to
+  invent inside this fix.
+- `Customer\ProductController::show()` stashes an incoming `affiliate_code` into session - the same "last
+  touch wins" pattern this app already uses for locale/RTL persistence across requests, not a new mechanism.
+- `Customer\CheckoutController::store()` reads it back out of session and adds it to the array handed to
+  `ApiController::place_order()`, which already knows what to do with it.
+
+**Verification**: `tests/Feature/Storefront/AffiliateAttributionTest.php` (4 tests, real HTTP kernel) - a
+product link redirects to the actual storefront route; visiting a product page with `?affiliate_code=`
+stores it in session; and the full chain (click -> redirect -> session capture -> logged-in checkout
+submission) produces an `Order` with `channel = CHANNEL_AFFILIATE` and a `ReferralConversion` row - the
+same assertions `OrderPlacementAffiliateAttributionTest` makes for the mobile API path, now proven for the
+real storefront too. Live-QA'd via Playwright: minted a real product link for the demo affiliate, clicked
+it, confirmed it lands on the actual product page (200, not 404) with the code intact in the URL. Full
+suite: 709 passing (the same one pre-existing, unrelated failure), zero regressions.
+
 Still open from the master prompt's Phase 7 spec, each substantial enough to be its own follow-up: **Affiliate
 Store** (section 26 - a real mini-store/landing page builder: product selection, logo/colors/banner,
 preview, publish, a public-facing rendering page - comparable in scope to this engagement's earlier Customer

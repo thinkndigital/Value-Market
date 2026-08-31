@@ -442,16 +442,30 @@ class AffiliateController extends Controller
             return redirect('/');
         }
 
+        // Master architecture prompt Phase 7 bug fix: these destinations pre-date the Customer Storefront
+        // (docs/STOREFRONT_V1.md) and never got updated to match its real routes - '/product/{id}' and
+        // '/category/{id}' don't exist and 404 (confirmed: `route:list` has no such paths), so every
+        // affiliate product/category link has been dead since the storefront was built. The real routes are
+        // slug-based ('/products/{slug}'), so a product link needs the slug looked up, not just the id.
+        // TARGET_STORE stays '/store/{id}' - the storefront has no per-seller-store public browse page yet
+        // (a real, separate gap, not something to invent here), so this one link type remains unreachable
+        // until that page exists.
+        $productSlug = $link->target_type === AffiliateLink::TARGET_PRODUCT
+            ? Product::where('id', $link->target_id)->value('slug')
+            : null;
+
         $destination = match ($link->target_type) {
-            AffiliateLink::TARGET_PRODUCT => '/product/' . $link->target_id,
+            AffiliateLink::TARGET_PRODUCT => $productSlug ? route('customer.product.show', $productSlug) : '/',
             AffiliateLink::TARGET_STORE => '/store/' . $link->target_id,
-            AffiliateLink::TARGET_CATEGORY => '/category/' . $link->target_id,
+            AffiliateLink::TARGET_CATEGORY => route('customer.products') . '?category_id=' . $link->target_id,
             default => '/',
         };
 
         // affiliate_code rides along so the eventual checkout (OrderService::placeOrder()) can attribute
-        // the sale - the storefront's own checkout flow is responsible for carrying it from here through to
-        // that request, same as any other query-string-driven referral pattern.
-        return redirect($destination . '?affiliate_code=' . urlencode($code));
+        // the sale - Customer\ProductController::show() picks this up into session, and
+        // Customer\CheckoutController::store() carries it from there into place_order().
+        $separator = str_contains($destination, '?') ? '&' : '?';
+
+        return redirect($destination . $separator . 'affiliate_code=' . urlencode($code));
     }
 }

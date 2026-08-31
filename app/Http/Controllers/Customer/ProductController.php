@@ -61,8 +61,17 @@ class ProductController extends Controller
      * Product detail - reuses the same ProductService::fetchProduct($id=...) call the mobile API's
      * get_products()/get_product_details() path already makes.
      */
-    public function show($slug)
+    public function show(Request $request, $slug)
     {
+        // Master architecture prompt Phase 7 bug fix: an affiliate link redirects here with
+        // ?affiliate_code=... (AffiliateController::trackAndRedirect()), but that query string dies the
+        // moment the visitor navigates away - checkout is a separate request. Session is this app's
+        // existing pattern for exactly this ("last touch wins" - matches how locale/is_rtl persist across
+        // requests elsewhere), and Customer\CheckoutController::store() reads it back out from here.
+        if ($request->filled('affiliate_code')) {
+            session(['affiliate_code' => $request->input('affiliate_code')]);
+        }
+
         $storeId = app(StoreService::class)->getStoreId();
         $languageCode = app(TranslationService::class)->getLanguageCode();
 
