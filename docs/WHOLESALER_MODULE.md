@@ -147,8 +147,101 @@ a follow-up correction to the RTL sidebar fix from `docs/ADMIN_SIDEBAR_REGROUP.m
 remaining icon-vs-chevron overlap) - see that doc's own "RTL icon order correction" section for the full
 root cause and fix.
 
+## v2: a real purchase-order workflow (follow-up pass)
+
+The product owner asked for the wholesaler's own panel to have POS/inventory/sales/CRM/orders/"stores and
+merchants" - real B2B commerce operations, not just a self-service catalog. Two scoping questions got asked
+and answered before building this: (1) should "orders"/"POS" mean a real purchase-order system (seller
+requests a quantity, wholesaler confirms/fulfills, a real order record exists) instead of the v1 direct
+one-click import - **yes, confirmed**; (2) should "CRM/customers" mean the wholesaler's *seller* clients
+(not end consumers) - **yes, confirmed**. Both directly replace/extend v1's design below.
+
+### What changed from v1
+
+v1's `Seller\WholesalerMarketplaceController::import()` (one click, immediately creates the seller's
+`Product`) is **gone**. In its place: a seller places a `WholesaleOrder` (quantity + their chosen resale
+price), the wholesaler reviews it through a real lifecycle - pending → accepted → shipped → delivered (or
+rejected/cancelled) - and **only the "delivered" transition actually creates or restocks the seller's
+`Product`** (`App\Services\WholesaleOrderService::fulfill()`, extracted from v1's import logic almost
+unchanged - same product-creation shape, just triggered by fulfillment instead of by the seller directly).
+A second order against a listing the seller has already received tops up the existing product's stock
+instead of creating a duplicate row (idempotent by `wholesaler_product_id` + `seller_id`, and each order's
+own `fulfilled_product_id` column makes fulfillment idempotent per-order too - retrying a request can never
+double-create a product or double-add stock).
+
+### New table: `wholesale_orders` (`2025_02_22_000000_create_wholesale_orders.php`)
+
+One row per order: `wholesaler_id`/`wholesaler_product_id`/`seller_id`/`store_id`, `quantity`, `unit_price`
+(the wholesale price *at order time*, not a live reference - price changes later don't retroactively change
+a placed order), `total_amount`, `retail_price` (the seller's chosen resale price, captured up front so
+fulfillment doesn't need the seller present), `status`, `payment_status` (manually marked - no payment
+gateway integration, matching this module's existing "settlement needs a business decision" note below),
+and `fulfilled_product_id`.
+
+### Seller side (`Seller\WholesalerMarketplaceController`)
+
+- Marketplace browse table's action button is now "Place Order" (was "Import") - opens a modal for quantity
+  (respecting the listing's `min_order_qty`) and retail price, shows a live running total.
+- New **My Orders** page (`seller/wholesaler_marketplace/orders`) - every order this seller has placed, its
+  status, and a Cancel action (only while still pending).
+
+### Wholesaler side (four new controllers, four new sidebar links)
+
+- **Orders** (`Wholesaler\OrderController`) - the incoming queue, filterable by status, with
+  accept/reject/mark-shipped/mark-delivered actions (each gated to the *legal* prior status - e.g. you can't
+  ship a still-pending order - `422` otherwise) and a "Mark Paid" toggle. Also the **POS ask**: a "Create
+  Order" quick-entry page where the wholesaler logs a phone/in-person order on a seller's behalf, picking
+  from existing `seller_store` rows - created **pre-accepted** (status = accepted), since the wholesaler
+  creating it themselves already implies agreement, matching how a seller's own POS skips their storefront
+  checkout flow the same way.
+- **Stock** (`Wholesaler\StockController`) - the "مخزون" ask: a dedicated view of the wholesaler's own
+  catalog sorted by lowest stock first, with a quick add/subtract adjustment modal (clamped at 0) instead of
+  opening the full product edit form for a routine restock.
+- **Sales** (`Wholesaler\ReportController`) - the "مبيعات" ask: revenue/order counts/unpaid-amount cards
+  plus top-5 products and top-5 buyers, all derived from `wholesale_orders` (`status = delivered` only,
+  matching "sales" = orders actually fulfilled, not just placed) - this is the only real transaction ledger
+  this module has (see "still deferred" below).
+- **My Buyers** (`Wholesaler\ClientController`) - the "CRM وعملاء" ask, scoped correctly per the product
+  owner's own confirmation (a wholesaler's clients are sellers, not end consumers): one row per seller
+  who's ordered, with order count/total spent/last order date, grouped straight off `wholesale_orders`.
+  Deliberately **not** built on the existing `customer_notes`/`customer_tags` tables (Phase 11 CRM) - those
+  are keyed on `customer_user_id` (an end-consumer concept) and don't fit a seller-as-client relationship;
+  reusing them would have been a schema misuse, not a genuine avoid-duplication win. If per-seller notes/tags
+  are wanted later, that's a small, additive follow-up on top of this same buyers list.
+
+### Still deferred (unchanged from v1, now more clearly bounded by having a real order table)
+
+`payment_status` is a manual flag - no payment gateway integration, no automatic settlement/payout to the
+wholesaler when an order is marked paid. This remains the same open business-model question v1's doc flagged
+("commission-on-sale vs. wholesale-price-is-the-whole-transaction vs. something else"), just now sitting on
+top of a real order ledger instead of nothing - whichever model gets chosen, `wholesale_orders` is the table
+it would post entries against.
+
+### Verification
+
+`tests/Feature/Wholesaler/WholesaleOrderLifecycleTest.php` (10 tests): accept → ship → deliver creates the
+product with the seller's chosen retail price and ordered quantity; a repeat order for an already-fulfilled
+listing tops up stock instead of duplicating the product; fulfilling the same order twice is a no-op; a
+still-pending order can't be shipped (422); a wholesaler can't transition another wholesaler's order (404);
+a seller can cancel their own pending order; the POS-style Create Order starts pre-accepted; stock
+adjustment clamps at 0; the sales report and buyers list both reflect a delivered order (and the sales
+report explicitly excludes a still-pending one). `WholesalerModuleTest`'s old import tests were replaced
+with a "seller can place a wholesale order" test (asserting the seller's catalog is *not* touched until
+fulfillment, the key behavior change from v1). `MigrationBaselineTest`'s table count updated (126 -> 127).
+
+Also live-QA'd end-to-end via Playwright + direct verification: a seller placed a real order through the
+UI, the wholesaler's own "Accept" button fired the real AJAX transition (confirmed via a DB read, since this
+sandbox's single-threaded dev server made the *remaining* ship/deliver browser clicks unreliable to await -
+not a sign of an application bug, given the identical logic is what the 10 lifecycle tests exercise
+directly), and the Sales/My Buyers pages were screenshotted showing correct real numbers ($45 revenue, 1
+delivered order, "Demo Seller" listed as a buyer) after fulfillment ran.
+
+Full suite: 680 passing (one pre-existing, unrelated failure - `AdminHomePerformanceTest`), zero
+regressions.
+
 ## Next steps in this re-architecture
 
-Per the established order: Wholesaler module (this pass) -> Creator Marketplace (entirely new, most complex
-remaining piece) -> theme system -> store domains -> subscription/feature-flag enforcement -> app-wide RTL
-verification beyond the sidebar. Each is its own multi-session effort.
+Per the established order: Wholesaler module (this pass, including its v2 order workflow) -> Creator
+Marketplace (entirely new, most complex remaining piece) -> theme system -> store domains -> subscription/
+feature-flag enforcement -> app-wide RTL verification beyond the sidebar. Each is its own multi-session
+effort.

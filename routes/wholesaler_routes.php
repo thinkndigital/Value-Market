@@ -1,7 +1,11 @@
 <?php
 
+use App\Http\Controllers\Wholesaler\ClientController;
 use App\Http\Controllers\Wholesaler\HomeController;
+use App\Http\Controllers\Wholesaler\OrderController;
 use App\Http\Controllers\Wholesaler\ProductController;
+use App\Http\Controllers\Wholesaler\ReportController;
+use App\Http\Controllers\Wholesaler\StockController;
 use Illuminate\Support\Facades\Route;
 
 Route::group(
@@ -15,6 +19,27 @@ Route::group(
         Route::post('wholesaler/products/{id}', [ProductController::class, 'store'])->name('wholesaler.products.update')->middleware(['demo_restriction']);
         Route::get('wholesaler/products/{id}/edit', [ProductController::class, 'edit'])->name('wholesaler.products.edit');
         Route::delete('wholesaler/products/{id}', [ProductController::class, 'destroy'])->name('wholesaler.products.destroy')->middleware(['demo_restriction']);
+
+        // Orders (v2 - docs/WHOLESALER_MODULE.md): the incoming purchase-order queue + POS-style quick
+        // "create order on a seller's behalf" entry point.
+        Route::get('wholesaler/orders', [OrderController::class, 'index'])->name('wholesaler.orders.index');
+        Route::get('wholesaler/orders/list', [OrderController::class, 'list'])->name('wholesaler.orders.list');
+        Route::get('wholesaler/orders/{id}/transition', [OrderController::class, 'transition'])->name('wholesaler.orders.transition')->middleware(['demo_restriction']);
+        Route::get('wholesaler/orders/{id}/mark_paid', [OrderController::class, 'markPaid'])->name('wholesaler.orders.mark_paid')->middleware(['demo_restriction']);
+        Route::get('wholesaler/orders/create', [OrderController::class, 'createPage'])->name('wholesaler.orders.create');
+        Route::post('wholesaler/orders', [OrderController::class, 'store'])->name('wholesaler.orders.store')->middleware(['demo_restriction']);
+
+        // Stock ("مخزون")
+        Route::get('wholesaler/stock', [StockController::class, 'index'])->name('wholesaler.stock.index');
+        Route::get('wholesaler/stock/list', [StockController::class, 'list'])->name('wholesaler.stock.list');
+        Route::post('wholesaler/stock/{id}/adjust', [StockController::class, 'adjust'])->name('wholesaler.stock.adjust')->middleware(['demo_restriction']);
+
+        // Sales report ("مبيعات")
+        Route::get('wholesaler/reports/sales', [ReportController::class, 'index'])->name('wholesaler.reports.sales');
+
+        // My Buyers ("عملاء" / CRM)
+        Route::get('wholesaler/clients', [ClientController::class, 'index'])->name('wholesaler.clients.index');
+        Route::get('wholesaler/clients/list', [ClientController::class, 'list'])->name('wholesaler.clients.list');
 
         // Language switcher (public/assets/admin/custom/custom.js's shared `.changeLang` handler builds
         // this URL from the current panel prefix, same as every other panel).

@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers\Seller;
 
-use App\Models\Product;
-use App\Models\Product_variants;
 use App\Models\Seller;
 use App\Models\SellerStore;
+use App\Models\WholesaleOrder;
 use App\Models\WholesalerProduct;
 use App\Services\MediaService;
 use App\Services\StoreService;
@@ -13,20 +12,25 @@ use App\Traits\HandlesValidation;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 
 /**
- * "Browse/import" half of the Wholesaler Marketplace (see docs/WHOLESALER_MODULE.md): a seller browses
- * active (admin-approved) wholesaler_products rows and imports the ones they want to stock. Importing does
- * NOT touch the wholesaler's own listing - it creates a brand-new row in this seller's own `products` table
- * (same table their own catalog already lives in, so every existing storefront/order/stock/POS code path
- * just works with it unchanged), linked back via `wholesaler_product_id` for traceability. The seller sets
- * their own retail price and starting stock at import time; the wholesaler's `wholesale_price` is shown
- * only as a reference cost, never copied in as the retail price.
+ * "Browse/order" half of the Wholesaler Marketplace (see docs/WHOLESALER_MODULE.md v2): a seller browses
+ * active (admin-approved) wholesaler_products rows and places a real purchase order for the ones they want
+ * to stock - quantity, their own chosen resale price. This does NOT touch the wholesaler's own listing or
+ * the seller's own catalog directly; it creates a `WholesaleOrder` row the wholesaler must accept and
+ * fulfill. Only on fulfillment (Wholesaler\OrderController::fulfill(), via
+ * App\Services\WholesaleOrderService) does the seller's own Product get created/restocked, reusing all
+ * existing product/order/storefront machinery unchanged - same as v1's direct import did, just gated behind
+ * a real order now instead of happening the instant a seller clicked a button.
  */
 class WholesalerMarketplaceController extends Controller
 {
     use HandlesValidation;
+
+    private function currentSeller(): ?Seller
+    {
+        return Seller::where('user_id', Auth::id())->first();
+    }
 
     public function index()
     {
@@ -48,11 +52,8 @@ class WholesalerMarketplaceController extends Controller
         $total = $query->count();
         $products = $query->orderBy('id', 'DESC')->skip($offset)->take($limit)->get();
 
-        $sellerId = Seller::where('user_id', Auth::id())->value('id');
-
-        $rows = $products->map(function ($p) use ($sellerId) {
+        $rows = $products->map(function ($p) {
             $name = json_decode($p->name, true);
-            $alreadyImported = Product::where('seller_id', $sellerId)->where('wholesaler_product_id', $p->id)->exists();
 
             return [
                 'id' => $p->id,
@@ -62,16 +63,14 @@ class WholesalerMarketplaceController extends Controller
                 'wholesale_price' => $p->wholesale_price,
                 'min_order_qty' => $p->min_order_qty,
                 'stock' => $p->stock,
-                'operate' => $alreadyImported
-                    ? '<span class="badge bg-success">' . labels('wholesaler_labels.imported', 'Imported') . '</span>'
-                    : '<button type="button" class="btn btn-sm btn-primary import-wholesaler-product" data-id="' . $p->id . '">' . labels('wholesaler_labels.import', 'Import') . '</button>',
+                'operate' => '<button type="button" class="btn btn-sm btn-primary place-wholesale-order" data-id="' . $p->id . '" data-price="' . $p->wholesale_price . '" data-min-qty="' . $p->min_order_qty . '">' . labels('wholesaler_labels.place_order', 'Place Order') . '</button>',
             ];
         });
 
         return response()->json(['rows' => $rows, 'total' => $total]);
     }
 
-    public function import(Request $request, $id)
+    public function placeOrder(Request $request, $id)
     {
         $wholesalerProduct = WholesalerProduct::where('status', 1)->find($id);
         if (!$wholesalerProduct) {
@@ -79,8 +78,9 @@ class WholesalerMarketplaceController extends Controller
         }
 
         $rules = [
+            'quantity' => 'required|integer|min:' . max(1, (int) $wholesalerProduct->min_order_qty),
             'retail_price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
+            'seller_note' => 'nullable|string|max:1000',
         ];
         if ($response = $this->HandlesValidation($request, $rules)) {
             return $response;
@@ -90,45 +90,79 @@ class WholesalerMarketplaceController extends Controller
         if (!SellerStore::where('user_id', Auth::id())->where('store_id', $storeId)->exists()) {
             return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')], 404);
         }
-        $sellerId = Seller::where('user_id', Auth::id())->value('id');
+        $seller = $this->currentSeller();
 
-        if (Product::where('seller_id', $sellerId)->where('wholesaler_product_id', $wholesalerProduct->id)->exists()) {
-            return response()->json(['error' => true, 'message' => labels('wholesaler_labels.already_imported', 'You have already imported this product.')]);
+        $order = WholesaleOrder::create([
+            'wholesaler_id' => $wholesalerProduct->wholesaler_id,
+            'wholesaler_product_id' => $wholesalerProduct->id,
+            'seller_id' => $seller->id,
+            'store_id' => $storeId,
+            'quantity' => $request->quantity,
+            'unit_price' => $wholesalerProduct->wholesale_price,
+            'total_amount' => $wholesalerProduct->wholesale_price * $request->quantity,
+            'retail_price' => $request->retail_price,
+            'status' => WholesaleOrder::STATUS_PENDING,
+            'seller_note' => $request->seller_note,
+        ]);
+
+        return response()->json(['message' => labels('wholesaler_labels.order_placed', 'Order placed successfully. The wholesaler will review and confirm it.'), 'id' => $order->id]);
+    }
+
+    public function myOrdersPage()
+    {
+        return view('seller.pages.views.wholesaler_marketplace.orders');
+    }
+
+    public function myOrdersList(Request $request)
+    {
+        $offset = (int) $request->input('offset', 0);
+        $limit = (int) $request->input('limit', 10);
+        $seller = $this->currentSeller();
+
+        $query = WholesaleOrder::with(['wholesalerProduct', 'wholesaler'])->where('seller_id', $seller?->id);
+        $total = $query->count();
+        $orders = $query->orderBy('id', 'DESC')->skip($offset)->take($limit)->get();
+
+        $statusLabels = [
+            WholesaleOrder::STATUS_PENDING => '<span class="badge bg-warning">' . labels('wholesaler_labels.pending', 'Pending') . '</span>',
+            WholesaleOrder::STATUS_ACCEPTED => '<span class="badge bg-info">' . labels('wholesaler_labels.accepted', 'Accepted') . '</span>',
+            WholesaleOrder::STATUS_SHIPPED => '<span class="badge bg-primary">' . labels('wholesaler_labels.shipped', 'Shipped') . '</span>',
+            WholesaleOrder::STATUS_DELIVERED => '<span class="badge bg-success">' . labels('wholesaler_labels.delivered', 'Delivered') . '</span>',
+            WholesaleOrder::STATUS_REJECTED => '<span class="badge bg-danger">' . labels('wholesaler_labels.rejected', 'Rejected') . '</span>',
+            WholesaleOrder::STATUS_CANCELLED => '<span class="badge bg-secondary">' . labels('wholesaler_labels.cancelled', 'Cancelled') . '</span>',
+        ];
+
+        $rows = $orders->map(function ($o) use ($statusLabels) {
+            $name = json_decode(optional($o->wholesalerProduct)->name, true);
+            return [
+                'id' => $o->id,
+                'product' => $name['en'] ?? '',
+                'wholesaler' => optional($o->wholesaler)->business_name,
+                'quantity' => $o->quantity,
+                'total_amount' => $o->total_amount,
+                'status' => $statusLabels[(int) $o->status] ?? $o->status,
+                'created_at' => $o->created_at?->format('Y-m-d H:i'),
+                'operate' => (int) $o->status === WholesaleOrder::STATUS_PENDING
+                    ? '<button type="button" class="btn btn-sm btn-outline-danger cancel-wholesale-order" data-id="' . $o->id . '">' . labels('admin_labels.cancel', 'Cancel') . '</button>'
+                    : '',
+            ];
+        });
+
+        return response()->json(['rows' => $rows, 'total' => $total]);
+    }
+
+    public function cancelOrder($id)
+    {
+        $seller = $this->currentSeller();
+        $order = WholesaleOrder::where('seller_id', $seller?->id)->where('status', WholesaleOrder::STATUS_PENDING)->find($id);
+
+        if (!$order) {
+            return response()->json(['error' => true, 'message' => labels('seller.data_not_found', 'Data Not Found')], 404);
         }
 
-        $name = json_decode($wholesalerProduct->name, true) ?: ['en' => 'Product'];
+        $order->status = WholesaleOrder::STATUS_CANCELLED;
+        $order->save();
 
-        $product = Product::create([
-            'store_id' => $storeId,
-            'category_id' => $wholesalerProduct->category_id,
-            'seller_id' => $sellerId,
-            'wholesaler_product_id' => $wholesalerProduct->id,
-            'name' => json_encode($name, JSON_UNESCAPED_UNICODE),
-            'short_description' => json_encode(['en' => Str::limit($name['en'] ?? '', 150)], JSON_UNESCAPED_UNICODE),
-            'slug' => generateSlug($name['en'] ?? ('product-' . $wholesalerProduct->id), 'products'),
-            // products.image is NOT NULL - the wholesaler UI always requires one for a new listing, but
-            // guard here too rather than let an edge-case null 500 the import.
-            'image' => $wholesalerProduct->image ?: '',
-            'description' => $wholesalerProduct->description,
-            'stock_type' => '0', // simple product, stock tracked at the product level
-            'stock' => $request->stock,
-            'availability' => 1,
-            'status' => 1,
-            'deliverable_type' => 1, // all
-            'deliverable_cities' => '',
-            'city_deliverable_type' => 1,
-            'minimum_order_quantity' => max(1, (int) $wholesalerProduct->min_order_qty),
-            'cod_allowed' => 1,
-        ]);
-
-        Product_variants::create([
-            'product_id' => $product->id,
-            'price' => $request->retail_price,
-            'stock' => $request->stock,
-            'availability' => 1,
-            'status' => 1,
-        ]);
-
-        return response()->json(['message' => labels('wholesaler_labels.product_imported', 'Product imported into your catalog successfully.')]);
+        return response()->json(['message' => labels('wholesaler_labels.order_cancelled', 'Order cancelled.')]);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Wholesaler;
 
 use App\Models\Product;
+use App\Models\WholesaleOrder;
 use App\Models\Wholesaler;
 use App\Models\WholesalerProduct;
 use Illuminate\Routing\Controller;
@@ -21,6 +22,11 @@ class HomeController extends Controller
             ->distinct('seller_id')
             ->count('seller_id');
 
-        return view('wholesaler.pages.views.home', compact('wholesaler', 'totalProducts', 'pendingApproval', 'activeProducts', 'sellersImporting'));
+        $pendingOrders = WholesaleOrder::where('wholesaler_id', $wholesaler->id)->where('status', WholesaleOrder::STATUS_PENDING)->count();
+        $totalRevenue = WholesaleOrder::where('wholesaler_id', $wholesaler->id)->where('status', WholesaleOrder::STATUS_DELIVERED)->sum('total_amount');
+
+        return view('wholesaler.pages.views.home', compact(
+            'wholesaler', 'totalProducts', 'pendingApproval', 'activeProducts', 'sellersImporting', 'pendingOrders', 'totalRevenue'
+        ));
     }
 }

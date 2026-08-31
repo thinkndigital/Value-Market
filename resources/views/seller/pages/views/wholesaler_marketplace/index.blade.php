@@ -5,10 +5,16 @@
 @section('content')
     <x-seller.breadcrumb :title="labels('wholesaler_labels.wholesaler_marketplace', 'Wholesaler Marketplace')" :subtitle="labels(
         'wholesaler_labels.wholesaler_marketplace_subtitle',
-        'Browse products listed by wholesalers and import them into your own catalog',
+        'Browse products listed by wholesalers and place an order to stock your store',
     )" :breadcrumbs="[['label' => labels('wholesaler_labels.wholesaler_marketplace', 'Wholesaler Marketplace')]]" />
 
-    <div class="row mt-3">
+    <div class="d-flex justify-content-end mb-2">
+        <a href="{{ route('seller.wholesaler_marketplace.orders.index') }}" class="btn btn-outline-dark btn-sm">
+            <i class="bx bx-list-ul"></i> {{ labels('wholesaler_labels.my_orders', 'My Orders') }}
+        </a>
+    </div>
+
+    <div class="row mt-1">
         <div class="col-md-12">
             <div class="card content-area p-4">
                 <div class="table-responsive">
@@ -34,28 +40,34 @@
         </div>
     </div>
 
-    <div class="modal fade" id="wholesalerImportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="wholesalerOrderModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">{{ labels('wholesaler_labels.import_product', 'Import Product') }}</h5>
+                    <h5 class="modal-title">{{ labels('wholesaler_labels.place_order', 'Place Order') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="wholesalerImportForm">
+                <form id="wholesalerOrderForm">
                     <div class="modal-body">
-                        <p class="text-muted">{{ labels('wholesaler_labels.import_help', "Set your own retail price and starting stock. This will add a new product to your own catalog - the wholesaler's listing itself is not changed.") }}</p>
+                        <p class="text-muted">{{ labels('wholesaler_labels.order_help', 'The wholesaler will review and confirm this order. Your product will be added to your catalog once it is delivered.') }}</p>
+                        <div class="mb-3">
+                            <label class="form-label">{{ labels('wholesaler_labels.quantity', 'Quantity') }}<span class='text-asterisks'>*</span></label>
+                            <input type="number" name="quantity" id="order_quantity" class="form-control" required>
+                            <small class="text-muted" id="order_min_qty_hint"></small>
+                        </div>
                         <div class="mb-3">
                             <label class="form-label">{{ labels('wholesaler_labels.retail_price', 'Your Retail Price') }}<span class='text-asterisks'>*</span></label>
-                            <input type="number" step="0.01" name="retail_price" id="import_retail_price" class="form-control" required>
+                            <input type="number" step="0.01" name="retail_price" id="order_retail_price" class="form-control" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">{{ labels('admin_labels.stock', 'Stock') }}<span class='text-asterisks'>*</span></label>
-                            <input type="number" name="stock" id="import_stock" class="form-control" required>
+                            <label class="form-label">{{ labels('admin_labels.note', 'Note') }} ({{ labels('admin_labels.optional', 'optional') }})</label>
+                            <textarea name="seller_note" id="order_note" class="form-control" rows="2"></textarea>
                         </div>
+                        <div id="order_total" class="fw-bold"></div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ labels('admin_labels.cancel', 'Cancel') }}</button>
-                        <button type="submit" class="btn btn-primary">{{ labels('wholesaler_labels.import', 'Import') }}</button>
+                        <button type="submit" class="btn btn-primary">{{ labels('wholesaler_labels.place_order', 'Place Order') }}</button>
                     </div>
                 </form>
             </div>
@@ -63,28 +75,43 @@
     </div>
 
     <script>
-        var currentImportId = null;
+        var currentOrderId = null;
+        var currentOrderPrice = 0;
 
-        $(document).on('click', '.import-wholesaler-product', function () {
-            currentImportId = $(this).data('id');
-            $('#wholesalerImportForm')[0].reset();
-            $('#wholesalerImportModal').modal('show');
+        function orderUpdateTotal() {
+            var qty = parseInt($('#order_quantity').val()) || 0;
+            $('#order_total').text(currentOrderPrice && qty
+                ? "{{ labels('wholesaler_labels.total_amount', 'Total Amount') }}: " + (currentOrderPrice * qty).toFixed(2)
+                : '');
+        }
+        $(document).on('input', '#order_quantity', orderUpdateTotal);
+
+        $(document).on('click', '.place-wholesale-order', function () {
+            currentOrderId = $(this).data('id');
+            currentOrderPrice = parseFloat($(this).data('price')) || 0;
+            var minQty = parseInt($(this).data('min-qty')) || 1;
+            $('#wholesalerOrderForm')[0].reset();
+            $('#order_quantity').attr('min', minQty).val(minQty);
+            $('#order_min_qty_hint').text("{{ labels('wholesaler_labels.min_order_qty', 'Min Order Qty') }}: " + minQty);
+            orderUpdateTotal();
+            $('#wholesalerOrderModal').modal('show');
         });
 
-        $('#wholesalerImportForm').on('submit', function (e) {
+        $('#wholesalerOrderForm').on('submit', function (e) {
             e.preventDefault();
-            if (!currentImportId) return;
+            if (!currentOrderId) return;
             $.ajax({
-                url: "{{ url('seller/wholesaler_marketplace') }}/" + currentImportId + "/import",
+                url: "{{ url('seller/wholesaler_marketplace') }}/" + currentOrderId + "/order",
                 type: 'POST',
                 data: {
                     _token: $('meta[name="csrf-token"]').attr('content'),
-                    retail_price: $('#import_retail_price').val(),
-                    stock: $('#import_stock').val(),
+                    quantity: $('#order_quantity').val(),
+                    retail_price: $('#order_retail_price').val(),
+                    seller_note: $('#order_note').val(),
                 },
                 success: function (res) {
                     iziToast.success({ title: 'Success', message: res.message, position: 'topRight' });
-                    $('#wholesalerImportModal').modal('hide');
+                    $('#wholesalerOrderModal').modal('hide');
                     $('#wholesaler_marketplace_table').bootstrapTable('refresh');
                 },
                 error: function (xhr) {

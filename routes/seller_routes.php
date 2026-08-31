@@ -514,12 +514,16 @@ Route::group(
         Route::delete('seller/suppliers/{id}', [SupplierController::class, 'destroy'])->middleware(['demo_restriction'])->name('seller.suppliers.destroy');
 
         // Wholesaler Marketplace (SaaS re-architecture brief) - browse admin-approved wholesaler listings
-        // and import them into this seller's own catalog. Distinct from the Supplier routes just above:
-        // a Supplier is this seller's own private procurement contact, a Wholesaler is a platform-wide
-        // marketplace entity any seller can browse (see App\Models\Wholesaler's own doc comment).
+        // and place a real purchase order against one (v2 - docs/WHOLESALER_MODULE.md - replaces v1's
+        // direct one-click import). Distinct from the Supplier routes just above: a Supplier is this
+        // seller's own private procurement contact, a Wholesaler is a platform-wide marketplace entity any
+        // seller can browse (see App\Models\Wholesaler's own doc comment).
         Route::get('seller/wholesaler_marketplace', [\App\Http\Controllers\Seller\WholesalerMarketplaceController::class, 'index'])->name('seller.wholesaler_marketplace.index');
         Route::get('seller/wholesaler_marketplace/list', [\App\Http\Controllers\Seller\WholesalerMarketplaceController::class, 'list'])->name('seller.wholesaler_marketplace.list');
-        Route::post('seller/wholesaler_marketplace/{id}/import', [\App\Http\Controllers\Seller\WholesalerMarketplaceController::class, 'import'])->middleware(['demo_restriction'])->name('seller.wholesaler_marketplace.import');
+        Route::post('seller/wholesaler_marketplace/{id}/order', [\App\Http\Controllers\Seller\WholesalerMarketplaceController::class, 'placeOrder'])->middleware(['demo_restriction'])->name('seller.wholesaler_marketplace.place_order');
+        Route::get('seller/wholesaler_marketplace/orders', [\App\Http\Controllers\Seller\WholesalerMarketplaceController::class, 'myOrdersPage'])->name('seller.wholesaler_marketplace.orders.index');
+        Route::get('seller/wholesaler_marketplace/orders/list', [\App\Http\Controllers\Seller\WholesalerMarketplaceController::class, 'myOrdersList'])->name('seller.wholesaler_marketplace.orders.list');
+        Route::get('seller/wholesaler_marketplace/orders/{id}/cancel', [\App\Http\Controllers\Seller\WholesalerMarketplaceController::class, 'cancelOrder'])->middleware(['demo_restriction'])->name('seller.wholesaler_marketplace.orders.cancel');
 
         Route::get('seller/purchase_orders', [PurchaseOrderController::class, 'list'])->name('seller.purchase_orders.list');
         Route::post('seller/purchase_orders', [PurchaseOrderController::class, 'store'])->middleware(['demo_restriction'])->name('seller.purchase_orders.store');

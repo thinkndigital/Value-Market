@@ -23,10 +23,11 @@ use Tests\TestCase;
 /**
  * Wholesaler module (SaaS re-architecture brief): a platform-level entity distinct from the existing
  * seller-scoped Supplier model (see database/migrations/2025_02_21_000000_create_wholesaler_module.php's
- * own doc comment). Covers the full "browse/import" flow this pass built: wholesaler registers, lists a
- * product (starts pending), admin approves it, a seller browses and imports it into their own catalog.
- * Live-QA'd first via a real Playwright run (register -> login -> add product with a real image upload ->
- * admin approve -> seller import) before these regression tests were written - see docs/WHOLESALER_MODULE.md.
+ * own doc comment). Covers registration/login/RBAC, a wholesaler listing a product (starts pending), admin
+ * approval, and a seller placing an order against an approved listing. The order's own fulfillment lifecycle
+ * (accept/reject/ship/deliver, which is what actually creates the seller's Product) is covered by
+ * WholesaleOrderLifecycleTest instead - see docs/WHOLESALER_MODULE.md's v2 section for why importing was
+ * replaced with a real order workflow.
  */
 class WholesalerModuleTest extends TestCase
 {
@@ -182,59 +183,30 @@ class WholesalerModuleTest extends TestCase
         $this->assertSame(1, $response->json('total'));
     }
 
-    public function test_seller_can_import_an_approved_wholesaler_product_into_their_own_catalog(): void
+    public function test_seller_can_place_a_wholesale_order_for_an_approved_product(): void
     {
         $fixtures = $this->baseFixtures();
         ['wholesaler' => $wholesaler] = $this->makeWholesaler();
 
         $wp = WholesalerProduct::create([
             'wholesaler_id' => $wholesaler->id, 'category_id' => $fixtures['category']->id,
-            'name' => json_encode(['en' => 'Importable Widget']), 'wholesale_price' => 5, 'min_order_qty' => 3,
-            'status' => 1, 'slug' => 'importable-' . uniqid(),
+            'name' => json_encode(['en' => 'Orderable Widget']), 'wholesale_price' => 5, 'min_order_qty' => 3,
+            'status' => 1, 'slug' => 'orderable-' . uniqid(),
         ]);
 
         $response = $this->actingAs($fixtures['sellerUser'])
             ->withSession(['store_id' => $fixtures['store']->id])
-            ->postJson('seller/wholesaler_marketplace/' . $wp->id . '/import', [
-                'retail_price' => 24.99, 'stock' => 40,
+            ->postJson('seller/wholesaler_marketplace/' . $wp->id . '/order', [
+                'quantity' => 10, 'retail_price' => 24.99,
             ]);
 
         $response->assertOk();
-
-        $product = Product::where('wholesaler_product_id', $wp->id)->first();
-        $this->assertNotNull($product);
-        $this->assertSame($fixtures['seller']->id, $product->seller_id);
-        $this->assertSame($fixtures['store']->id, $product->store_id);
-        $this->assertSame($fixtures['category']->id, $product->category_id);
-        $this->assertSame(3, $product->minimum_order_quantity);
-
-        $variant = Product_variants::where('product_id', $product->id)->first();
-        $this->assertNotNull($variant);
-        $this->assertEquals(24.99, $variant->price);
-        $this->assertEquals(40, $variant->stock);
-    }
-
-    public function test_seller_cannot_import_the_same_wholesaler_product_twice(): void
-    {
-        $fixtures = $this->baseFixtures();
-        ['wholesaler' => $wholesaler] = $this->makeWholesaler();
-
-        $wp = WholesalerProduct::create([
-            'wholesaler_id' => $wholesaler->id, 'category_id' => $fixtures['category']->id,
-            'name' => json_encode(['en' => 'Widget']), 'wholesale_price' => 5, 'status' => 1,
-            'slug' => 'widget-' . uniqid(),
+        $this->assertDatabaseHas('wholesale_orders', [
+            'wholesaler_product_id' => $wp->id, 'seller_id' => $fixtures['seller']->id, 'quantity' => 10,
+            'unit_price' => 5, 'total_amount' => 50, 'retail_price' => 24.99, 'status' => 0,
         ]);
-
-        $importOnce = fn() => $this->actingAs($fixtures['sellerUser'])
-            ->withSession(['store_id' => $fixtures['store']->id])
-            ->postJson('seller/wholesaler_marketplace/' . $wp->id . '/import', ['retail_price' => 10, 'stock' => 5]);
-
-        $importOnce()->assertOk();
-        $second = $importOnce();
-
-        $second->assertOk();
-        $this->assertTrue((bool) $second->json('error'));
-        $this->assertSame(1, Product::where('wholesaler_product_id', $wp->id)->count());
+        // Placing an order must not touch the seller's catalog until the wholesaler fulfills it.
+        $this->assertSame(0, Product::where('wholesaler_product_id', $wp->id)->count());
     }
 
     public function test_admin_can_approve_a_pending_wholesaler_product(): void

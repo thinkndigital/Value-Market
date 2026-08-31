@@ -40,6 +40,34 @@
                      <span class="nav-link-text ms-1">{{ labels('wholesaler_labels.my_products', 'My Products') }}</span>
                  </a>
              </li>
+             <li class="nav-item ms-3">
+                 <a class="nav-link {{ Request::is('wholesaler/orders*') ? 'active' : '' }}"
+                     href="{{ route('wholesaler.orders.index') }}">
+                     <i class='bx bx-cart'></i>
+                     <span class="nav-link-text ms-1">{{ labels('wholesaler_labels.orders', 'Orders') }}</span>
+                 </a>
+             </li>
+             <li class="nav-item ms-3">
+                 <a class="nav-link {{ Request::is('wholesaler/stock*') ? 'active' : '' }}"
+                     href="{{ route('wholesaler.stock.index') }}">
+                     <i class='bx bx-box'></i>
+                     <span class="nav-link-text ms-1">{{ labels('wholesaler_labels.stock', 'Stock') }}</span>
+                 </a>
+             </li>
+             <li class="nav-item ms-3">
+                 <a class="nav-link {{ Request::is('wholesaler/reports*') ? 'active' : '' }}"
+                     href="{{ route('wholesaler.reports.sales') }}">
+                     <i class='bx bx-line-chart'></i>
+                     <span class="nav-link-text ms-1">{{ labels('wholesaler_labels.sales', 'Sales') }}</span>
+                 </a>
+             </li>
+             <li class="nav-item ms-3">
+                 <a class="nav-link {{ Request::is('wholesaler/clients*') ? 'active' : '' }}"
+                     href="{{ route('wholesaler.clients.index') }}">
+                     <i class='bx bx-group'></i>
+                     <span class="nav-link-text ms-1">{{ labels('wholesaler_labels.my_buyers', 'My Buyers') }}</span>
+                 </a>
+             </li>
          </ul>
      </div>
  </nav>
